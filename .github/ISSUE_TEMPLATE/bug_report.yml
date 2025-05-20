@@ -1,0 +1,24 @@
+name: "🐛 Bug Report"
+description: "버그를 보고하기 위한 템플릿"
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: 📄 버그 설명
+      description: 버그에 대한 자세한 설명을 작성해 주세요.
+      placeholder: 어떤 문제가 발생했는지, 어떻게 재현되는지 자세히 적어주세요!
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🔄 재현 방법
+      description: 버그를 재현하기 위한 단계를 작성해 주세요.
+      placeholder: 1. 이 작업을 수행\n2. 이 버튼 클릭\n3. 결과 확인
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: 🙋🏻 참고 자료
+      description: 스크린샷, 로그, 또는 기타 참고 자료가 있다면 작성해 주세요.
+    validations:
+      required: false
