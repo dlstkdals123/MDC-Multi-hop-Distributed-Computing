@@ -13,7 +13,7 @@ body:
     attributes:
       label: 🔄 재현 방법
       description: 버그를 재현하기 위한 단계를 작성해 주세요.
-      placeholder: 1. 이 작업을 수행\n2. 이 버튼 클릭\n3. 결과 확인
+      placeholder: 1. 이 작업을 수행 2. 이 버튼 클릭 3. 결과 확인
     validations:
       required: true
   - type: textarea
