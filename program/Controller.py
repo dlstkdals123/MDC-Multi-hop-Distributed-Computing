@@ -56,8 +56,8 @@ class Controller(Program):
 
     def init_network_info(self):
         with open("config.json", 'r') as file:
-            netork_info = NetworkInfo(json.load(file))
-            self._network_info = netork_info
+            network_info = NetworkInfo(json.load(file)["Controller"])
+            self._network_info = network_info
 
     def init_path(self):
         folder_name = self._network_info.get_experiment_name() + "_" + datetime.now().strftime('%m-%d_%H%M%S')
