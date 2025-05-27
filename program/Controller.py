@@ -56,7 +56,7 @@ class Controller(Program):
 
     def init_network_info(self):
         with open("config.json", 'r') as file:
-            netork_info = NetworkInfo(json.load(file))
+            netork_info = NetworkInfo(json.load(file)["Controller"])
             self._network_info = netork_info
 
     def init_path(self):
