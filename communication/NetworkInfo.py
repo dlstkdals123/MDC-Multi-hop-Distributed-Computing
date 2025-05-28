@@ -8,7 +8,7 @@ class NetworkInfo:
         _experiment_name (str): 실험 이름, 결과 폴더 이름에 사용됩니다.
         _queue_name (str): 큐 이름.
         _jobs (Dict[str, any]): 작업 정보.
-        _netowrk (Dict[str, any]): 네트워크 정보.
+        _network (Dict[str, any]): 네트워크 정보.
         _router (Dict[str, any]): 라우터 정보.
         _scheduling_algorithm (str): 스케줄링 알고리즘 이름.
         _sync_time (float): 동기화 시간.
@@ -29,6 +29,7 @@ class NetworkInfo:
         self._scheduling_algorithm: str = self._network_config["scheduling_algorithm"]
         self._sync_time: float = self._network_config["sync_time"]
         self._collect_garbage_job_time: float = self._network_config["collect_garbage_job_time"]
+
 
     def get_experiment_name(self):
         return self._experiment_name
