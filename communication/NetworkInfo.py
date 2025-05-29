@@ -19,6 +19,8 @@ class NetworkInfo:
         Args:
             network_config (Dict[str, any]): 네트워크 설정 정보가 담긴 Json 형식의 딕셔너리.
         """
+        self.check_validate(network_config)
+
         self._network_config = network_config
 
         self._experiment_name = self._network_config["experiment_name"]
@@ -29,6 +31,30 @@ class NetworkInfo:
         self._scheduling_algorithm: str = self._network_config["scheduling_algorithm"]
         self._sync_time: float = self._network_config["sync_time"]
         self._collect_garbage_job_time: float = self._network_config["collect_garbage_job_time"]
+
+    def check_validate(self, network_config: Dict[str, any]):
+        """
+        config.json의 Controller 정보가 올바른지 검증합니다.
+        
+        Raises:
+            ValueError: 필수 정보가 누락되었을 때 발생합니다.
+            필수 정보는 매뉴얼을 참고해주세요.
+        """
+
+        required_keys = [
+            "experiment_name", 
+            "queue_name", 
+            "jobs", 
+            "network", 
+            "router", 
+            "scheduling_algorithm", 
+            "sync_time", 
+            "collect_garbage_job_time"
+        ]
+
+        for key in required_keys:
+            if key not in network_config:
+                raise ValueError(f"Missing required key: {key}")
 
 
     def get_experiment_name(self):
