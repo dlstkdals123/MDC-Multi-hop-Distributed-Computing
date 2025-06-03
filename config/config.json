@@ -1,6 +1,5 @@
 {
-    "Controller": {
-        "experiment_name": "LRLO_JN_V_30000000",
+    "NetworkInfo": {
         "queue_name": "LRLO",
         "jobs": {
             "test job 1": {
@@ -29,7 +28,10 @@
             "192.168.1.5"
         ],
         "scheduling_algorithm": "scheduling/Dijkstra.py",
-        "sync_time": 1.0,
         "collect_garbage_job_time": 300
+    },
+    "Controller": {
+        "experiment_name": "LRLO_JN_V_30000000",
+        "sync_time": 1.0
     }
 }
