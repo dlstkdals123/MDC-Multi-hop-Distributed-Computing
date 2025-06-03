@@ -58,17 +58,17 @@ class Controller(Program):
         self.init_layered_graph()
 
     def init_network_info(self):
-        with open("config/config.json", 'r') as file:
+        with open(path, 'r') as file:
             network_info = NetworkInfo(json.load(file)["NetworkInfo"])
             self._network_info = network_info
 
     def init_controller_info(self):
-        with open("config/config.json", 'r') as file:
+        with open(path, 'r') as file:
             controller_info = ControllerInfo(json.load(file)["Controller"])
             self._controller_info = controller_info
 
     def init_path(self):
-        folder_name = self.controller_info.get_experiment_name() + "_" + datetime.now().strftime('%m-%d_%H%M%S')
+        folder_name = self._controller_info.get_experiment_name() + "_" + datetime.now().strftime('%m-%d_%H%M%S')
         self._latency_log_path = f"./results/{folder_name}/latency"
         os.makedirs(self._latency_log_path, exist_ok=True)
 
@@ -86,7 +86,7 @@ class Controller(Program):
         callback_thread.start()
 
     def garbage_job_collector(self):
-        collect_garbage_job_time = self.controller_info.get_collect_garbage_job_time()
+        collect_garbage_job_time = self._network_info.get_collect_garbage_job_time()
         for job_name in self._network_info.get_jobs():
             while True:
                 time.sleep(collect_garbage_job_time)
@@ -122,7 +122,7 @@ class Controller(Program):
 
     def sync_backlog(self):
         while True:
-            time.sleep(self.controller_info.get_sync_time())
+            time.sleep(self._controller_info.get_sync_time())
             for node_ip in self._network_info.get_network():
                 # send RequestBacklog byte to source ip (response)
                 request_backlog = RequestBacklog()
@@ -138,7 +138,7 @@ class Controller(Program):
 
     def sync_network_performance(self):
         while True:
-            time.sleep(self.controller_info.get_sync_time())
+            time.sleep(self._controller_info.get_sync_time())
             for node_ip in self._network_info.get_network():
                 # send RequestBacklog byte to source ip (response)
                 request_network_performance = RequestNetworkPerformance()
@@ -310,6 +310,9 @@ if __name__ == '__main__':
             ],
         }
     
+    global path
+    path = "config/config.json"
+
     pub_configs = []
     
     controller = Controller(sub_config=sub_config, pub_configs=pub_configs)

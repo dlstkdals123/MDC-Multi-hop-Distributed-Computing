@@ -12,7 +12,6 @@ class ControllerInfo:
 
         self._experiment_name = self._controller_config["experiment_name"]
         self._sync_time = self._controller_config["sync_time"]
-        self._collect_garbage_job_time = self._controller_config["collect_garbage_job_time"]
 
     def check_validate(self, controller_config: Dict[str, any]):
         """
@@ -22,7 +21,7 @@ class ControllerInfo:
             ValueError: 필수 정보가 누락되었을 때 발생합니다.
             필수 정보는 매뉴얼을 참고해주세요.
         """
-        required_keys = ["experiment_name", "sync_time", "collect_garbage_job_time"]
+        required_keys = ["experiment_name", "sync_time"]
 
         for key in required_keys:
             if key not in controller_config:
