@@ -1,6 +1,8 @@
 {
     "NetworkInfo": {
         "queue_name": "LRLO",
+        "scheduling_algorithm": "scheduling/Dijkstra.py",
+        "collect_garbage_job_time": 300,
         "jobs": {
             "test job 1": {
                 "job_type": "dnn",
@@ -26,9 +28,7 @@
         },
         "router": [
             "192.168.1.5"
-        ],
-        "scheduling_algorithm": "scheduling/Dijkstra.py",
-        "collect_garbage_job_time": 300
+        ]
     },
     "Controller": {
         "experiment_name": "LRLO_JN_V_30000000",
