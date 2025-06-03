@@ -2,7 +2,7 @@ from typing import Dict
 
 class NetworkInfo:
     """
-    Network 정보를 담는 클래스입니다.
+    네트워크 정보를 저장하는 클래스입니다.
 
     Attributes:
         _experiment_name (str): 실험 이름, 결과 폴더 이름에 사용됩니다.
