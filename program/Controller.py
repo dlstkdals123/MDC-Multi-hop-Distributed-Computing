@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from program import Program
 from communication import *
-from config import ControllerInfo
+from config import ControllerConfig
 from layeredgraph import LayeredGraph, LayerNode
 from job import JobInfo, SubtaskInfo
 from utils import save_latency, save_virtual_backlog, save_path
@@ -37,7 +37,7 @@ class Controller(Program):
         self._backlog_log_path = None
         self._path_log_path = None
         self._network_info: NetworkInfo = None
-        self._controller_info: ControllerInfo = None
+        self._controller_info: ControllerConfig = None
         self._layered_graph = None
         self._arrival_rate = 0
         self._real_arrival_rate = 0
@@ -64,7 +64,7 @@ class Controller(Program):
 
     def init_controller_info(self):
         with open(path, 'r') as file:
-            controller_info = ControllerInfo(json.load(file)["Controller"])
+            controller_info = ControllerConfig(json.load(file)["Controller"])
             self._controller_info = controller_info
 
     def init_path(self):

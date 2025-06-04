@@ -1,6 +1,15 @@
 from typing import Dict
 
-class ControllerInfo:
+class ControllerConfig:
+    """
+    Controller 설정 정보를 저장하는 클래스입니다.
+
+    Attributes:
+        _controller_config (Dict[str, any]): 컨트롤러 설정 정보가 담긴 Json 형식의 딕셔너리.
+        _experiment_name (str): 실험 이름
+        _sync_time (int): 동기화 시간.
+    """
+        
     def __init__(self, controller_config: Dict[str, any]):
         """
         Args:
@@ -32,6 +41,3 @@ class ControllerInfo:
     
     def get_sync_time(self):
         return self._sync_time
-    
-    def get_collect_garbage_job_time(self):
-        return self._collect_garbage_job_time

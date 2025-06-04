@@ -1,1 +1,1 @@
-from config.ControllerInfo import ControllerInfo
+from config.ControllerConfig import ControllerConfig
