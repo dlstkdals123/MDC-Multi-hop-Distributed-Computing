@@ -1,0 +1,35 @@
+{
+    "Controller": {
+        "experiment_name": "LRLO_JN_V_30000000",
+        "queue_name": "LRLO",
+        "jobs": {
+            "test job 1": {
+                "job_type": "dnn",
+                "model_name": "yolov5",
+                "warmup": "True",
+                "warmup_input": [1, 3, 320, 320],
+                "split_points": [
+                    [0, 0],
+                    [0, 1],
+                    [1, 2],
+                    [2, 3],
+                    [3, 4]
+                ],
+                "source": "192.168.1.5",
+                "destination": "192.168.1.8"
+            }
+        },
+        "network": {
+            "192.168.1.5": ["192.168.1.6"],
+            "192.168.1.6": ["192.168.1.8"],
+            "192.168.1.7": ["192.168.1.8"],
+            "192.168.1.8": []
+        },
+        "router": [
+            "192.168.1.5"
+        ],
+        "scheduling_algorithm": "scheduling/Dijkstra.py",
+        "sync_time": 1.0,
+        "collect_garbage_job_time": 300
+    }
+}
