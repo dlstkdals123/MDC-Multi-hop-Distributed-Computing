@@ -161,7 +161,7 @@ class Controller(Program):
 
     def handle_network_info(self, topic, payload, publisher):
         # get source ip address
-        node_info: NodeInfo = pickle.loads(payload)
+        node_info: RequestNetworkInfo = pickle.loads(payload)
         ip = node_info.get_ip()
 
         print(f"ip: {ip} requested network information.")
@@ -270,7 +270,7 @@ class Controller(Program):
 
     def handle_request_arrival_rate(self, topic, payload, publisher):
         # get source ip address
-        node_info: NodeInfo = pickle.loads(payload)
+        node_info: RequestNetworkInfo = pickle.loads(payload)
         ip = node_info.get_ip()
 
         if "Dijkstra" in self._network_info.get_scheduling_algorithm():
