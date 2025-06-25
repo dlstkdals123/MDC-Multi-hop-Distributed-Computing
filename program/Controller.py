@@ -4,7 +4,6 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from program import Program
 from communication import *
-from config import ControllerConfig
 from layeredgraph import LayeredGraph, LayerNode
 from job import JobInfo, SubtaskInfo
 from utils import save_latency, save_virtual_backlog, save_path
@@ -37,7 +36,6 @@ class Controller(Program):
         self._backlog_log_path = None
         self._path_log_path = None
         self._network_info: NetworkInfo = None
-        self._controller_info: ControllerConfig = None
         self._layered_graph = None
         self._arrival_rate = 0
         self._real_arrival_rate = 0
@@ -53,22 +51,16 @@ class Controller(Program):
         self._job_info_dummy = None
 
         self.init_network_info()
-        self.init_controller_info()
         self.init_path()
         self.init_layered_graph()
 
     def init_network_info(self):
-        with open(path, 'r') as file:
-            network_info = NetworkInfo(json.load(file)["NetworkInfo"])
+        with open("config.json", 'r') as file:
+            network_info = NetworkInfo(json.load(file)["Controller"])
             self._network_info = network_info
 
-    def init_controller_info(self):
-        with open(path, 'r') as file:
-            controller_info = ControllerConfig(json.load(file)["Controller"])
-            self._controller_info = controller_info
-
     def init_path(self):
-        folder_name = self._controller_info.get_experiment_name() + "_" + datetime.now().strftime('%m-%d_%H%M%S')
+        folder_name = self._network_info.get_experiment_name() + "_" + datetime.now().strftime('%m-%d_%H%M%S')
         self._latency_log_path = f"./results/{folder_name}/latency"
         os.makedirs(self._latency_log_path, exist_ok=True)
 
@@ -122,7 +114,7 @@ class Controller(Program):
 
     def sync_backlog(self):
         while True:
-            time.sleep(self._controller_info.get_sync_time())
+            time.sleep(self._network_info.get_sync_time())
             for node_ip in self._network_info.get_network():
                 # send RequestBacklog byte to source ip (response)
                 request_backlog = RequestBacklog()
@@ -138,7 +130,7 @@ class Controller(Program):
 
     def sync_network_performance(self):
         while True:
-            time.sleep(self._controller_info.get_sync_time())
+            time.sleep(self._network_info.get_sync_time())
             for node_ip in self._network_info.get_network():
                 # send RequestBacklog byte to source ip (response)
                 request_network_performance = RequestNetworkPerformance()
@@ -161,7 +153,7 @@ class Controller(Program):
 
     def handle_network_info(self, topic, payload, publisher):
         # get source ip address
-        node_info: RequestNetworkInfo = pickle.loads(payload)
+        node_info: NodeInfo = pickle.loads(payload)
         ip = node_info.get_ip()
 
         print(f"ip: {ip} requested network information.")
@@ -270,7 +262,7 @@ class Controller(Program):
 
     def handle_request_arrival_rate(self, topic, payload, publisher):
         # get source ip address
-        node_info: RequestNetworkInfo = pickle.loads(payload)
+        node_info: NodeInfo = pickle.loads(payload)
         ip = node_info.get_ip()
 
         if "Dijkstra" in self._network_info.get_scheduling_algorithm():
@@ -310,9 +302,6 @@ if __name__ == '__main__':
             ],
         }
     
-    global path
-    path = "config/config.json"
-
     pub_configs = []
     
     controller = Controller(sub_config=sub_config, pub_configs=pub_configs)
