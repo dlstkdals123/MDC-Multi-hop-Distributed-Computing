@@ -18,6 +18,8 @@ import time
 
 class MDC(Program):
     def __init__(self, sub_config, pub_configs):
+        self._path = "config/config.json"
+
         self.sub_config = sub_config
         self.pub_configs = pub_configs
         self._address = get_ip_address(["eth0", "wlan0"])
@@ -59,7 +61,7 @@ class MDC(Program):
         self.request_network_info()
 
     def init_model_config(self):
-        with open(path, 'r') as file:
+        with open(self._path, 'r') as file:
             data = json.load(file)  # 한 번만 읽기
             model_names = data["Model"].keys()
             for model_name in model_names:
@@ -207,8 +209,6 @@ if __name__ == '__main__':
             ],
         }
     
-    path = "config/config.json"
-
     pub_configs = [
     ]
     

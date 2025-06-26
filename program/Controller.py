@@ -17,6 +17,8 @@ from datetime import datetime
 
 class Controller(Program):
     def __init__(self, sub_config, pub_configs):
+        self._path = "config/config.json"
+
         self.sub_config = sub_config
         self.pub_configs = pub_configs
 
@@ -61,17 +63,17 @@ class Controller(Program):
         self.init_layered_graph()
 
     def init_network_config(self):
-        with open(path, 'r') as file:
+        with open(self._path, 'r') as file:
             network_config = NetworkConfig(json.load(file)["Network"])
             self._network_config = network_config
 
     def init_controller_config(self):
-        with open(path, 'r') as file:
+        with open(self._path, 'r') as file:
             controller_config = ControllerConfig(json.load(file)["Controller"])
             self._controller_config = controller_config
 
     def init_model_config(self):
-        with open(path, 'r') as file:
+        with open(self._path, 'r') as file:
             data = json.load(file)  # 한 번만 읽기
             model_names = data["Model"].keys()
             for model_name in model_names:
@@ -311,9 +313,6 @@ if __name__ == '__main__':
             ],
         }
     
-    global path
-    path = "config/config.json"
-
     pub_configs = []
     
     controller = Controller(sub_config=sub_config, pub_configs=pub_configs)
