@@ -4,7 +4,7 @@ from config import NetworkConfig, ModelConfig
 from layeredgraph import LayerNode, LayerNodePair
 from job import JobInfo
 from job.DNNModels import DNNModels
-from scheduling import Dijkstra, JDPCRA, TLDOC
+from scheduling import Dijkstra, JDPCRA, TLDOC, RandomSelection
 
 import importlib
 import time
@@ -40,7 +40,6 @@ class LayeredGraph:
         self.init_graph()
         self.init_algorithm()
         self.init_network_performance_info()
-        
 
     def set_graph(self, links):
         self._previous_update_time = time.time()
@@ -110,10 +109,11 @@ class LayeredGraph:
     def init_graph(self):
         # 단순화: 모든 노드는 layer 0으로 통일
         self._max_layer_depth = 1
+        models = self._network_config.get_models()
 
         for layer in range(self._max_layer_depth):
             for source_ip in self._network:
-                source = LayerNode(source_ip, layer)
+                source = LayerNode(source_ip, layer, models.get(source_ip, []))
                 self._layer_nodes.append(source)
 
                 if source not in self._layered_graph:
@@ -126,7 +126,7 @@ class LayeredGraph:
                     if destination_ip not in self._capacity[source_ip]:
                         self._capacity[source_ip][destination_ip] = 0
 
-                    destination = LayerNode(destination_ip, layer)
+                    destination = LayerNode(destination_ip, layer, models.get(destination_ip, []))
 
                     self._layered_graph[source].append(destination)
 
@@ -140,12 +140,13 @@ class LayeredGraph:
     def init_algorithm(self):
         module_path = self._network_config.get_scheduling_algorithm().replace(".py", "").replace("/", ".")
         self._algorithm_class = module_path.split(".")[-1]
+        # self._scheduling_algorithm: Dijkstra = importlib.import_module(module_path).Dijkstra()
         self._scheduling_algorithm = getattr(importlib.import_module(module_path), self._algorithm_class)()
         
     def schedule(self, source_ip: str, job_info: JobInfo):
         # 단순화: 모든 노드는 layer 0
-        source_node = LayerNode(source_ip, 0)
-        destination_node = LayerNode(job_info.get_terminal_destination(), 0)
+        source_node = LayerNode(source_ip, 0, self._network_config.get_models().get(source_ip, []))
+        destination_node = LayerNode(job_info.get_terminal_destination(), 0, self._network_config.get_models().get(job_info.get_terminal_destination(), []))
 
         input_size = job_info.get_input_size()
     
@@ -162,15 +163,22 @@ class LayeredGraph:
             self._scheduling_algorithm.set_t_wait(self.get_t_wait())
             path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._expected_arrival_rate, self._network_performance_info, input_size)
         
-        else:
+        elif self._algorithm_class == 'Dijkstra':
             path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._layered_graph_backlog, self._layer_nodes)
+        
+        elif self._algorithm_class == 'RandomSelection':
+            self._scheduling_algorithm: RandomSelection
+            path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._layered_graph_backlog, self._layer_nodes, job_info.get_model_name())
+        
+        else:
+            raise ValueError(f"Invalid scheduling algorithm: {self._algorithm_class}")
         
         return path
     
     def get_links(self, layer_node_ip: str):
         links = []
         for layer in range(self._max_layer_depth):
-            layer_node = LayerNode(layer_node_ip, layer)
+            layer_node = LayerNode(layer_node_ip, layer, self._network_config.get_models().get(layer_node_ip, []))
 
             neighbors = self._layered_graph[layer_node]
             for neighbor in neighbors:

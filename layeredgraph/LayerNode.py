@@ -1,13 +1,19 @@
+from typing import List
+
 class LayerNode:
-    def __init__(self, ip: str, layer: int):
+    def __init__(self, ip: str, layer: int, models: List[str] = []):
         self._ip = ip
         self._layer = layer
+        self._models = models
 
     def get_ip(self):
         return self._ip
     
     def get_layer(self):
         return self._layer
+    
+    def get_models(self):
+        return self._models
     
     def is_same_layer(self, target_layer_node) -> bool:
         if self._layer == target_layer_node.get_layer():
