@@ -4,6 +4,7 @@ import torch
 from job import *
 from utils import *
 from communication import *
+from config import NetworkConfig, ModelConfig
 from virtual_queue import VirtualQueue, AheadOutputQueue
 
 import threading
@@ -19,15 +20,15 @@ except ImportError:
         return int(now.timestamp() * 1e9)
 
 class JobManager:
-    def __init__(self, address, network_info: NetworkInfo):
+    def __init__(self, address, network_config: NetworkConfig, model_configs: Dict[str, ModelConfig] = None):
         # TODO
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        self._network_info = network_info
+        self._network_config = network_config
 
         self._virtual_queue = VirtualQueue()
         self._ahead_of_time_outputs = AheadOutputQueue()
-        self._dnn_models = DNNModels(self._network_info, self._device, address)
+        self._dnn_models = DNNModels(self._network_config, self._device, address, model_configs)
         
         self.init_garbage_subtask_collector()
 
@@ -57,14 +58,14 @@ class JobManager:
         garbage_dnn_output_collector_thread.start()
 
     def garbage_subtask_collector(self):
-        collect_garbage_job_time = self._network_info.get_collect_garbage_job_time()
+        collect_garbage_job_time = self._network_config.get_collect_garbage_job_time()
         while True:
             time.sleep(collect_garbage_job_time)
 
             self._virtual_queue.garbage_subtask_collector(collect_garbage_job_time)
 
     def garbage_dnn_output_collector(self):
-        collect_garbage_job_time = self._network_info.get_collect_garbage_job_time()
+        collect_garbage_job_time = self._network_config.get_collect_garbage_job_time()
         while True:
             time.sleep(collect_garbage_job_time)
 
@@ -76,7 +77,7 @@ class JobManager:
     def run(self, output: DNNOutput, is_compressed: bool = False) -> Tuple[DNNOutput, float]:
         if is_compressed:
             job_name = output.get_subtask_info().get_job_name()
-            decompressed_shape = tuple(self._network_info.get_jobs()[job_name]["real_input"])
+            decompressed_shape = tuple(self._network_config.get_jobs()[job_name]["real_input"])
             real_data = torch.rand(decompressed_shape)
             output = DNNOutput(real_data, output.get_subtask_info())
 

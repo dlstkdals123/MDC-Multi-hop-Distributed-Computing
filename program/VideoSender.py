@@ -43,8 +43,8 @@ class VideoSender(MDC):
 
     def init_job_info(self):
         source_ip = self._address
-        terminal_destination = self._network_info.get_jobs()[self._job_name]["destination"]
-        job_type = self._network_info.get_jobs()[self._job_name]["job_type"]
+        terminal_destination = self._network_config.get_jobs()[self._job_name]["destination"]
+        job_type = self._network_config.get_jobs()[self._job_name]["job_type"]
         job_name = self._job_name
         start_time = time_ns()
         input_size = None # should be initiailzed
@@ -104,7 +104,7 @@ class VideoSender(MDC):
             self.send_frame()
 
     def set_job_info_time(self):
-        if self._network_info == None:
+        if self._network_config == None:
             return False
         
         else:
@@ -116,7 +116,7 @@ class VideoSender(MDC):
                 return True
             
     def set_job_info_input_size(self, frame: np.array):
-        if self._network_info == None:
+        if self._network_config == None:
             return False
         
         else:

@@ -40,8 +40,8 @@ class Sender(MDC):
 
     def init_job_info(self, input_size: int):
         source_ip = self._address
-        terminal_destination = self._network_info.get_jobs()[self._job_name]["destination"]
-        job_type = self._network_info.get_jobs()[self._job_name]["job_type"]
+        terminal_destination = self._network_config.get_jobs()[self._job_name]["destination"]
+        job_type = self._network_config.get_jobs()[self._job_name]["job_type"]
         job_name = self._job_name
         start_time = time_ns()
         input_size = input_size 
@@ -102,7 +102,7 @@ class Sender(MDC):
                 self.handle_finish_from_agent()
 
     def set_job_info_time(self):
-        if self._network_info == None:
+        if self._network_config == None:
             return False
         
         else:
@@ -114,7 +114,7 @@ class Sender(MDC):
                 return True
             
     def set_job_info_input_size(self, frame: np.array):
-        if self._network_info == None:
+        if self._network_config == None:
             return False
         
         else:
@@ -142,7 +142,7 @@ class Sender(MDC):
         arrival_rate_thread.start()
 
     def init_communicator(self):
-        self._communicator = Communicator(queue_name=self._network_info.get_queue_name(), 
+        self._communicator = Communicator(queue_name=self._network_config.get_queue_name(), 
                                           buffer_size=4096, 
                                           is_agent=False,
                                           debug_mode=False)

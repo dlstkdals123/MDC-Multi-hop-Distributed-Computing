@@ -1,10 +1,11 @@
 import sys, os, time
+from typing import Dict
  
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from program import Program
 from communication import *
-from config import ControllerConfig
+from config import ControllerConfig, ModelConfig, NetworkConfig
 from layeredgraph import LayeredGraph, LayerNode
 from job import JobInfo, SubtaskInfo
 from utils import save_latency, save_virtual_backlog, save_path
@@ -36,8 +37,9 @@ class Controller(Program):
         self._latency_log_path = None
         self._backlog_log_path = None
         self._path_log_path = None
-        self._network_info: NetworkInfo = None
-        self._controller_info: ControllerConfig = None
+        self._network_config: NetworkConfig = None
+        self._controller_config: ControllerConfig = None
+        self._model_config: Dict[str, ModelConfig] = {}
         self._layered_graph = None
         self._arrival_rate = 0
         self._real_arrival_rate = 0
@@ -52,23 +54,32 @@ class Controller(Program):
 
         self._job_info_dummy = None
 
-        self.init_network_info()
-        self.init_controller_info()
+        self.init_network_config()
+        self.init_controller_config() 
+        self.init_model_config()
         self.init_path()
         self.init_layered_graph()
 
-    def init_network_info(self):
+    def init_network_config(self):
         with open(path, 'r') as file:
-            network_info = NetworkInfo(json.load(file)["NetworkInfo"])
-            self._network_info = network_info
+            network_config = NetworkConfig(json.load(file)["Network"])
+            self._network_config = network_config
 
-    def init_controller_info(self):
+    def init_controller_config(self):
         with open(path, 'r') as file:
-            controller_info = ControllerConfig(json.load(file)["Controller"])
-            self._controller_info = controller_info
+            controller_config = ControllerConfig(json.load(file)["Controller"])
+            self._controller_config = controller_config
+
+    def init_model_config(self):
+        with open(path, 'r') as file:
+            data = json.load(file)  # 한 번만 읽기
+            model_names = data["Model"].keys()
+            for model_name in model_names:
+                model_config = ModelConfig(data["Model"][model_name])
+                self._model_config[model_name] = model_config
 
     def init_path(self):
-        folder_name = self._controller_info.get_experiment_name() + "_" + datetime.now().strftime('%m-%d_%H%M%S')
+        folder_name = self._controller_config.get_experiment_name() + "_" + datetime.now().strftime('%m-%d_%H%M%S')
         self._latency_log_path = f"./results/{folder_name}/latency"
         os.makedirs(self._latency_log_path, exist_ok=True)
 
@@ -79,15 +90,15 @@ class Controller(Program):
         os.makedirs(self._path_log_path, exist_ok=True)
         
     def init_layered_graph(self):
-        self._layered_graph = LayeredGraph(self._network_info)
+        self._layered_graph = LayeredGraph(self._network_config, self._model_config)
 
     def init_garbage_job_collector(self):
         callback_thread = threading.Thread(target=self.garbage_job_collector, args=())
         callback_thread.start()
 
     def garbage_job_collector(self):
-        collect_garbage_job_time = self._network_info.get_collect_garbage_job_time()
-        for job_name in self._network_info.get_jobs():
+        collect_garbage_job_time = self._network_config.get_collect_garbage_job_time()
+        for job_name in self._network_config.get_jobs():
             while True:
                 time.sleep(collect_garbage_job_time)
 
@@ -122,8 +133,8 @@ class Controller(Program):
 
     def sync_backlog(self):
         while True:
-            time.sleep(self._controller_info.get_sync_time())
-            for node_ip in self._network_info.get_network():
+            time.sleep(self._controller_config.get_sync_time())
+            for node_ip in self._network_config.get_network():
                 # send RequestBacklog byte to source ip (response)
                 request_backlog = RequestBacklog()
                 request_backlog_bytes = pickle.dumps(request_backlog)
@@ -138,8 +149,8 @@ class Controller(Program):
 
     def sync_network_performance(self):
         while True:
-            time.sleep(self._controller_info.get_sync_time())
-            for node_ip in self._network_info.get_network():
+            time.sleep(self._controller_config.get_sync_time())
+            for node_ip in self._network_config.get_network():
                 # send RequestBacklog byte to source ip (response)
                 request_network_performance = RequestNetworkPerformance()
                 request_network_performance_bytes = pickle.dumps(request_network_performance)
@@ -167,7 +178,7 @@ class Controller(Program):
         print(f"ip: {ip} requested network information.")
 
         # make NetworkInfo & NetworkInfo byte
-        network_info_bytes = pickle.dumps(self._network_info)
+        network_info_bytes = pickle.dumps(self._network_config)
 
         # send NetworkInfo byte to source ip (response)
         publish.single("mdc/network_info", network_info_bytes, hostname=ip)
@@ -199,8 +210,6 @@ class Controller(Program):
             self._is_first_scheduling = False
             self._job_info_dummy = job_info
 
-        
-
         # register start time
         self._job_list[job_info.get_job_id()] = time.time_ns()
 
@@ -210,26 +219,18 @@ class Controller(Program):
         path_log_file_path = f"{self._path_log_path}/path.csv"
         save_path(path_log_file_path, path)
 
-
-        if path[0].is_same_node(path[1]) and not path[0].is_same_layer(path[1]):
-            model_index = 1
-        else:
-            model_index = 0
-        
+        # 단순화: 각 노드가 전체 모델을 처리하므로 layer 구분 없음
         for i in range(len(path) - 1):
             source_layer_node: LayerNode = path[i]
             destination_layer_node: LayerNode = path[i + 1]
             future_destination_layer_node: LayerNode = path[i + 2] if i + 2 < len(path) else path[i + 1]
 
-            if i != 0 and source_layer_node.is_same_node(destination_layer_node) and not source_layer_node.is_same_layer(destination_layer_node):
-                model_index += 1
-
-            subtask_info = SubtaskInfo(job_info, model_index, source_layer_node, destination_layer_node, future_destination_layer_node)
+            subtask_info = SubtaskInfo(job_info, source_layer_node, destination_layer_node, future_destination_layer_node)
             subtask_info_bytes = pickle.dumps(subtask_info)
 
             # send SubtaskInfo byte to source ip
             publish.single("job/subtask_info", subtask_info_bytes, hostname=source_layer_node.get_ip())
-            
+
     def handle_response(self, topic, payload, publisher):
         subtask_info: SubtaskInfo = pickle.loads(payload)
         self._job_list_mutex.acquire()
@@ -261,7 +262,7 @@ class Controller(Program):
             self._layered_graph.update_network_performance_info('cloud', network_performance.get_gpu_capacity())
 
     def notify_finish(self):
-        for node_ip in self._network_info.get_network():
+        for node_ip in self._network_config.get_network():
             # send finish to nodes
             try:
                 publish.single("mdc/finish", b"", hostname=node_ip)
@@ -273,7 +274,7 @@ class Controller(Program):
         node_info: RequestNetworkInfo = pickle.loads(payload)
         ip = node_info.get_ip()
 
-        if "Dijkstra" in self._network_info.get_scheduling_algorithm():
+        if "Dijkstra" in self._network_config.get_scheduling_algorithm():
             arrival_rate_bytes = pickle.dumps(self._arrival_rate)
 
         else:

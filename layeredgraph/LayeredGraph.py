@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from communication import NetworkInfo
+from config import NetworkConfig, ModelConfig
 from layeredgraph import LayerNode, LayerNodePair
 from job import JobInfo
 from job.DNNModels import DNNModels
@@ -14,9 +14,9 @@ import pandas as pd
 import glob
 
 class LayeredGraph:
-    def __init__(self, network_info: NetworkInfo):
-        self._network_info = network_info
-        self._network = network_info.get_network()
+    def __init__(self, network_config: NetworkConfig, model_configs: Dict[str, ModelConfig] = None):
+        self._network_config = network_config
+        self._network = network_config.get_network()
         self._layered_graph = dict()
         self._layered_graph_backlog = dict()
         self._layer_nodes = []
@@ -25,9 +25,10 @@ class LayeredGraph:
         self._previous_update_time = time.time()
         self._capacity = dict()
 
-        self._max_layer_depth = 0
+        # layer 개념 제거 - 모든 노드는 layer 0으로 통일
+        self._max_layer_depth = 1
 
-        self._dnn_models = DNNModels(self._network_info, "cpu", "192.168.1.2")
+        self._dnn_models = DNNModels(self._network_config, "cpu", "192.168.1.2", model_configs)
         
         self._alpha = 0.5
         self._expected_arrival_rate = 0
@@ -57,34 +58,25 @@ class LayeredGraph:
     def update_path_backlog(self, job_info: JobInfo, path: List[LayerNode]):
         input_size = job_info.get_input_size()
         job_name = job_info.get_job_name()
-        model_index = 0
-
-        if path[0].is_same_node(path[1]) and not path[0].is_same_layer(path[1]):
-            model_index = 1
-        else:
-            model_index = 0
         
+        # 단순화: 모든 노드가 전체 모델을 처리하므로 layer 구분 없음
         for i in range(len(path) - 1):
             source_layer_node: LayerNode = path[i]
             destination_layer_node: LayerNode = path[i + 1]
             link = LayerNodePair(source_layer_node, destination_layer_node)
 
-            if i != 0 and source_layer_node.is_same_node(destination_layer_node) and not source_layer_node.is_same_layer(destination_layer_node):
-                model_index += 1
-
             if source_layer_node.is_same_node(destination_layer_node):
-                self._layered_graph_backlog[link] += self._dnn_models.get_computing(job_name, model_index) * input_size
-
-            elif source_layer_node.is_same_layer(destination_layer_node):
-                self._layered_graph_backlog[link] += self._dnn_models.get_transfer(job_name, model_index) * input_size
+                # 같은 노드 내에서의 처리 (계산)
+                self._layered_graph_backlog[link] += self._dnn_models.get_computing(job_name, 0) * input_size
+            else:
+                # 다른 노드로의 전송
+                self._layered_graph_backlog[link] += self._dnn_models.get_transfer(job_name, 0) * input_size
         
     def update_graph(self):
         current_time = time.time()
         elapsed_time = current_time - self._previous_update_time
 
         links_job_num = {}
-
-        # print("cap", self._capacity)
 
         for link in self._layer_node_pairs:
             link: LayerNodePair
@@ -116,7 +108,8 @@ class LayeredGraph:
         self._layered_graph_backlog[link] = backlog
 
     def init_graph(self):
-        self._max_layer_depth = max([len(job["split_points"]) for job_name, job in self._network_info.get_jobs().items()])
+        # 단순화: 모든 노드는 layer 0으로 통일
+        self._max_layer_depth = 1
 
         for layer in range(self._max_layer_depth):
             for source_ip in self._network:
@@ -142,45 +135,22 @@ class LayeredGraph:
                     self._layer_node_pairs.append(link)
                     self._layered_graph_backlog[link] = 0
 
-        for layer in range(self._max_layer_depth - 1):
-            for source_ip in self._network:
-                if source_ip in self._network_info.get_router():
-                    continue
-                
-                source = LayerNode(source_ip, layer)
-                destination = LayerNode(source_ip, layer + 1)
-
-                if source_ip not in self._capacity[source_ip]:
-                    self._capacity[source_ip][source_ip] = 0
-
-                if source not in self._layered_graph:
-                    self._layered_graph[source] = []
-
-                self._layered_graph[source].append(destination)
-
-                link = LayerNodePair(source, destination)
-
-                self._layer_node_pairs.append(link)
-                self._layered_graph_backlog[link] = 0
+        # layer 간 연결 제거 (모든 노드가 같은 layer에 있음)
 
     def init_algorithm(self):
-        module_path = self._network_info.get_scheduling_algorithm().replace(".py", "").replace("/", ".")
+        module_path = self._network_config.get_scheduling_algorithm().replace(".py", "").replace("/", ".")
         self._algorithm_class = module_path.split(".")[-1]
-        # self._scheduling_algorithm: Dijkstra = importlib.import_module(module_path).Dijkstra()
         self._scheduling_algorithm = getattr(importlib.import_module(module_path), self._algorithm_class)()
         
     def schedule(self, source_ip: str, job_info: JobInfo):
-        split_num = len(self._network_info.get_jobs()[job_info.get_job_name()]["split_points"])
+        # 단순화: 모든 노드는 layer 0
         source_node = LayerNode(source_ip, 0)
-        destination_node = LayerNode(job_info.get_terminal_destination(), split_num - 1)
+        destination_node = LayerNode(job_info.get_terminal_destination(), 0)
 
         input_size = job_info.get_input_size()
     
         if self._algorithm_class == 'JDPCRA':
             self._scheduling_algorithm: JDPCRA
-            # schedule을 호출할 때마다,
-            # self.update_expected_arrival_rate()         # 1. self._expected_arrival_rate를 갱신
-            # self.update_network_performance_info()      # 2. remaining computing resource를 구하여 self._network_performance_info에 저장
             path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._dnn_models._yolo_computing_ratios, self._dnn_models._yolo_transfer_ratios, self._expected_arrival_rate, self._network_performance_info, input_size)
         
         elif self._algorithm_class == 'TLDOC':
@@ -189,8 +159,6 @@ class LayeredGraph:
                 idle_power = self.load_config()
                 self._scheduling_algorithm.init_parameter(self._configs[0], self._configs[1], idle_power, self._dnn_models._yolo_transfer_ratios)
                 print("init configs")
-            # self.update_expected_arrival_rate()         #!check: TLDOC에서도 expected rate를 쓸 것인지, 진짜 값을 사용할 것인지
-            # self.update_network_performance_info()
             self._scheduling_algorithm.set_t_wait(self.get_t_wait())
             path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._expected_arrival_rate, self._network_performance_info, input_size)
         
@@ -199,9 +167,6 @@ class LayeredGraph:
         
         return path
     
-    # Method that return all layered grph's links of layer_node_ip.
-    # ex) layer_node_ip : 192.168.1.5
-    # return : LayerNodePair(192.168.1.5-0, 192.168.1.6-0), LayerNodePair(192.168.1.5-1, 192.168.1.6-1) ...
     def get_links(self, layer_node_ip: str):
         links = []
         for layer in range(self._max_layer_depth):

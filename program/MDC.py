@@ -5,10 +5,12 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from program import Program
 from job import *
 from communication import *
+from config import NetworkConfig, ModelConfig
 from job.JobManager import JobManager
 from utils.utils import get_ip_address
 from spec.GPUUtilManager import GPUUtilManager
 
+import json
 import paho.mqtt.publish as publish
 import MQTTclient
 import pickle
@@ -42,7 +44,8 @@ class MDC(Program):
             "mdc/node_info": [(self.check_job_manager_exists, True)],
         }
 
-        self._network_info = None
+        self._network_config = None
+        self._model_config = {}
         self._job_manager = None
         self._neighbors = None
         self._backlogs_zero_flag = False
@@ -52,12 +55,21 @@ class MDC(Program):
 
         super().__init__(self.sub_config, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
+        self.init_model_config()
         self.request_network_info()
+
+    def init_model_config(self):
+        with open(path, 'r') as file:
+            data = json.load(file)  # 한 번만 읽기
+            model_names = data["Model"].keys()
+            for model_name in model_names:
+                model_config = ModelConfig(data["Model"][model_name])
+                self._model_config[model_name] = model_config
 
     # request network information to network controller
     # sending node info.
     def request_network_info(self):
-        while self._network_info == None:
+        while self._network_config == None:
             print("Requested network info..")
             node_info_bytes = pickle.dumps(self._node_info)
 
@@ -76,8 +88,8 @@ class MDC(Program):
             self.run_dnn(dnn_output)
     
     def handle_network_info(self, topic, data, publisher):
-        self._network_info: NetworkInfo = pickle.loads(data)
-        self._job_manager = JobManager(self._address, self._network_info)
+        self._network_config: NetworkConfig = pickle.loads(data)
+        self._job_manager = JobManager(self._address, self._network_config, self._model_config)
 
         self.init_node_publisher()
 
@@ -95,7 +107,7 @@ class MDC(Program):
         self._controller_publisher.publish("mdc/network_performance_info", network_performance_bytes)
 
     def init_node_publisher(self):
-        network = self._network_info.get_network()
+        network = self._network_config.get_network()
         neighbors = network[self._address]
 
         for neighbor in neighbors:
@@ -128,10 +140,10 @@ class MDC(Program):
         self._controller_publisher.publish("mdc/node_info", node_link_info_bytes)
 
     def check_network_info_exists(self, data = None):
-        if self._network_info == None:
+        if self._network_config == None:
             return False
         
-        elif self._network_info != None:
+        elif self._network_config != None:
             return True
         
     def check_job_manager_exists(self, data = None):
@@ -162,7 +174,7 @@ class MDC(Program):
         else: 
             if self._job_manager.is_subtask_exists(previous_dnn_output):
                 # if cao
-                is_compressed = self._address == "192.168.1.8" and self._network_info.get_queue_name() == "cao"
+                is_compressed = self._address == "192.168.1.8" and self._network_config.get_queue_name() == "cao"
 
                 dnn_output, computing_capacity = self._job_manager.run(output=previous_dnn_output, is_compressed=is_compressed)
 
@@ -195,6 +207,8 @@ if __name__ == '__main__':
             ],
         }
     
+    path = "config/config.json"
+
     pub_configs = [
     ]
     
