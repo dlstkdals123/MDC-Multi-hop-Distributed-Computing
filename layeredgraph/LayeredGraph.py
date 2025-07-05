@@ -118,6 +118,7 @@ class LayeredGraph:
                 continue
             
             source = LayerNode(source_ip)
+            self._capacity[source_ip].setdefault(source_ip, 0)
             self._layered_graph.setdefault(source, [])
             self._layered_graph[source].append(source)
             self._layer_node_pairs.append(LayerNodePair(source, source))
