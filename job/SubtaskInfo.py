@@ -3,16 +3,12 @@ from layeredgraph import LayerNode, LayerNodePair
 
 # info class for making subtask
 class SubtaskInfo(JobInfo):
-    def __init__(self, job_info: JobInfo, model_index: int, source_layer_node: LayerNode, destination_layer_node: LayerNode, future_destination_layer_node: LayerNode):
-        self._model_index = model_index # only includes dnn computation
+    def __init__(self, job_info: JobInfo, source_layer_node: LayerNode, destination_layer_node: LayerNode, future_destination_layer_node: LayerNode):
         self._source_layer_node = source_layer_node
         self._destination_layer_node = destination_layer_node
         self._future_destination_layer_node = future_destination_layer_node
 
         super().__init__(job_info.get_job_id(), job_info.get_terminal_destination(), job_info.get_job_type(), job_info.get_job_name(), job_info.get_start_time(), job_info.get_input_size())
-    
-    def get_model_index(self):
-        return self._model_index
     
     def get_source(self):
         return self._source_layer_node
@@ -31,7 +27,7 @@ class SubtaskInfo(JobInfo):
         return LayerNodePair(self._source_layer_node, self._destination_layer_node)
     
     def is_transmission(self):
-        return self._source_layer_node.is_same_layer(self._destination_layer_node)
+        return not self.is_computing()
     
     def is_computing(self):
         return self._source_layer_node.is_same_node(self._destination_layer_node)
