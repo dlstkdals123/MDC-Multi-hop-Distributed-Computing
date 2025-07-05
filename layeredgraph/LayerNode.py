@@ -1,3 +1,4 @@
+from typing import List
 class LayerNode:
     """
     LayeredGraph의 노드를 나타내는 클래스입니다.
