@@ -145,6 +145,7 @@ class LayeredGraph:
         #     path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._expected_arrival_rate, self._network_performance_info, input_size)
         
         if self._algorithm_class == 'RandomSelection':
+            self._scheduling_algorithm: RandomSelection
             path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph)
         
         else:

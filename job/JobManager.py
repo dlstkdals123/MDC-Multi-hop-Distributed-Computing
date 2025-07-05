@@ -5,7 +5,7 @@ from job import *
 from utils import *
 from communication import *
 from virtual_queue import VirtualQueue, AheadOutputQueue
-from config import NetworkConfig
+from config import NetworkConfig, ModelConfig
 
 import threading
 import time
@@ -20,15 +20,15 @@ except ImportError:
         return int(now.timestamp() * 1e9)
 
 class JobManager:
-    def __init__(self, address, network_config: NetworkConfig):
+    def __init__(self, address, network_config: NetworkConfig, model_config: Dict[str, ModelConfig]):
         # TODO
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self._network_config = network_config
+        self._model_config = model_config
 
         self._virtual_queue = VirtualQueue()
         self._ahead_of_time_outputs = AheadOutputQueue()
-        self._dnn_models = DNNModels(self._network_config, self._device, address)
         
         self.init_garbage_subtask_collector()
 
@@ -100,11 +100,10 @@ class JobManager:
         
     # add subtask_info based SubtaskInfo
     def add_subtask(self, subtask_info: SubtaskInfo):
-        job_name = subtask_info.get_job_name()
-        model_index = subtask_info.get_model_index()
-        subtask_model = self._dnn_models.get_subtask(job_name, model_index) if subtask_info.is_computing() else None
-        computing = self._dnn_models.get_computing(job_name, model_index) * subtask_info.get_input_size()
-        transfer = self._dnn_models.get_transfer(job_name, model_index) * subtask_info.get_input_size()
+        model_name = subtask_info.get_model_name()
+        subtask_model = model_name if subtask_info.is_computing() else None
+        computing = self._model_config[model_name].get_computing() * subtask_info.get_input_size()
+        transfer = self._model_config[model_name].get_transfer() * subtask_info.get_input_size()
 
         subtask = DNNSubtask(
             subtask_info = subtask_info,
