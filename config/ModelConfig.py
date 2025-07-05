@@ -7,8 +7,8 @@ class ModelConfig:
     Attributes:
         _warmup (bool): 모델 워밍업 여부
         _warmup_input (List[int]): 모델 워밍업 입력 크기
-        _computing_ratios (List[float]): 모델 계산 비율
-        _transfer_ratios (List[float]): 모델 전송 비율
+        _computing_ratio (float): 모델 계산 비율
+        _transfer_ratio (float): 모델 전송 비율
     """
 
     def __init__(self, model_config: Dict[str, any]):
@@ -20,8 +20,8 @@ class ModelConfig:
 
         self._warmup = model_config["warmup"]
         self._warmup_input = model_config["warmup_input"]
-        self._computing_ratios = model_config["computing_ratios"]
-        self._transfer_ratios = model_config["transfer_ratios"]
+        self._computing_ratio = model_config["computing_ratio"]
+        self._transfer_ratio = model_config["transfer_ratio"]
 
     def check_validate(self, model_config: Dict[str, any]):
         """
@@ -31,7 +31,7 @@ class ModelConfig:
             ValueError: 필수 정보가 누락되었을 때 발생합니다.
             필수 정보는 매뉴얼을 참고해주세요.
         """
-        required_keys = ["warmup", "computing_ratios", "transfer_ratios"]
+        required_keys = ["warmup", "computing_ratio", "transfer_ratio"]
 
         for key in required_keys:
             if key not in model_config:
@@ -41,13 +41,9 @@ class ModelConfig:
         if key == "warmup" and model_config[key] == "True" and "warmup_input" not in model_config:
             raise ValueError(f"Missing required key: warmup_input")
         
-        # computing_ratios와 transfer_ratios의 길이가 같아야 함
-        if len(model_config["computing_ratios"]) != len(model_config["transfer_ratios"]):
-            raise ValueError(f"computing_ratios and transfer_ratios must have the same length")
-        
-        # computing_ratios와 transfer_ratios의 값이 0보다 크거나 같아야 함
-        if any(ratio < 0 for ratio in model_config["computing_ratios"] + model_config["transfer_ratios"]):
-            raise ValueError(f"computing_ratios and transfer_ratios must be greater than or equal to 0")
+        # computing_ratio의 값이 0보다 크거나 같아야 함
+        if model_config["computing_ratio"] < 0:
+            raise ValueError(f"computing_ratio must be greater than or equal to 0")
         
     def get_warmup(self):
         return self._warmup
@@ -55,8 +51,8 @@ class ModelConfig:
     def get_warmup_input(self):
         return self._warmup_input
     
-    def get_computing_ratios(self):
-        return self._computing_ratios
+    def get_computing_ratio(self):
+        return self._computing_ratio
     
-    def get_transfer_ratios(self):
-        return self._transfer_ratios
+    def get_transfer_ratio(self):
+        return self._transfer_ratio

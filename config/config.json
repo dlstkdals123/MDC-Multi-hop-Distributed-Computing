@@ -34,8 +34,8 @@
         "yolov5": {
             "warmup": "True",
             "warmup_input": [1, 3, 320, 320],
-            "computing_ratios": [0, 6.24, 2.02, 1.80, 0.64],
-            "transfer_ratios": [1, 1.17, 0.95, 1.17, 0.00008]
+            "computing_ratio": 1.0,
+            "transfer_ratio": 1.0
         }
     }
 }
