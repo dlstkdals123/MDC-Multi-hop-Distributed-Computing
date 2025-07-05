@@ -140,7 +140,6 @@ class Controller(Program):
                 try:
                     publish.single("mdc/node_info", request_backlog_bytes, hostname=node_ip)
                 except:
-                    print(f"Failed to send RequestBacklog to {node_ip}")
                     pass
 
     def init_sync_network_performance(self):
@@ -157,7 +156,6 @@ class Controller(Program):
                 try:
                     publish.single("mdc/network_performance_info", request_network_performance_bytes, hostname=node_ip)
                 except:
-                    print(f"Failed to send RequestNetworkPerformance to {node_ip}")
                     pass
 
     def init_measure_arrival_rate(self):
@@ -275,7 +273,6 @@ class Controller(Program):
             try:
                 publish.single("mdc/finish", b"", hostname=node_ip)
             except:
-                print(f"Failed to send finish to {node_ip}")
                 pass
 
     def handle_request_arrival_rate(self, topic, payload, publisher):
