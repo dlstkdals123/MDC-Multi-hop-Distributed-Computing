@@ -1,10 +1,11 @@
 from typing import List
+
 class LayerNode:
     """
     LayeredGraph의 노드를 나타내는 클래스입니다.
     """
     
-    def __init__(self, ip: str, model_names: list[str] = []):
+    def __init__(self, ip: str, model_names: List[str] = []):
         """
         LayerNode 객체를 초기화합니다.
         
@@ -20,7 +21,7 @@ class LayerNode:
         return self._ip
     
     @property
-    def model_names(self) -> list[str]:
+    def model_names(self) -> List[str]:
         return self._model_names
 
     def is_same_node(self, other: 'LayerNode') -> bool:
