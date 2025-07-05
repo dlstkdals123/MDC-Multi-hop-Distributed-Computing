@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from layeredgraph import LayerNode, LayerNodePair
 from config import NetworkConfig, ModelConfig
@@ -49,7 +49,7 @@ class LayeredGraph:
             capacity = computing_capacity if source_ip == destination_ip else transfer_capacity
             self._capacity[source_ip][destination_ip] = capacity
     
-    def update_path_backlog(self, job_info: JobInfo, path: List[tuple[LayerNode, LayerNode, str]]) -> None:
+    def update_path_backlog(self, job_info: JobInfo, path: List[Tuple[LayerNode, LayerNode, str]]) -> None:
         input_size = job_info.get_input_size()
         
         for source_node, destination_node, model_name in path:
@@ -128,7 +128,7 @@ class LayeredGraph:
         self._algorithm_class = module_path.split(".")[-1]
         self._scheduling_algorithm = getattr(importlib.import_module(module_path), self._algorithm_class)()
         
-    def schedule(self, source_ip: str, job_info: JobInfo) -> List[tuple[LayerNode, LayerNode, str]]:
+    def schedule(self, source_ip: str, job_info: JobInfo) -> List[Tuple[LayerNode, LayerNode, str]]:
         source_node = LayerNode(source_ip)
         destination_node = LayerNode(job_info.get_terminal_destination())
 
@@ -171,7 +171,7 @@ class LayeredGraph:
     def get_layered_graph_backlog(self):
         return self._layered_graph_backlog
     
-    def get_arrival_rate(self, path: List[tuple[LayerNode, LayerNode, str]]) -> float:
+    def get_arrival_rate(self, path: List[Tuple[LayerNode, LayerNode, str]]) -> float:
         arrival_rate = 0
         for source, destination, _ in path:
             link = LayerNodePair(source, destination)
