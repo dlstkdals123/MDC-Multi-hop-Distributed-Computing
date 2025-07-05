@@ -16,16 +16,14 @@ class LayerNode:
         self._ip = ip
         self._model_names = model_names
 
-    @property
-    def ip(self) -> str:
+    def get_ip(self) -> str:
         return self._ip
     
-    @property
-    def model_names(self) -> List[str]:
+    def get_model_names(self) -> List[str]:
         return self._model_names
 
     def is_same_node(self, other: 'LayerNode') -> bool:
-        return self._ip == other.ip
+        return self._ip == other.get_ip()
 
     def to_string(self) -> str:
         return self._ip
@@ -42,7 +40,7 @@ class LayerNode:
     def __eq__(self, other: 'LayerNode') -> bool:
         if not isinstance(other, LayerNode):
             return False
-        return self._ip == other._ip
+        return self._ip == other.get_ip()
 
     def __ne__(self, other):
         return not(self == other)
