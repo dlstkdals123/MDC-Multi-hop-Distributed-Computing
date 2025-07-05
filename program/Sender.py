@@ -124,7 +124,7 @@ class Sender(MDC):
             
     def wait_until_can_send(self):
         print("Waiting for network info.")
-        while not (self.check_job_manager_exists() and self.check_network_info_exists()):
+        while not (self.check_job_manager_exists() and self.check_config_exists()):
             time.sleep(1.0)
             
     def arrival_rate_getter(self):

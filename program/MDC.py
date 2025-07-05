@@ -16,8 +16,8 @@ import time
 from typing import Dict, Any
 
 class MDC(Program):
-    def __init__(self, sub_config, pub_configs):
-        self.sub_config = sub_config
+    def __init__(self, sub_configs, pub_configs):
+        self.sub_configs = sub_configs
         self.pub_configs = pub_configs
         self._address = get_ip_address(["eth0", "wlan0"])
         self._node_info = RequestConfig(self._address)
@@ -37,7 +37,7 @@ class MDC(Program):
         }
 
         self.topic_dispatcher_checker = {
-            "job/dnn": [(self.check_network_info_exists, True)],
+            "job/dnn": [(self.check_network_config_exists, True)],
             "job/subtask_info": [(self.check_job_manager_exists, True)],
             "mdc/config": [(self.check_job_manager_exists, False)],
             "mdc/node_info": [(self.check_job_manager_exists, True)],
@@ -52,18 +52,18 @@ class MDC(Program):
         self._capacity_manager = CapacityManager()
         self._gpu_util_manager = GPUUtilManager()
 
-        super().__init__(self.sub_config, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
+        super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
-        self.request_network_info()
+        self.request_config()
 
     # request network information to network controller
     # sending node info.
-    def request_network_info(self):
+    def request_config(self):
         while self._network_config == None:
             print("Requested config..")
             node_info_bytes = pickle.dumps(self._node_info)
 
-            # send NetworkInfo byte to source ip (response)
+            # send config byte to source ip (response)
             self._controller_publisher.publish("mdc/config", node_info_bytes)
 
             time.sleep(2)
@@ -132,8 +132,11 @@ class MDC(Program):
         # send NodeLinkInfo byte to source ip (response)
         self._controller_publisher.publish("mdc/node_info", node_link_info_bytes)
 
-    def check_network_info_exists(self, data = None) -> bool:
+    def check_network_config_exists(self, data = None) -> bool:
         return self._network_config is not None
+    
+    def check_model_config_exists(self, data = None) -> bool:
+        return self._model_config is not None
         
     def check_job_manager_exists(self, data = None) -> bool:
         return self._job_manager is not None
@@ -179,7 +182,7 @@ class MDC(Program):
 
        
 if __name__ == '__main__':
-    sub_config = {
+    sub_configs = {
             "ip": "127.0.0.1", 
             "port": 1883,
             "topics": [
@@ -195,5 +198,5 @@ if __name__ == '__main__':
     pub_configs = [
     ]
     
-    mdc = MDC(sub_config=sub_config, pub_configs=pub_configs)
+    mdc = MDC(sub_configs=sub_configs, pub_configs=pub_configs)
     mdc.start()

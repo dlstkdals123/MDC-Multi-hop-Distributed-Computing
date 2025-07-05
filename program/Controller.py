@@ -16,8 +16,8 @@ from datetime import datetime
 from typing import Dict
 
 class Controller(Program):
-    def __init__(self, sub_config, pub_configs):
-        self.sub_config = sub_config
+    def __init__(self, sub_configs, pub_configs):
+        self.sub_configs = sub_configs
         self.pub_configs = pub_configs
 
         self.topic_dispatcher = {
@@ -32,7 +32,7 @@ class Controller(Program):
 
         self.topic_dispatcher_checker = {}
 
-        super().__init__(self.sub_config, self.pub_configs, self.topic_dispatcher)
+        super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher)
 
         self._latency_log_path = None
         self._backlog_log_path = None
@@ -303,7 +303,7 @@ class Controller(Program):
 
 if __name__ == '__main__':
 
-    sub_config = {
+    sub_configs = {
             "ip": "127.0.0.1", 
             "port": 1883,
             "topics": [
@@ -322,5 +322,5 @@ if __name__ == '__main__':
 
     pub_configs = []
     
-    controller = Controller(sub_config=sub_config, pub_configs=pub_configs)
+    controller = Controller(sub_configs=sub_configs, pub_configs=pub_configs)
     controller.start()
