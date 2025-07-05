@@ -1,13 +1,17 @@
 class LayerNode:
-    def __init__(self, ip: str, layer: int):
+    def __init__(self, ip: str, layer: int, model_names: list[str] = []):
         self._ip = ip
         self._layer = layer
+        self._model_names = model_names
 
     def get_ip(self):
         return self._ip
     
     def get_layer(self):
         return self._layer
+    
+    def get_model_names(self):
+        return self._model_names
     
     def is_same_layer(self, target_layer_node) -> bool:
         if self._layer == target_layer_node.get_layer():

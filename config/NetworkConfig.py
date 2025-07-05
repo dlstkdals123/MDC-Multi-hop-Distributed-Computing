@@ -1,6 +1,6 @@
-from typing import Dict
+from typing import Dict, List
 
-class NetworkInfo:
+class NetworkConfig:
     """
     네트워크 정보를 저장하는 클래스입니다.
 
@@ -11,6 +11,7 @@ class NetworkInfo:
         _router (Dict[str, any]): 라우터 정보.
         _scheduling_algorithm (str): 스케줄링 알고리즘 이름.
         _collect_garbage_job_time (float): 가비지 컬렉션 작업 시간.
+        _models (Dict[str, List[str]]): 각 노드가 소지할 수 있는 모델들.
     """
     def __init__(self, network_config: Dict[str, any]):
         """
@@ -19,14 +20,15 @@ class NetworkInfo:
         """
         self.check_validate(network_config)
 
-        self._network_config = network_config
-
-        self._queue_name = self._network_config["queue_name"]
-        self._jobs = self._network_config["jobs"]
-        self._network = self._network_config["network"]
-        self._router = self._network_config["router"]
-        self._scheduling_algorithm: str = self._network_config["scheduling_algorithm"]
-        self._collect_garbage_job_time: float = self._network_config["collect_garbage_job_time"]
+        self._queue_name = network_config["queue_name"]
+        self._jobs = network_config["jobs"]
+        self._network = network_config["network"]
+        self._router = network_config["router"]
+        self._scheduling_algorithm: str = network_config["scheduling_algorithm"]
+        self._collect_garbage_job_time: float = network_config["collect_garbage_job_time"]
+        
+        # Models 섹션이 있으면 추가
+        self._models = network_config.get("Models", {})
 
     def check_validate(self, network_config: Dict[str, any]):
         """
@@ -67,3 +69,13 @@ class NetworkInfo:
     
     def get_collect_garbage_job_time(self):
         return self._collect_garbage_job_time
+    
+    def get_models(self):
+        """각 노드가 소지할 수 있는 모델들을 반환합니다."""
+        return self._models
+    
+    def get_model_config(self, model_name: str):
+        """특정 모델의 설정을 반환합니다. 이는 Controller에서 ModelConfig를 통해 처리됩니다."""
+        # 이 메서드는 Controller에서 ModelConfig를 통해 처리되므로 None을 반환
+        # 실제 구현은 Controller에서 ModelConfig를 통해 처리
+        return None
