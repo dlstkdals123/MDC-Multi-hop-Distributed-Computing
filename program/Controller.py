@@ -21,7 +21,7 @@ class Controller(Program):
         self.pub_configs = pub_configs
 
         self.topic_dispatcher = {
-            "mdc/network_info": self.handle_network_info,
+            "mdc/config": self.handle_config,
             "mdc/node_info": self.handle_node_info,
             "job/request_scheduling": self.handle_request_scheduling,
             "job/response": self.handle_response,
@@ -169,18 +169,22 @@ class Controller(Program):
             self._layered_graph.update_expected_arrival_rate(self._real_arrival_rate)
             self._send_num = 0
 
-    def handle_network_info(self, topic, payload, publisher):
+    def handle_config(self, topic, payload, publisher):
         # get source ip address
         node_info: RequestNetworkInfo = pickle.loads(payload)
         ip = node_info.get_ip()
 
-        print(f"ip: {ip} requested network information.")
+        print(f"ip: {ip} requested config.")
 
-        # make NetworkInfo & NetworkInfo byte
-        network_info_bytes = pickle.dumps(self._network_config)
+        config = {
+            "network": self._network_config,
+            "model": self._model_config
+        }
 
-        # send NetworkInfo byte to source ip (response)
-        publish.single("mdc/network_info", network_info_bytes, hostname=ip)
+        config_bytes = pickle.dumps(config)
+
+        # send config byte to source ip (response)
+        publish.single("mdc/config", config_bytes, hostname=ip)
 
         print(f"Succesfully respond to ip: {ip}.")
 
@@ -303,7 +307,7 @@ if __name__ == '__main__':
             "ip": "127.0.0.1", 
             "port": 1883,
             "topics": [
-                ("mdc/network_info", 1),
+                ("mdc/config", 1),
                 ("job/response", 1),
                 ("mdc/node_info", 1),
                 ("job/request_scheduling", 1),

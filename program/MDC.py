@@ -7,12 +7,13 @@ from job import *
 from communication import *
 from utils.utils import get_ip_address
 from spec.GPUUtilManager import GPUUtilManager
-from config import NetworkConfig
+from config import NetworkConfig, ModelConfig
 
 import paho.mqtt.publish as publish
 import MQTTclient
 import pickle
 import time
+from typing import Dict, Any
 
 class MDC(Program):
     def __init__(self, sub_config, pub_configs):
@@ -29,7 +30,7 @@ class MDC(Program):
         self.topic_dispatcher = {
             "job/dnn": self.handle_dnn,
             "job/subtask_info": self.handle_subtask_info,
-            "mdc/network_info" : self.handle_network_info,
+            "mdc/config" : self.handle_config,
             "mdc/node_info": self.handle_request_backlog,
             "mdc/finish": self.handle_finish,
             "mdc/network_performance_info": self.handle_requset_network_performance_info,
@@ -43,6 +44,7 @@ class MDC(Program):
         }
 
         self._network_config = None
+        self._model_config = None
         self._job_manager = None
         self._neighbors = None
         self._backlogs_zero_flag = False
@@ -75,13 +77,16 @@ class MDC(Program):
             dnn_output = self._job_manager.pop_dnn_output(subtask_info) # make another method
             self.run_dnn(dnn_output)
     
-    def handle_network_info(self, topic, data, publisher):
-        self._network_config: NetworkConfig = pickle.loads(data)
-        self._job_manager = JobManager(self._address, self._network_config)
+    def handle_config(self, topic, data, publisher):
+        config: Dict[str, Any] = pickle.loads(data)
+        self._network_config: NetworkConfig = config["network"]
+        self._model_config: Dict[str, ModelConfig] = config["model"]
+
+        self._job_manager = JobManager(self._address, self._network_config, self._model_config)
 
         self.init_node_publisher()
 
-        print(f"Succesfully get network info.")
+        print(f"Succesfully get network and model config.")
 
     def handle_requset_network_performance_info(self, topic, data, publisher):
         gpu_usage = self._gpu_util_manager.get_all_gpu_stats()["utilization"]
@@ -180,7 +185,7 @@ if __name__ == '__main__':
             "topics": [
                 ("job/dnn", 1),
                 ("job/subtask_info", 1),
-                ("mdc/network_info", 1),
+                ("mdc/config", 1),
                 ("mdc/node_info", 1),
                 ("mdc/finish", 1),
                 ("mdc/network_performance_info", 1),
