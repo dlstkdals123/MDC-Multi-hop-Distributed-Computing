@@ -20,7 +20,7 @@ class MDC(Program):
         self.sub_config = sub_config
         self.pub_configs = pub_configs
         self._address = get_ip_address(["eth0", "wlan0"])
-        self._node_info = RequestNetworkInfo(self._address)
+        self._node_info = RequestConfig(self._address)
         self._controller_publisher = MQTTclient.Publisher(config={
             "ip" : "192.168.1.2",
             "port" : 1883
@@ -39,7 +39,7 @@ class MDC(Program):
         self.topic_dispatcher_checker = {
             "job/dnn": [(self.check_network_info_exists, True)],
             "job/subtask_info": [(self.check_job_manager_exists, True)],
-            "mdc/network_info": [(self.check_job_manager_exists, False)],
+            "mdc/config": [(self.check_job_manager_exists, False)],
             "mdc/node_info": [(self.check_job_manager_exists, True)],
         }
 
@@ -60,11 +60,11 @@ class MDC(Program):
     # sending node info.
     def request_network_info(self):
         while self._network_config == None:
-            print("Requested network info..")
+            print("Requested config..")
             node_info_bytes = pickle.dumps(self._node_info)
 
             # send NetworkInfo byte to source ip (response)
-            self._controller_publisher.publish("mdc/network_info", node_info_bytes)
+            self._controller_publisher.publish("mdc/config", node_info_bytes)
 
             time.sleep(2)
 
@@ -86,7 +86,7 @@ class MDC(Program):
 
         self.init_node_publisher()
 
-        print(f"Succesfully get network and model config.")
+        print(f"Succesfully get config.")
 
     def handle_requset_network_performance_info(self, topic, data, publisher):
         gpu_usage = self._gpu_util_manager.get_all_gpu_stats()["utilization"]

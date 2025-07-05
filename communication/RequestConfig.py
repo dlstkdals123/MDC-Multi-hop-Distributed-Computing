@@ -1,6 +1,6 @@
-class RequestNetworkInfo:
+class RequestConfig:
     """
-    네트워크 정보를 요청하는 클래스입니다.
+    설정 정보를 요청하는 클래스입니다.
 
     Attributes:
         _ip (str): 노드의 IP 주소.

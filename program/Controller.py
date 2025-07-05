@@ -171,7 +171,7 @@ class Controller(Program):
 
     def handle_config(self, topic, payload, publisher):
         # get source ip address
-        node_info: RequestNetworkInfo = pickle.loads(payload)
+        node_info: RequestConfig = pickle.loads(payload)
         ip = node_info.get_ip()
 
         print(f"ip: {ip} requested config.")
@@ -281,7 +281,7 @@ class Controller(Program):
 
     def handle_request_arrival_rate(self, topic, payload, publisher):
         # get source ip address
-        node_info: RequestNetworkInfo = pickle.loads(payload)
+        node_info: RequestConfig = pickle.loads(payload)
         ip = node_info.get_ip()
 
         arrival_rate_bytes = pickle.dumps(self._arrival_rate)
