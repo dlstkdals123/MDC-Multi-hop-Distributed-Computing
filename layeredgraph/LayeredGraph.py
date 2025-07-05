@@ -1,10 +1,9 @@
 from typing import Dict, List
 
-from communication import NetworkInfo
 from layeredgraph import LayerNode, LayerNodePair
+from config import NetworkConfig, ModelConfig
 from job import JobInfo
-from job.DNNModels import DNNModels
-from scheduling import Dijkstra, JDPCRA, TLDOC
+from scheduling import *
 
 import importlib
 import time
@@ -14,9 +13,10 @@ import pandas as pd
 import glob
 
 class LayeredGraph:
-    def __init__(self, network_info: NetworkInfo):
-        self._network_info = network_info
-        self._network = network_info.get_network()
+    def __init__(self, network_config: NetworkConfig, model_configs: Dict[str, ModelConfig]):
+        self._network_config = network_config
+        self._network = network_config.get_network()
+        self._model_configs = model_configs
         self._layered_graph = dict()
         self._layered_graph_backlog = dict()
         self._layer_nodes = []
@@ -26,8 +26,6 @@ class LayeredGraph:
         self._capacity = dict()
 
         self._max_layer_depth = 0
-
-        self._dnn_models = DNNModels(self._network_info, "cpu", "192.168.1.2")
         
         self._alpha = 0.5
         self._expected_arrival_rate = 0
@@ -41,161 +39,116 @@ class LayeredGraph:
         self.init_network_performance_info()
         
 
-    def set_graph(self, links):
+    def set_graph(self, links: Dict[LayerNodePair, float]) -> None:
         self._previous_update_time = time.time()
-        for link in links:
-            link: LayerNodePair
-            self.set_link(link, links[link])
+        for link, backlog in links.items():
+            self.set_link(link, backlog)
 
-    def set_capacity(self, source_ip: str, computing_capacity: float, transfer_capacity: float):
+    def set_capacity(self, source_ip: str, computing_capacity: float, transfer_capacity: float) -> None:
         for destination_ip in self._capacity[source_ip]:
-            if source_ip == destination_ip:
-                self._capacity[source_ip][destination_ip] = computing_capacity
-            else:
-                self._capacity[source_ip][destination_ip] = transfer_capacity
+            capacity = computing_capacity if source_ip == destination_ip else transfer_capacity
+            self._capacity[source_ip][destination_ip] = capacity
     
-    def update_path_backlog(self, job_info: JobInfo, path: List[LayerNode]):
+    def update_path_backlog(self, job_info: JobInfo, path: List[tuple[LayerNode, LayerNode, str]]) -> None:
         input_size = job_info.get_input_size()
-        job_name = job_info.get_job_name()
-        model_index = 0
-
-        if path[0].is_same_node(path[1]) and not path[0].is_same_layer(path[1]):
-            model_index = 1
-        else:
-            model_index = 0
         
-        for i in range(len(path) - 1):
-            source_layer_node: LayerNode = path[i]
-            destination_layer_node: LayerNode = path[i + 1]
-            link = LayerNodePair(source_layer_node, destination_layer_node)
-
-            if i != 0 and source_layer_node.is_same_node(destination_layer_node) and not source_layer_node.is_same_layer(destination_layer_node):
-                model_index += 1
-
-            if source_layer_node.is_same_node(destination_layer_node):
-                self._layered_graph_backlog[link] += self._dnn_models.get_computing(job_name, model_index) * input_size
-
-            elif source_layer_node.is_same_layer(destination_layer_node):
-                self._layered_graph_backlog[link] += self._dnn_models.get_transfer(job_name, model_index) * input_size
+        for source_node, destination_node, model_name in path:
+            link = LayerNodePair(source_node, destination_node)
+            model_config = self._model_configs[model_name]
+            ratio = model_config.get_computing_ratio() if source_node.is_same_node(destination_node) else model_config.get_transfer_ratio()
+            self._layered_graph_backlog[link] += ratio * input_size
         
     def update_graph(self):
         current_time = time.time()
         elapsed_time = current_time - self._previous_update_time
-
-        links_job_num = {}
-
-        # print("cap", self._capacity)
-
-        for link in self._layer_node_pairs:
-            link: LayerNodePair
-            source_node_ip = link.get_source().get_ip()
-            destination_node_ip = link.get_destination().get_ip()
-
-            destinations: Dict = links_job_num.setdefault(source_node_ip, {})
-            destinations.setdefault(destination_node_ip, 0)
-
-            if self._layered_graph_backlog[link] > 0:
-                destinations[destination_node_ip] += 1
-
-        for link in self._layer_node_pairs:
-            link: LayerNodePair
-            source_node_ip = link.get_source().get_ip()
-            destination_node_ip = link.get_destination().get_ip()
-            
-            link_job_num = links_job_num[source_node_ip][destination_node_ip]
-            capacity = self._capacity[source_node_ip][destination_node_ip]
-
-            if link_job_num > 0:
-                job_computing_delta = elapsed_time * capacity / link_job_num
-
-                self._layered_graph_backlog[link] = max(0, self._layered_graph_backlog[link] - job_computing_delta)
-
+        
+        links_job_num = self._count_active_jobs()
+        self._update_backlog(elapsed_time, links_job_num)
         self._previous_update_time = time.time()
+
+    def _count_active_jobs(self) -> Dict[str, Dict[str, int]]:
+        links_job_num = {}
+        
+        for link in self._layer_node_pairs:
+            source_ip = link.get_source().get_ip()
+            dest_ip = link.get_destination().get_ip()
+            
+            if source_ip not in links_job_num:
+                links_job_num[source_ip] = {}
+            if dest_ip not in links_job_num[source_ip]:
+                links_job_num[source_ip][dest_ip] = 0
+                
+            if self._layered_graph_backlog[link] > 0:
+                links_job_num[source_ip][dest_ip] += 1
+                
+        return links_job_num
+
+    def _update_backlog(self, elapsed_time: float, links_job_num: Dict[str, Dict[str, int]]):
+        for link in self._layer_node_pairs:
+            source_ip = link.get_source().get_ip()
+            dest_ip = link.get_destination().get_ip()
+            
+            job_count = links_job_num[source_ip][dest_ip]
+            capacity = self._capacity[source_ip][dest_ip]
+
+            if job_count > 0:
+                computing_delta = elapsed_time * capacity / job_count
+                self._layered_graph_backlog[link] = max(0, self._layered_graph_backlog[link] - computing_delta)
 
     def set_link(self, link: LayerNodePair, backlog: float):
         self._layered_graph_backlog[link] = backlog
 
     def init_graph(self):
-        self._max_layer_depth = max([len(job["split_points"]) for job_name, job in self._network_info.get_jobs().items()])
+        for source_ip in self._network:
+            source = LayerNode(source_ip)
+            self._layer_nodes.append(source)
+            self._layered_graph.setdefault(source, [])
+            self._capacity.setdefault(source_ip, {})
 
-        for layer in range(self._max_layer_depth):
-            for source_ip in self._network:
-                source = LayerNode(source_ip, layer)
-                self._layer_nodes.append(source)
-
-                if source not in self._layered_graph:
-                    self._layered_graph[source] = []
-
-                if source_ip not in self._capacity:
-                    self._capacity[source_ip] = dict()
-
-                for destination_ip in self._network[source_ip]:
-                    if destination_ip not in self._capacity[source_ip]:
-                        self._capacity[source_ip][destination_ip] = 0
-
-                    destination = LayerNode(destination_ip, layer)
-
-                    self._layered_graph[source].append(destination)
-
-                    link = LayerNodePair(source, destination)
-
-                    self._layer_node_pairs.append(link)
-                    self._layered_graph_backlog[link] = 0
-
-        for layer in range(self._max_layer_depth - 1):
-            for source_ip in self._network:
-                if source_ip in self._network_info.get_router():
-                    continue
-                
-                source = LayerNode(source_ip, layer)
-                destination = LayerNode(source_ip, layer + 1)
-
-                if source_ip not in self._capacity[source_ip]:
-                    self._capacity[source_ip][source_ip] = 0
-
-                if source not in self._layered_graph:
-                    self._layered_graph[source] = []
-
+            for destination_ip in self._network[source_ip]:
+                self._capacity[source_ip].setdefault(destination_ip, 0)
+                destination = LayerNode(destination_ip)
                 self._layered_graph[source].append(destination)
-
                 link = LayerNodePair(source, destination)
-
                 self._layer_node_pairs.append(link)
-                self._layered_graph_backlog[link] = 0
+                self._layered_graph_backlog.setdefault(link, 0)
+
+        for source_ip in self._network:
+            if source_ip in self._network_config.get_router():
+                continue
+            
+            source = LayerNode(source_ip)
+            self._layered_graph.setdefault(source, [])
+            self._layered_graph[source].append(source)
+            self._layer_node_pairs.append(LayerNodePair(source, source))
+            self._layered_graph_backlog.setdefault(LayerNodePair(source, source), 0)
 
     def init_algorithm(self):
-        module_path = self._network_info.get_scheduling_algorithm().replace(".py", "").replace("/", ".")
+        module_path = self._network_config.get_scheduling_algorithm().replace(".py", "").replace("/", ".")
         self._algorithm_class = module_path.split(".")[-1]
-        # self._scheduling_algorithm: Dijkstra = importlib.import_module(module_path).Dijkstra()
         self._scheduling_algorithm = getattr(importlib.import_module(module_path), self._algorithm_class)()
         
-    def schedule(self, source_ip: str, job_info: JobInfo):
-        split_num = len(self._network_info.get_jobs()[job_info.get_job_name()]["split_points"])
-        source_node = LayerNode(source_ip, 0)
-        destination_node = LayerNode(job_info.get_terminal_destination(), split_num - 1)
+    def schedule(self, source_ip: str, job_info: JobInfo) -> List[tuple[LayerNode, LayerNode, str]]:
+        source_node = LayerNode(source_ip)
+        destination_node = LayerNode(job_info.get_terminal_destination())
 
         input_size = job_info.get_input_size()
     
-        if self._algorithm_class == 'JDPCRA':
-            self._scheduling_algorithm: JDPCRA
-            # schedule을 호출할 때마다,
-            # self.update_expected_arrival_rate()         # 1. self._expected_arrival_rate를 갱신
-            # self.update_network_performance_info()      # 2. remaining computing resource를 구하여 self._network_performance_info에 저장
-            path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._dnn_models._yolo_computing_ratios, self._dnn_models._yolo_transfer_ratios, self._expected_arrival_rate, self._network_performance_info, input_size)
+        # if self._algorithm_class == 'JDPCRA':
+        #     path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._model_configs, self._expected_arrival_rate, self._network_performance_info, input_size)
         
-        elif self._algorithm_class == 'TLDOC':
-            self._scheduling_algorithm: TLDOC
-            if self._configs == None:
-                idle_power = self.load_config()
-                self._scheduling_algorithm.init_parameter(self._configs[0], self._configs[1], idle_power, self._dnn_models._yolo_transfer_ratios)
-                print("init configs")
-            # self.update_expected_arrival_rate()         #!check: TLDOC에서도 expected rate를 쓸 것인지, 진짜 값을 사용할 것인지
-            # self.update_network_performance_info()
-            self._scheduling_algorithm.set_t_wait(self.get_t_wait())
-            path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._expected_arrival_rate, self._network_performance_info, input_size)
+        # elif self._algorithm_class == 'TLDOC':
+        #     if self._configs == None:
+        #         idle_power = self.load_config()
+        #         self._scheduling_algorithm.init_parameter(self._configs[0], self._configs[1], idle_power, self._model_configs)
+        #     self._scheduling_algorithm.set_t_wait(self.get_t_wait())
+        #     path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._expected_arrival_rate, self._network_performance_info, input_size)
+        
+        if self._algorithm_class == 'RandomSelection':
+            path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph)
         
         else:
-            path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._layered_graph_backlog, self._layer_nodes)
+            raise ValueError(f"Invalid scheduling algorithm: {self._algorithm_class}")
         
         return path
     
@@ -204,28 +157,23 @@ class LayeredGraph:
     # return : LayerNodePair(192.168.1.5-0, 192.168.1.6-0), LayerNodePair(192.168.1.5-1, 192.168.1.6-1) ...
     def get_links(self, layer_node_ip: str):
         links = []
-        for layer in range(self._max_layer_depth):
-            layer_node = LayerNode(layer_node_ip, layer)
+        layer_node = LayerNode(layer_node_ip)
 
-            neighbors = self._layered_graph[layer_node]
-            for neighbor in neighbors:
-                link = LayerNodePair(layer_node, neighbor)
+        neighbors = self._layered_graph[layer_node]
+        for neighbor in neighbors:
+            link = LayerNodePair(layer_node, neighbor)
 
-                links.append(link)
+            links.append(link)
 
         return links
     
     def get_layered_graph_backlog(self):
         return self._layered_graph_backlog
     
-    def get_arrival_rate(self,path):
+    def get_arrival_rate(self, path: List[tuple[LayerNode, LayerNode, str]]) -> float:
         arrival_rate = 0
-        for i in range(len(path) - 1):
-            source = path[i]
-            destination = path[i + 1]
-
-            link = LayerNodePair(source = source, destination = destination)
-            
+        for source, destination, _ in path:
+            link = LayerNodePair(source, destination)
             arrival_rate += self._layered_graph_backlog[link]
 
         return arrival_rate
@@ -309,13 +257,10 @@ class LayeredGraph:
             elif link.get_source().get_ip() == "192.168.1.8":
                 node_name = "cloud"
 
-            # transfer
-            if link.is_same_layer():
-                transfer_backlog[node_name] += self._layered_graph_backlog[link]
-            
-            # compute
-            elif link.is_same_node():
+            if link.is_same_node(): # computing
                 computing_backlog[node_name] += self._layered_graph_backlog[link]
+            else: # transfer
+                transfer_backlog[node_name] += self._layered_graph_backlog[link]
 
 
         end_wait_time = computing_backlog["end"] / self._network_performance_info[0]["end"] + transfer_backlog["end"] / self._network_performance_info[1]["end"]
