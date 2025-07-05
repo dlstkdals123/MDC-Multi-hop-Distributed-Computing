@@ -5,9 +5,9 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from program import Program
 from job import *
 from communication import *
-from job.JobManager import JobManager
 from utils.utils import get_ip_address
 from spec.GPUUtilManager import GPUUtilManager
+from config import NetworkConfig
 
 import paho.mqtt.publish as publish
 import MQTTclient
@@ -42,7 +42,7 @@ class MDC(Program):
             "mdc/node_info": [(self.check_job_manager_exists, True)],
         }
 
-        self._network_info = None
+        self._network_config = None
         self._job_manager = None
         self._neighbors = None
         self._backlogs_zero_flag = False
@@ -57,7 +57,7 @@ class MDC(Program):
     # request network information to network controller
     # sending node info.
     def request_network_info(self):
-        while self._network_info == None:
+        while self._network_config == None:
             print("Requested network info..")
             node_info_bytes = pickle.dumps(self._node_info)
 
@@ -76,8 +76,8 @@ class MDC(Program):
             self.run_dnn(dnn_output)
     
     def handle_network_info(self, topic, data, publisher):
-        self._network_info: NetworkInfo = pickle.loads(data)
-        self._job_manager = JobManager(self._address, self._network_info)
+        self._network_config: NetworkConfig = pickle.loads(data)
+        self._job_manager = JobManager(self._address, self._network_config)
 
         self.init_node_publisher()
 
@@ -95,7 +95,7 @@ class MDC(Program):
         self._controller_publisher.publish("mdc/network_performance_info", network_performance_bytes)
 
     def init_node_publisher(self):
-        network = self._network_info.get_network()
+        network = self._network_config.get_network()
         neighbors = network[self._address]
 
         for neighbor in neighbors:
@@ -127,19 +127,11 @@ class MDC(Program):
         # send NodeLinkInfo byte to source ip (response)
         self._controller_publisher.publish("mdc/node_info", node_link_info_bytes)
 
-    def check_network_info_exists(self, data = None):
-        if self._network_info == None:
-            return False
+    def check_network_info_exists(self, data = None) -> bool:
+        return self._network_config is not None
         
-        elif self._network_info != None:
-            return True
-        
-    def check_job_manager_exists(self, data = None):
-        if self._job_manager == None:
-            return False
-        
-        elif self._job_manager != None:
-            return True
+    def check_job_manager_exists(self, data = None) -> bool:
+        return self._job_manager is not None
 
     def handle_dnn(self, topic, data, publisher):
         previous_dnn_output: DNNOutput = pickle.loads(data)
@@ -162,7 +154,7 @@ class MDC(Program):
         else: 
             if self._job_manager.is_subtask_exists(previous_dnn_output):
                 # if cao
-                is_compressed = self._address == "192.168.1.8" and self._network_info.get_queue_name() == "cao"
+                is_compressed = self._address == "192.168.1.8" and self._network_config.get_queue_name() == "cao"
 
                 dnn_output, computing_capacity = self._job_manager.run(output=previous_dnn_output, is_compressed=is_compressed)
 

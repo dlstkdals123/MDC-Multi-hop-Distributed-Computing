@@ -1,4 +1,7 @@
 import subprocess, socket, re, os
+from typing import Dict
+
+from layeredgraph import LayerNode, LayerNodePair
 
 import csv
 
@@ -54,7 +57,7 @@ def save_latency(file_path, latency):
         # 데이터 행을 파일에 씁니다.
         writer.writerow([latency])
 
-def save_virtual_backlog(file_path, virtual_backlog):
+def save_virtual_backlog(file_path, virtual_backlog: Dict[LayerNodePair, float]):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
