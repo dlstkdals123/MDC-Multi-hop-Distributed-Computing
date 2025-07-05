@@ -1,20 +1,20 @@
 from layeredgraph import LayerNode, LayerNodePair
 import random
-from typing import Dict
+from typing import Dict, List
 from config.ModelConfig import ModelConfig
 
 class RandomSelection:
     def __init__(self):
         pass
 
-    def get_path(self, source_node: LayerNode, destination_node: LayerNode, layered_graph: Dict[LayerNode, list[LayerNode]]):
+    def get_path(self, source_node: LayerNode, destination_node: LayerNode, layered_graph: Dict[LayerNode, List[LayerNode]]):
         """
         랜덤 선택 알고리즘을 구현한 클래스입니다.
 
         Args:
             source_node (LayerNode): 출발 노드
             destination_node (LayerNode): 도착 노드
-            layered_graph (Dict[LayerNode, list[LayerNode]]): 레이어드 그래프
+            layered_graph (Dict[LayerNode, List[LayerNode]]): 레이어드 그래프
 
         Returns:
             List[LayerNode, LayerNode, str]: 경로

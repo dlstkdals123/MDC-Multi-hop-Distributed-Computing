@@ -11,7 +11,7 @@ class LayerNode:
         
         Args:
             ip (str): 노드의 IP 주소
-            model_names (list[str]): 노드에서 실행 가능한 모델 이름 목록
+            model_names (List[str]): 노드에서 실행 가능한 모델 이름 목록
         """
         self._ip = ip
         self._model_names = model_names
