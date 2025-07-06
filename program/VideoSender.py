@@ -47,7 +47,7 @@ class VideoSender(MDC):
         job_type = self._network_config.get_jobs()[self._job_name]["job_type"]
         job_name = self._job_name
         start_time = time_ns()
-        input_size = None # should be initiailzed
+        input_size = 1 * TARGET_DEPTH * TARGET_HEIGHT * TARGET_WIDTH # should be initiailzed
 
         job_info = JobInfo(source_ip, terminal_destination, job_type, job_name, start_time, input_size)
 
