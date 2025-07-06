@@ -102,8 +102,8 @@ class JobManager:
     def add_subtask(self, subtask_info: SubtaskInfo):
         model_name = subtask_info.get_model_name()
         subtask_model = model_name if subtask_info.is_computing() else None
-        computing = self._model_config[model_name].get_computing() * subtask_info.get_input_size()
-        transfer = self._model_config[model_name].get_transfer() * subtask_info.get_input_size()
+        computing = self._model_config[model_name].get_computing_ratio() * subtask_info.get_input_size() if subtask_info.is_computing() else 0
+        transfer = self._model_config[model_name].get_transfer_ratio() * subtask_info.get_input_size() if subtask_info.is_transmission() else 0
 
         subtask = DNNSubtask(
             subtask_info = subtask_info,
