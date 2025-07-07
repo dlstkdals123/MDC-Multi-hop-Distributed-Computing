@@ -13,10 +13,10 @@ import pandas as pd
 import glob
 
 class LayeredGraph:
-    def __init__(self, network_config: NetworkConfig, model_configs: Dict[str, ModelConfig]):
+    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig):
         self._network_config = network_config
         self._network = network_config.get_network()
-        self._model_configs = model_configs
+        self._model_config = model_config
         self._layered_graph = dict()
         self._layered_graph_backlog = dict()
         self._layer_nodes = []
@@ -55,8 +55,8 @@ class LayeredGraph:
         for source_node, destination_node, model_name in path:
             link = LayerNodePair(source_node, destination_node)
             if source_node.is_same_node(destination_node):
-                ratio = self._model_configs[model_name].get_computing_ratio()
-                last_transfer_ratio = self._model_configs[model_name].get_transfer_ratio()
+                ratio = self._model_config.get_computing_ratio(model_name)
+                last_transfer_ratio = self._model_config.get_transfer_ratio(model_name)
             else:
                 ratio = last_transfer_ratio
             

@@ -10,12 +10,15 @@ class SubtaskInfo(JobInfo):
     def get_path(self):
         return self._path
 
+    def is_terminated(self):
+        return self._index == len(self._path) - 1
+
     def get_next_subtask(self):
-        if self._index == len(self._path) - 1:
+        if self.is_terminated():
             return None
         else:
             self._index += 1
-            return self._path[self._index]
+            return self._path[self._index], self._path[self._index][2]
 
     def get_current_subtask(self):
         return self._path[self._index]
@@ -43,12 +46,6 @@ class SubtaskInfo(JobInfo):
     
     def is_computing(self):
         return self._path[self._index][0].is_same_node(self._path[self._index][1])
-
-    def get_computing_ratio(self):
-        return self._path[self._index][0].get_model_names()[self._path[self._index][2]].get_computing_ratio() if self.is_computing() else 0.0
-    
-    def get_transfer_ratio(self):
-        return self._path[self._index][0].get_model_names()[self._path[self._index][2]].get_transfer_ratio() if self.is_transmission() else 0.0
     
     def __hash__(self):
         return hash(self.get_subtask_id())

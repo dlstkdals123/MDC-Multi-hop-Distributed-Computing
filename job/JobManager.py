@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Tuple
 import torch
 
 from job import *
@@ -20,7 +20,7 @@ except ImportError:
         return int(now.timestamp() * 1e9)
 
 class JobManager:
-    def __init__(self, address, network_config: NetworkConfig, model_config: Dict[str, ModelConfig]):
+    def __init__(self, address, network_config: NetworkConfig, model_config: ModelConfig):
         # TODO
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -100,14 +100,14 @@ class JobManager:
         
     # add subtask_info based SubtaskInfo
     def add_subtask(self, subtask_info: SubtaskInfo):
+
         model_name = subtask_info.get_model_name()
-        subtask_model = model_name if subtask_info.is_computing() else None
-        computing = self._model_config[model_name].get_computing_ratio() * subtask_info.get_input_size() if subtask_info.is_computing() else 0
-        transfer = self._model_config[model_name].get_transfer_ratio() * subtask_info.get_input_size() if subtask_info.is_transmission() else 0
+        computing = self._model_config.get_computing_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_computing() else 0
+        transfer = self._model_config.get_transfer_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_transmission() and model_name != "" else 0
 
         subtask = DNNSubtask(
             subtask_info = subtask_info,
-            dnn_model = subtask_model,
+            dnn_model = model_name,
             computing = computing,
             transfer = transfer
         )

@@ -39,7 +39,7 @@ class Controller(Program):
         self._path_log_path = None
         self._network_config: NetworkConfig = None
         self._controller_config: ControllerConfig = None
-        self._model_config: Dict[str, ModelConfig] = {}
+        self._model_config: ModelConfig = None
         self._layered_graph = None
         self._arrival_rate = 0
         self._real_arrival_rate = 0
@@ -71,8 +71,7 @@ class Controller(Program):
     def init_model_config(self):
         with open(path, 'r') as file:
             model_configs = json.load(file)["Model"]
-            for model_name, model_config in model_configs.items():
-                self._model_config[model_name] = ModelConfig(model_config)
+            self._model_config = ModelConfig(model_configs)
 
     def init_path(self):
         folder_name = self._controller_config.get_experiment_name() + "_" + datetime.now().strftime('%m-%d_%H%M%S')

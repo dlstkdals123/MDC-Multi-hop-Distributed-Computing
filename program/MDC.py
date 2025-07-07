@@ -80,7 +80,7 @@ class MDC(Program):
     def handle_config(self, topic, data, publisher):
         config: Dict[str, Any] = pickle.loads(data)
         self._network_config: NetworkConfig = config["network"]
-        self._model_config: Dict[str, ModelConfig] = config["model"]
+        self._model_config: ModelConfig = config["model"]
 
         self._job_manager = JobManager(self._address, self._network_config, self._model_config)
 

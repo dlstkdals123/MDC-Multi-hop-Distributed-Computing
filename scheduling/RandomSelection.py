@@ -18,19 +18,20 @@ class RandomSelection:
 
         Returns:
             List[LayerNode, LayerNode, str]: 경로
-            예시1: [["192.168.1.5", "192.168.1.6", ""], ["192.168.1.6", "192.168.1.6", "yolov5"], ["192.168.1.6", "192.168.1.8", ""]]
+            예시1: [["192.168.1.5", "192.168.1.6", ""], ["192.168.1.6", "192.168.1.6", "yolov5"], ["192.168.1.6", "192.168.1.8", "yolov5"]]
 
             예시2: [["192.168.1.5", "192.168.1.6", ""], ["192.168.1.6", "192.168.1.8", ""], ["192.168.1.8", "192.168.1.8", "yolov5"]]
 
-            예시3: [["192.168.1.5", "192.168.1.6", ""], ["192.168.1.6", "192.168.1.8", ""]]
+            예시3: [["192.168.1.5", "192.168.1.6", ""], ["192.168.1.6", "192.168.1.8", "yolov5"]]
         """
         possible_paths = []
         visited_models = set()
+        last_model_name = ""
         prop = 0.5
         current_node = source_node
 
         while True:
-            neighbor_list = layered_graph[current_node].copy()
+            neighbor_list = layered_graph[current_node]
             if current_node in neighbor_list:
                 neighbor_list.remove(current_node)
             
@@ -45,7 +46,7 @@ class RandomSelection:
             # 다음 노드로 이동
             if len(not_visited_model_names) == 0:
                 random_neighbor = random.choice(neighbor_list)
-                possible_paths.append((current_node, random_neighbor, ""))
+                possible_paths.append((current_node, random_neighbor, last_model_name))
                 current_node = possible_paths[-1][1]
                 continue
 
@@ -54,6 +55,7 @@ class RandomSelection:
                 random_model_name = random.choice(not_visited_model_names)
                 possible_paths.append((current_node, current_node, random_model_name))
                 visited_models.add(random_model_name)
+                last_model_name = random_model_name
                 continue
 
             # 모델을 전부 사용했다면 다음 노드로 이동.
@@ -63,7 +65,7 @@ class RandomSelection:
             
             # 다음 노드로 이동
             random_neighbor = random.choice(neighbor_list)
-            possible_paths.append((current_node, random_neighbor, ""))
+            possible_paths.append((current_node, random_neighbor, last_model_name))
             current_node = possible_paths[-1][1]
 
         return possible_paths
