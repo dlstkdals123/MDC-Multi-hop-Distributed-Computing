@@ -85,8 +85,14 @@ def save_path(file_path, path):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
-    path = [source_node.to_string() + "->" + destination_node.to_string() + "->" + model_name for source_node, destination_node, model_name in path]
-    path_string = ','.join(path)
+    path_list = []
+    for source_node, destination_node, model_name in path:
+        if model_name == "":
+            path_list.append(source_node.to_string() + "->" + destination_node.to_string())
+        else:
+            path_list.append(source_node.to_string() + ": " + model_name)
+
+    path_string = ','.join(path_list)
 
     # 파일에 데이터 쓰기
     with open(file_path, 'a', newline='') as csvfile:
