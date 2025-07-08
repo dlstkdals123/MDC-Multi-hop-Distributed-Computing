@@ -2,6 +2,8 @@ import sys, os
  
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
+import queue
+import threading
 from program import Program
 from job import *
 from communication import *
@@ -48,6 +50,15 @@ class MDC(Program):
         self._job_manager = None
         self._neighbors = None
         self._backlogs_zero_flag = False
+
+        self.job_queue = queue.Queue()
+        self.active_jobs = 0
+        self.job_limit = 4
+        self.job_lock = threading.Lock()
+        self.job_available = threading.Event()
+
+        for _ in range(self.job_limit):
+            threading.Thread(target=self.process_jobs, daemon=True).start()
 
         self._capacity_manager = CapacityManager()
         self._gpu_util_manager = GPUUtilManager()
@@ -143,7 +154,16 @@ class MDC(Program):
 
     def handle_dnn(self, topic, data, publisher):
         previous_dnn_output: DNNOutput = pickle.loads(data)
-        self.run_dnn(previous_dnn_output)
+        # self.run_dnn(previous_dnn_output)
+        self.job_queue.put(previous_dnn_output)
+
+    def process_jobs(self):
+        while True:
+            try:
+                dnn_output = self.job_queue.get()
+                self.run_dnn(dnn_output)
+            finally:
+                self.job_queue.task_done()
 
     def handle_finish(self, topic, data, publisher):
         print("finish!! exit program.")
