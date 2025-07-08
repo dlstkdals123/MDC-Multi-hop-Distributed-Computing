@@ -51,15 +51,6 @@ class MDC(Program):
         self._neighbors = None
         self._backlogs_zero_flag = False
 
-        self.job_queue = queue.Queue()
-        self.active_jobs = 0
-        self.job_limit = 4
-        self.job_lock = threading.Lock()
-        self.job_available = threading.Event()
-
-        for _ in range(self.job_limit):
-            threading.Thread(target=self.process_jobs, daemon=True).start()
-
         self._capacity_manager = CapacityManager()
         self._gpu_util_manager = GPUUtilManager()
 
@@ -154,16 +145,21 @@ class MDC(Program):
 
     def handle_dnn(self, topic, data, publisher):
         previous_dnn_output: DNNOutput = pickle.loads(data)
-        # self.run_dnn(previous_dnn_output)
-        self.job_queue.put(previous_dnn_output)
 
-    def process_jobs(self):
-        while True:
-            try:
-                dnn_output = self.job_queue.get()
-                self.run_dnn(dnn_output)
-            finally:
-                self.job_queue.task_done()
+        # computing subtask
+        while dnn_output.get_subtask_info().is_computing():
+            self.run_dnn(dnn_output)
+        
+        # terminal node
+        if dnn_output.is_terminal_destination(self._address) and not self._job_manager.is_subtask_exists(dnn_output):
+            subtask_info = dnn_output.get_subtask_info()
+            subtask_info_bytes = pickle.dumps(subtask_info)
+            self._controller_publisher.publish("job/response", subtask_info_bytes)
+        
+        # transfer subtask
+        else:
+            dnn_output = self._job_manager.update_dnn_output(previous_dnn_output)
+
 
     def handle_finish(self, topic, data, publisher):
         print("finish!! exit program.")
@@ -171,34 +167,38 @@ class MDC(Program):
         os._exit(1)
 
     def run_dnn(self, previous_dnn_output: DNNOutput):
+        dnn_output = self._job_manager.update_dnn_output(previous_dnn_output)
+
         # terminal node
-        if previous_dnn_output.is_terminal_destination(self._address) and not self._job_manager.is_subtask_exists(previous_dnn_output): 
-            subtask_info = previous_dnn_output.get_subtask_info()
+        if dnn_output.is_terminal_destination(self._address) and not self._job_manager.is_subtask_exists(dnn_output): 
+            subtask_info = dnn_output.get_subtask_info()
             subtask_info_bytes = pickle.dumps(subtask_info)
 
             # send subtask info to controller
             self._controller_publisher.publish("job/response", subtask_info_bytes)
+            return
 
-        else: 
-            if self._job_manager.is_subtask_exists(previous_dnn_output):
-                # if cao
-                is_compressed = self._address == "192.168.1.8" and self._network_config.get_queue_name() == "cao"
+        # subtask가 도착 후 dnn_output이 온 경우
+        if self._job_manager.is_subtask_exists(dnn_output):
+            # if cao
+            is_compressed = self._address == "192.168.1.8" and self._network_config.get_queue_name() == "cao"
 
-                dnn_output, computing_capacity = self._job_manager.run(output=previous_dnn_output, is_compressed=is_compressed)
+            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output, is_compressed=is_compressed)
 
-                subtask_info = dnn_output.get_subtask_info()
-                destination_ip = subtask_info.get_destination().get_ip()
+            subtask_info = dnn_output.get_subtask_info()
+            destination_ip = subtask_info.get_destination().get_ip()
 
-                dnn_output.get_subtask_info().set_next_subtask_id()
+            dnn_output.get_subtask_info().set_next_source()
 
-                dnn_output_bytes = pickle.dumps(dnn_output)
-                    
-                # send job to next node
-                publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
+            dnn_output_bytes = pickle.dumps(dnn_output)
+                
+            # send job to next node
+            publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
 
-                self._capacity_manager.update_computing_capacity(computing_capacity)
-            else:
-                self._job_manager.add_dnn_output(previous_dnn_output)
+            self._capacity_manager.update_computing_capacity(computing_capacity)
+        # subtask가 도착하기 전에 dnn_output이 온 경우
+        else:
+            self._job_manager.add_dnn_output(dnn_output)
 
        
 if __name__ == '__main__':

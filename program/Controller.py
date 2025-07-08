@@ -228,11 +228,11 @@ class Controller(Program):
         path_log_file_path = f"{self._path_log_path}/path.csv"
         save_path(path_log_file_path, path)
         
-        subtask_info = SubtaskInfo(job_info, path)
-        subtask_info_bytes = pickle.dumps(subtask_info)
-
-        # send SubtaskInfo byte to source ip
-        publish.single("job/subtask_info", subtask_info_bytes, hostname=job_info.get_source_ip())
+        for i in range(len(path) - 1):
+            subtask_info = SubtaskInfo(job_info, path[i], path[i + 1], path[i][2], i)
+            subtask_info_bytes = pickle.dumps(subtask_info)
+            # send SubtaskInfo byte to source ip
+            publish.single("job/subtask_info", subtask_info_bytes, hostname=job_info.get_source_ip())
             
     def handle_response(self, topic, payload, publisher):
         subtask_info: SubtaskInfo = pickle.loads(payload)

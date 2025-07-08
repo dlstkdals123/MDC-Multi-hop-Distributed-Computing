@@ -2,50 +2,37 @@ from job import JobInfo
 from layeredgraph import LayerNode, LayerNodePair
 from typing import List, Tuple
 class SubtaskInfo(JobInfo):
-    def __init__(self, job_info: JobInfo, path: List[Tuple[LayerNode, LayerNode, str]]):
-        self._path = path
-        self._index = 0
+    def __init__(self, job_info: JobInfo, source_layer_node: LayerNode, destination_layer_node: LayerNode, model_name: str = None, primary_path_index: int = 0):
+        self._source_layer_node = source_layer_node
+        self._destination_layer_node = destination_layer_node
+        self._model_name = model_name
+        self._primary_path_index = primary_path_index
         super().__init__(job_info.get_job_id(), job_info.get_terminal_destination(), job_info.get_job_type(), job_info.get_job_name(), job_info.get_start_time(), job_info.get_input_size())
     
-    def get_path(self):
-        return self._path
-
-    def is_terminated(self):
-        return self._index == len(self._path) - 1
-
-    def get_next_subtask(self):
-        if self.is_terminated():
-            return None
-        else:
-            self._index += 1
-            return self._path[self._index], self._path[self._index][2]
-
-    def get_current_subtask(self):
-        return self._path[self._index]
-    
-    def get_model_name(self):
-        return self._path[self._index][2]
-    
     def get_source(self):
-        return self._path[self._index][0]
+        return self._source_layer_node
     
     def get_destination(self):
-        return self._path[self._index][1]  
+        return self._destination_layer_node
+    
+    def get_model_name(self):
+        return self._model_name
         
     def get_subtask_id(self):
-        return self._delimeter.join([self.get_job_id(), self._path[self._index][0].to_string(), self._path[self._index][1].to_string()]) # yolo20240312101010_192.168.1.5-0_192.168.1.6-0_1
+        return self._delimeter.join([self.get_job_id(), self._source_layer_node.to_string(), str(self._primary_path_index)])
     
-    def set_next_subtask_id(self):
-        self._index += 1
-        
+    def set_next_source(self):
+        self._source_layer_node = self._destination_layer_node
+        self._primary_path_index += 1
+    
     def get_link(self):
-        return LayerNodePair(self._path[self._index][0], self._path[self._index][1])
+        return LayerNodePair(self._source_layer_node, self._destination_layer_node)
     
     def is_transmission(self):
         return not self.is_computing()
     
     def is_computing(self):
-        return self._path[self._index][0].is_same_node(self._path[self._index][1])
+        return self._source_layer_node.is_same_node(self._destination_layer_node)
     
     def __hash__(self):
         return hash(self.get_subtask_id())

@@ -35,7 +35,12 @@ class JobManager:
     def is_subtask_exists(self, output: DNNOutput) -> bool:
         previous_subtask_info = output.get_subtask_info()
         return bool(self._virtual_queue.exist_subtask_info(previous_subtask_info))
-        
+    
+    def update_dnn_output(self, dnn_output: DNNOutput):
+        previous_subtask_info = dnn_output.get_subtask_info()
+        current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
+        return DNNOutput(dnn_output.get_output(), current_subtask_info)
+    
     def is_dnn_output_exists(self, subtask_info: SubtaskInfo) -> bool:
         return bool(self._ahead_of_time_outputs.exist_dnn_output(subtask_info))
         

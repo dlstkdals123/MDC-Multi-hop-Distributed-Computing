@@ -44,6 +44,12 @@ class VirtualQueue:
             self.subtask_infos[subtask_info] = (subtask, cur_time)
             return True
 
+    def get_subtask_info(self, subtask_info: SubtaskInfo):
+        self.mutex.acquire()
+        subtask, _ = self.subtask_infos[subtask_info]
+        self.mutex.release()
+        return subtask.get_subtask_info()
+
     def del_subtask_info(self, subtask_info):
         self.mutex.acquire()
         del self.subtask_infos[subtask_info]
