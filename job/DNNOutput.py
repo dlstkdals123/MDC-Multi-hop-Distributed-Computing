@@ -20,12 +20,6 @@ class DNNOutput:
 
     def get_output(self):
         return self._output
-    
-    def is_destination(self, other_layer_node: LayerNode):
-        return self._subtask_info.get_destination() == other_layer_node
-        
-    def is_terminal_destination(self, other_address):
-        return self._subtask_info.get_terminal_destination() == other_address
         
     def __eq__(self, other):
         return self.get_subtask_info().get_subtask_id() == other.get_subtask_info().get_subtask_id()

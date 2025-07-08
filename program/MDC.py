@@ -145,60 +145,51 @@ class MDC(Program):
 
     def handle_dnn(self, topic, data, publisher):
         previous_dnn_output: DNNOutput = pickle.loads(data)
-
-        # computing subtask
-        while dnn_output.get_subtask_info().is_computing():
-            self.run_dnn(dnn_output)
-        
-        # terminal node
-        if dnn_output.is_terminal_destination(self._address) and not self._job_manager.is_subtask_exists(dnn_output):
-            subtask_info = dnn_output.get_subtask_info()
-            subtask_info_bytes = pickle.dumps(subtask_info)
-            self._controller_publisher.publish("job/response", subtask_info_bytes)
-        
-        # transfer subtask
-        else:
-            dnn_output = self._job_manager.update_dnn_output(previous_dnn_output)
-
+        self.run_dnn(previous_dnn_output)
 
     def handle_finish(self, topic, data, publisher):
         print("finish!! exit program.")
         time.sleep(5)
         os._exit(1)
 
-    def run_dnn(self, previous_dnn_output: DNNOutput):
-        dnn_output = self._job_manager.update_dnn_output(previous_dnn_output)
-
-        # terminal node
-        if dnn_output.is_terminal_destination(self._address) and not self._job_manager.is_subtask_exists(dnn_output): 
-            subtask_info = dnn_output.get_subtask_info()
-            subtask_info_bytes = pickle.dumps(subtask_info)
-
-            # send subtask info to controller
-            self._controller_publisher.publish("job/response", subtask_info_bytes)
+    def run_dnn(self, dnn_output: DNNOutput):
+        # subtask가 도착하기 전에 dnn_output이 온 경우
+        if not self._job_manager.is_subtask_exists(dnn_output):
+            self._job_manager.add_dnn_output(dnn_output)
             return
 
-        # subtask가 도착 후 dnn_output이 온 경우
-        if self._job_manager.is_subtask_exists(dnn_output):
+        total_computing_capacity = 0
+        
+        while True:
+            # terminal node
+            if dnn_output.get_subtask_info().is_terminated():
+                subtask_info = dnn_output.get_subtask_info()
+                subtask_info_bytes = pickle.dumps(subtask_info)
+
+                # send subtask info to controller
+                self._controller_publisher.publish("job/response", subtask_info_bytes)
+                return
+            
+            dnn_output = self._job_manager.update_dnn_output(dnn_output)
+
+            if dnn_output.get_subtask_info().is_transmission():
+                subtask_info = dnn_output.get_subtask_info()
+                destination_ip = subtask_info.get_destination().get_ip()
+                dnn_output_bytes = pickle.dumps(dnn_output)
+                    
+                # send job to next node
+                publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
+
+                self._capacity_manager.update_computing_capacity(total_computing_capacity)
+                return
+
             # if cao
             is_compressed = self._address == "192.168.1.8" and self._network_config.get_queue_name() == "cao"
 
             dnn_output, computing_capacity = self._job_manager.run(output=dnn_output, is_compressed=is_compressed)
-
-            subtask_info = dnn_output.get_subtask_info()
-            destination_ip = subtask_info.get_destination().get_ip()
+            total_computing_capacity += computing_capacity
 
             dnn_output.get_subtask_info().set_next_source()
-
-            dnn_output_bytes = pickle.dumps(dnn_output)
-                
-            # send job to next node
-            publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
-
-            self._capacity_manager.update_computing_capacity(computing_capacity)
-        # subtask가 도착하기 전에 dnn_output이 온 경우
-        else:
-            self._job_manager.add_dnn_output(dnn_output)
 
        
 if __name__ == '__main__':

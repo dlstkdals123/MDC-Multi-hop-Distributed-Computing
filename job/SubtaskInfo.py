@@ -2,11 +2,12 @@ from job import JobInfo
 from layeredgraph import LayerNode, LayerNodePair
 from typing import List, Tuple
 class SubtaskInfo(JobInfo):
-    def __init__(self, job_info: JobInfo, source_layer_node: LayerNode, destination_layer_node: LayerNode, model_name: str = None, primary_path_index: int = 0):
+    def __init__(self, job_info: JobInfo, source_layer_node: LayerNode, destination_layer_node: LayerNode, model_name: str = None, primary_path_index: int = 0, terminal_index: int = 0):
         self._source_layer_node = source_layer_node
         self._destination_layer_node = destination_layer_node
         self._model_name = model_name
         self._primary_path_index = primary_path_index
+        self._terminal_index = terminal_index
         super().__init__(job_info.get_job_id(), job_info.get_terminal_destination(), job_info.get_job_type(), job_info.get_job_name(), job_info.get_start_time(), job_info.get_input_size())
     
     def get_source(self):
@@ -22,8 +23,9 @@ class SubtaskInfo(JobInfo):
         return self._delimeter.join([self.get_job_id(), self._source_layer_node.to_string(), str(self._primary_path_index)])
     
     def set_next_source(self):
-        self._source_layer_node = self._destination_layer_node
-        self._primary_path_index += 1
+        if self._primary_path_index < self._terminal_index:
+            self._source_layer_node = self._destination_layer_node
+            self._primary_path_index += 1
     
     def get_link(self):
         return LayerNodePair(self._source_layer_node, self._destination_layer_node)
@@ -33,6 +35,9 @@ class SubtaskInfo(JobInfo):
     
     def is_computing(self):
         return self._source_layer_node.is_same_node(self._destination_layer_node)
+
+    def is_terminated(self):
+        return self._primary_path_index == self._terminal_index
     
     def __hash__(self):
         return hash(self.get_subtask_id())
