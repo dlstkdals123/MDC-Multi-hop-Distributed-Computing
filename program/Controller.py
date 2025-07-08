@@ -229,7 +229,7 @@ class Controller(Program):
         save_path(path_log_file_path, path)
         
         for i in range(len(path) - 1):
-            subtask_info = SubtaskInfo(job_info, path[i], path[i + 1], path[i][2], i)
+            subtask_info = SubtaskInfo(job_info, path[i][0], path[i][1], path[i][2], i)
             subtask_info_bytes = pickle.dumps(subtask_info)
             # send SubtaskInfo byte to source ip
             publish.single("job/subtask_info", subtask_info_bytes, hostname=job_info.get_source_ip())
