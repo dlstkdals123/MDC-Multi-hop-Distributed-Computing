@@ -66,7 +66,7 @@ class VideoSender(MDC):
             dnn_output, computing_capacity = self._job_manager.run(input_frame)
             destination_ip = subtask_info.get_destination().get_ip()
 
-            dnn_output.get_subtask_info().set_next_subtask_id()
+            dnn_output.get_subtask_info().set_next_source()
 
             dnn_output_bytes = pickle.dumps(dnn_output)
                 
