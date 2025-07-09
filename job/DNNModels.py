@@ -37,7 +37,7 @@ class DNNModels:
             x : torch.Tensor = model(x)
 
     def get_model(self, model_name: str):
-        return self._models[model_name]
+        return None if model_name == "" else self._models[model_name]
 
     def get_computing_ratio(self, model_name: str):
         return self._computing_ratio[model_name]
