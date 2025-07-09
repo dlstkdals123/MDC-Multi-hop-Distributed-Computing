@@ -26,6 +26,7 @@ class JobManager:
 
         self._network_config = network_config
         self._model_config = model_config
+        self._dnn_models = DNNModels(model_config.get_model_names(), model_config, self._device, address)
 
         self._virtual_queue = VirtualQueue()
         self._ahead_of_time_outputs = AheadOutputQueue()
@@ -107,12 +108,13 @@ class JobManager:
     def add_subtask(self, subtask_info: SubtaskInfo):
 
         model_name = subtask_info.get_model_name()
-        computing = self._model_config.get_computing_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_computing() else 0
-        transfer = self._model_config.get_transfer_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_transmission() and model_name != "" else 0
+        model: torch.nn.Module = self._dnn_models.get_model(model_name)
+        computing = self._dnn_models.get_computing_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_computing() else 0
+        transfer = self._dnn_models.get_transfer_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_transmission() and model_name != "" else 0
 
         subtask = DNNSubtask(
             subtask_info = subtask_info,
-            dnn_model = model_name,
+            dnn_model = model,
             computing = computing,
             transfer = transfer
         )
