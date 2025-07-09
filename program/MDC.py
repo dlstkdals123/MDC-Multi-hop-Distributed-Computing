@@ -154,11 +154,7 @@ class MDC(Program):
 
     def run_dnn(self, dnn_output: DNNOutput):
         while True:
-            # subtask가 도착하기 전에 dnn_output이 온 경우
-            if not self._job_manager.is_subtask_exists(dnn_output):
-                self._job_manager.add_dnn_output(dnn_output)
-                return
-            
+
             # terminal node
             if dnn_output.get_subtask_info().is_terminated():
                 subtask_info = dnn_output.get_subtask_info()
@@ -167,12 +163,18 @@ class MDC(Program):
                 # send subtask info to controller
                 self._controller_publisher.publish("job/response", subtask_info_bytes)
                 return
+
+            # subtask가 도착하기 전에 dnn_output이 온 경우
+            if not self._job_manager.is_subtask_exists(dnn_output):
+                self._job_manager.add_dnn_output(dnn_output)
+                return
             
             dnn_output = self._job_manager.update_dnn_output(dnn_output)
 
             if dnn_output.get_subtask_info().is_transmission():
                 subtask_info = dnn_output.get_subtask_info()
-                destination_ip = subtask_info.get_destination().get_ip()
+                subtask_info.set_next_source()
+                destination_ip = subtask_info.get_source().get_ip()
                 dnn_output_bytes = pickle.dumps(dnn_output)
                     
                 # send job to next node

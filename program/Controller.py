@@ -228,7 +228,7 @@ class Controller(Program):
         path_log_file_path = f"{self._path_log_path}/path.csv"
         save_path(path_log_file_path, path)
         
-        for i in range(len(path) - 1):
+        for i in range(len(path)):
             source = path[i][0]
             destination = path[i][1]
             model_name = path[i][2]
