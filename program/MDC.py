@@ -153,14 +153,12 @@ class MDC(Program):
         os._exit(1)
 
     def run_dnn(self, dnn_output: DNNOutput):
-        # subtask가 도착하기 전에 dnn_output이 온 경우
-        if not self._job_manager.is_subtask_exists(dnn_output):
-            self._job_manager.add_dnn_output(dnn_output)
-            return
-
-        total_computing_capacity = 0
-        
         while True:
+            # subtask가 도착하기 전에 dnn_output이 온 경우
+            if not self._job_manager.is_subtask_exists(dnn_output):
+                self._job_manager.add_dnn_output(dnn_output)
+                return
+            
             # terminal node
             if dnn_output.get_subtask_info().is_terminated():
                 subtask_info = dnn_output.get_subtask_info()
@@ -180,14 +178,13 @@ class MDC(Program):
                 # send job to next node
                 publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
 
-                self._capacity_manager.update_computing_capacity(total_computing_capacity)
                 return
 
             # if cao
             is_compressed = self._address == "192.168.1.8" and self._network_config.get_queue_name() == "cao"
 
             dnn_output, computing_capacity = self._job_manager.run(output=dnn_output, is_compressed=is_compressed)
-            total_computing_capacity += computing_capacity
+            self._capacity_manager.update_computing_capacity(computing_capacity)
 
             dnn_output.get_subtask_info().set_next_source()
 
