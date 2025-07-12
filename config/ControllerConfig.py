@@ -16,8 +16,8 @@ class ControllerConfig:
         """
         self.check_validate(controller_config)
 
-        self._experiment_name = controller_config["experiment_name"]
-        self._sync_time = controller_config["sync_time"]
+        self._experiment_name: str = controller_config["experiment_name"]
+        self._sync_time: float = float(controller_config["sync_time"])
 
     def check_validate(self, controller_config: Dict[str, any]):
         """
@@ -25,7 +25,6 @@ class ControllerConfig:
         
         Raises:
             ValueError: 필수 정보가 누락되었을 때 발생합니다.
-            필수 정보는 매뉴얼을 참고해주세요.
         """
         required_keys = ["experiment_name", "sync_time"]
 
@@ -33,8 +32,10 @@ class ControllerConfig:
             if key not in controller_config:
                 raise ValueError(f"Missing required key: {key}")
             
-    def get_experiment_name(self):
+    @property
+    def experiment_name(self) -> str:
         return self._experiment_name
     
-    def get_sync_time(self):
+    @property
+    def sync_time(self) -> float:
         return self._sync_time

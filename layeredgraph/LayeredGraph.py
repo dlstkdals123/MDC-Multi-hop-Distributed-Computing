@@ -1,8 +1,8 @@
 from typing import Dict, List, Tuple
 
 from layeredgraph import LayerNode, LayerNodePair
-from config import NetworkConfig, ModelConfig
-from job import JobInfo
+from config import NetworkConfig
+from job import JobInfo, DNNModels
 from scheduling import *
 
 import importlib
@@ -13,10 +13,9 @@ import pandas as pd
 import glob
 
 class LayeredGraph:
-    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig):
+    def __init__(self, network_config: NetworkConfig, dnn_models: DNNModels):
         self._network_config = network_config
-        self._network = network_config.get_network()
-        self._model_config = model_config
+        self._dnn_models = dnn_models
         self._layered_graph = dict()
         self._layered_graph_backlog = dict()
         self._layer_nodes = []
@@ -55,8 +54,8 @@ class LayeredGraph:
         for source_node, destination_node, model_name in path:
             link = LayerNodePair(source_node, destination_node)
             if source_node.is_same_node(destination_node):
-                ratio = self._model_config.get_computing_ratio(model_name)
-                last_transfer_ratio = self._model_config.get_transfer_ratio(model_name)
+                ratio = self._dnn_models.get_computing_ratio(model_name)
+                last_transfer_ratio = self._dnn_models.get_transfer_ratio(model_name)
             else:
                 ratio = last_transfer_ratio
             
@@ -103,25 +102,25 @@ class LayeredGraph:
         self._layered_graph_backlog[link] = backlog
 
     def init_graph(self):
-        for source_ip in self._network:
-            source = LayerNode(source_ip, self._network_config.get_models()[source_ip])
+        for source_ip in self._network_config.get_network_list():
+            source = LayerNode(source_ip, self._network_config.get_models(source_ip))
             self._layer_nodes.append(source)
             self._layered_graph.setdefault(source, [])
             self._capacity.setdefault(source_ip, {})
 
-            for destination_ip in self._network[source_ip]:
+            for destination_ip in self._network_config.get_network_neighbors(source_ip):
                 self._capacity[source_ip].setdefault(destination_ip, 0)
-                destination = LayerNode(destination_ip, self._network_config.get_models()[destination_ip])
+                destination = LayerNode(destination_ip, self._network_config.get_models(destination_ip))
                 self._layered_graph[source].append(destination)
                 link = LayerNodePair(source, destination)
                 self._layer_node_pairs.append(link)
                 self._layered_graph_backlog.setdefault(link, 0)
 
-        for source_ip in self._network:
-            if source_ip in self._network_config.get_router():
+        for source_ip in self._network_config.get_network_list():
+            if source_ip in self._network_config.router:
                 continue
             
-            source = LayerNode(source_ip, self._network_config.get_models()[source_ip])
+            source = LayerNode(source_ip, self._network_config.get_models(source_ip))
             self._capacity[source_ip].setdefault(source_ip, 0)
             self._layered_graph.setdefault(source, [])
             self._layered_graph[source].append(source)
@@ -129,13 +128,13 @@ class LayeredGraph:
             self._layered_graph_backlog.setdefault(LayerNodePair(source, source), 0)
 
     def init_algorithm(self):
-        module_path = self._network_config.get_scheduling_algorithm().replace(".py", "").replace("/", ".")
+        module_path = self._network_config.scheduling_algorithm.replace(".py", "").replace("/", ".")
         self._algorithm_class = module_path.split(".")[-1]
         self._scheduling_algorithm = getattr(importlib.import_module(module_path), self._algorithm_class)()
         
     def schedule(self, source_ip: str, job_info: JobInfo) -> List[Tuple[LayerNode, LayerNode, str]]:
-        source_node = LayerNode(source_ip, self._network_config.get_models()[source_ip])
-        destination_node = LayerNode(job_info.get_terminal_destination(), self._network_config.get_models()[job_info.get_terminal_destination()])
+        source_node = LayerNode(source_ip, self._network_config.get_models(source_ip))
+        destination_node = LayerNode(job_info.get_terminal_destination(), self._network_config.get_models(job_info.get_terminal_destination()))
 
         input_size = job_info.get_input_size()
     
@@ -163,7 +162,7 @@ class LayeredGraph:
     # return : LayerNodePair(192.168.1.5-0, 192.168.1.6-0), LayerNodePair(192.168.1.5-1, 192.168.1.6-1) ...
     def get_links(self, layer_node_ip: str):
         links = []
-        layer_node = LayerNode(layer_node_ip, self._network_config.get_models()[layer_node_ip])
+        layer_node = LayerNode(layer_node_ip, self._network_config.get_models(layer_node_ip))
 
         neighbors = self._layered_graph[layer_node]
         for neighbor in neighbors:

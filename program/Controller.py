@@ -74,7 +74,7 @@ class Controller(Program):
             self._model_config = ModelConfig(model_configs)
 
     def init_path(self):
-        folder_name = self._controller_config.get_experiment_name() + "_" + datetime.now().strftime('%m-%d_%H%M%S')
+        folder_name = self._controller_config.experiment_name + "_" + datetime.now().strftime('%m-%d_%H%M%S')
         self._latency_log_path = f"./results/{folder_name}/latency"
         os.makedirs(self._latency_log_path, exist_ok=True)
 
@@ -92,8 +92,8 @@ class Controller(Program):
         callback_thread.start()
 
     def garbage_job_collector(self):
-        collect_garbage_job_time = self._network_config.get_collect_garbage_job_time()
-        for job_name in self._network_config.get_jobs():
+        collect_garbage_job_time = self._network_config.collect_garbage_job_time
+        for job_name in self._network_config.get_job_names():
             while True:
                 time.sleep(collect_garbage_job_time)
                 
@@ -131,8 +131,8 @@ class Controller(Program):
 
     def sync_backlog(self):
         while True:
-            time.sleep(self._controller_config.get_sync_time())
-            for node_ip in self._network_config.get_network():
+            time.sleep(self._controller_config.sync_time)
+            for node_ip in self._network_config.get_network_list():
                 # send RequestBacklog byte to source ip (response)
                 request_backlog = RequestBacklog()
                 request_backlog_bytes = pickle.dumps(request_backlog)
@@ -147,8 +147,8 @@ class Controller(Program):
 
     def sync_network_performance(self):
         while True:
-            time.sleep(self._controller_config.get_sync_time())
-            for node_ip in self._network_config.get_network():
+            time.sleep(self._controller_config.sync_time)
+            for node_ip in self._network_config.get_network_list():
                 # send RequestBacklog byte to source ip (response)
                 request_network_performance = RequestNetworkPerformance()
                 request_network_performance_bytes = pickle.dumps(request_network_performance)
@@ -269,7 +269,7 @@ class Controller(Program):
             self._layered_graph.update_network_performance_info('cloud', network_performance.gpu_capacity)
 
     def notify_finish(self):
-        for node_ip in self._network_config.get_network():
+        for node_ip in self._network_config.get_network_list():
             # send finish to nodes
             try:
                 publish.single("mdc/finish", b"", hostname=node_ip)

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 class ModelConfig:
     """
@@ -15,7 +15,7 @@ class ModelConfig:
         """
         self.check_validate(model_configs)
 
-        self._model_configs = model_configs
+        self._model_configs: Dict[str, any] = model_configs
 
     def check_validate(self, model_configs: Dict[str, any]):
         """
@@ -23,7 +23,6 @@ class ModelConfig:
         
         Raises:
             ValueError: 필수 정보가 누락되었을 때 발생합니다.
-            필수 정보는 매뉴얼을 참고해주세요.
         """
         required_keys = ["warmup", "computing_ratio", "transfer_ratio"]
 
@@ -36,21 +35,23 @@ class ModelConfig:
             if key == "warmup" and model_config[key] == "True" and "warmup_input" not in model_config:
                 raise ValueError(f"'warmup_input'가 누락되었습니다.")
             
-            # computing_ratio의 값이 0보다 크거나 같아야 함
             if model_config["computing_ratio"] < 0:
                 raise ValueError(f"'computing_ratio'의 값이 0보다 작습니다.")
 
-    def get_model_names(self):
+            if model_config["transfer_ratio"] < 0:
+                raise ValueError(f"'transfer_ratio'의 값이 0보다 작습니다.")
+
+    def get_model_names(self) -> List[str]:
         return list(self._model_configs.keys())
         
-    def get_warmup(self, model_name: str):
+    def get_warmup(self, model_name: str) -> str:
         return self._model_configs[model_name]["warmup"]
     
-    def get_warmup_input(self, model_name: str):
+    def get_warmup_input(self, model_name: str) -> List[int]:
         return self._model_configs[model_name]["warmup_input"]
     
-    def get_computing_ratio(self, model_name: str):
+    def get_computing_ratio(self, model_name: str) -> float:
         return self._model_configs[model_name]["computing_ratio"]
     
-    def get_transfer_ratio(self, model_name: str):
+    def get_transfer_ratio(self, model_name: str) -> float:
         return self._model_configs[model_name]["transfer_ratio"]
