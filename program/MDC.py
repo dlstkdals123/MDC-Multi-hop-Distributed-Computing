@@ -102,8 +102,7 @@ class MDC(Program):
         self._controller_publisher.publish("mdc/network_performance_info", network_performance_bytes)
 
     def init_node_publisher(self):
-        network = self._network_config.get_network()
-        neighbors = network[self._address]
+        neighbors = self._network_config.get_network_neighbors(self._address)
 
         for neighbor in neighbors:
             publisher = MQTTclient.Publisher(config={
@@ -183,7 +182,7 @@ class MDC(Program):
                 return
 
             # if cao
-            is_compressed = self._address == "192.168.1.8" and self._network_config.get_queue_name() == "cao"
+            is_compressed = self._address == "192.168.1.8" and self._network_config.queue_name == "cao"
 
             dnn_output, computing_capacity = self._job_manager.run(output=dnn_output, is_compressed=is_compressed)
             self._capacity_manager.update_computing_capacity(computing_capacity)

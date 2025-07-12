@@ -1,3 +1,4 @@
+import importlib
 from typing import Dict, List
 
 class NetworkConfig:
@@ -6,11 +7,11 @@ class NetworkConfig:
 
     Attributes:
         _queue_name (str): 큐 이름.
+        _scheduling_algorithm (str): 스케줄링 알고리즘 이름.
+        _collect_garbage_job_time (float): 가비지 컬렉션 작업 시간.
         _jobs (Dict[str, any]): 작업 정보.
         _network (Dict[str, any]): 네트워크 정보.
         _router (Dict[str, any]): 라우터 정보.
-        _scheduling_algorithm (str): 스케줄링 알고리즘 이름.
-        _collect_garbage_job_time (float): 가비지 컬렉션 작업 시간.
         _models (Dict[str, List[str]]): 각 노드가 소지할 수 있는 모델들.
     """
     def __init__(self, network_config: Dict[str, any]):
@@ -20,15 +21,13 @@ class NetworkConfig:
         """
         self.check_validate(network_config)
 
-        self._queue_name = network_config["queue_name"]
-        self._jobs = network_config["jobs"]
-        self._network = network_config["network"]
-        self._router = network_config["router"]
+        self._queue_name: str = network_config["queue_name"]
         self._scheduling_algorithm: str = network_config["scheduling_algorithm"]
-        self._collect_garbage_job_time: float = network_config["collect_garbage_job_time"]
-        
-        # Models 섹션이 있으면 추가
-        self._models = network_config["Models"]
+        self._collect_garbage_job_time: float = float(network_config["collect_garbage_job_time"])
+        self._jobs: Dict[str, any] = network_config["jobs"]
+        self._network: Dict[str, any] = network_config["network"]
+        self._router: List[str] = network_config["router"]
+        self._models: Dict[str, any] = network_config["models"]
 
     def check_validate(self, network_config: Dict[str, any]):
         """
@@ -36,39 +35,83 @@ class NetworkConfig:
         
         Raises:
             ValueError: 필수 정보가 누락되었을 때 발생합니다.
-            필수 정보는 매뉴얼을 참고해주세요.
         """
 
         required_keys = [
             "queue_name", 
+            "scheduling_algorithm",
+            "collect_garbage_job_time",
             "jobs", 
             "network", 
             "router", 
-            "scheduling_algorithm",
-            "collect_garbage_job_time"
+            "models"
         ]
 
         for key in required_keys:
             if key not in network_config:
                 raise ValueError(f"Missing required key: {key}")
+        
+        # 스케줄링 알고리즘 클래스 존재 여부 검증
+        self._validate_scheduling_algorithm(network_config["scheduling_algorithm"])
     
-    def get_queue_name(self):
-        return self._queue_name
+    def _validate_scheduling_algorithm(self, algorithm_path: str):
+        """
+        스케줄링 알고리즘 클래스가 실제로 존재하는지 검증합니다.
+        
+        Args:
+            algorithm_path (str): 스케줄링 알고리즘 클래스 경로 (예: "scheduling/RandomSelection.py")
+        
+        Raises:
+            ValueError: 스케줄링 알고리즘 클래스가 존재하지 않을 때 발생합니다.
+        """
+        try:
+            # 파일 경로에서 모듈 경로로 변환
+            if algorithm_path.endswith('.py'):
+                module_path = algorithm_path[:-3].replace('/', '.')
+            else:
+                module_path = algorithm_path.replace('/', '.')
+            
+            # 모듈이 존재하는지 확인
+            importlib.import_module(module_path)
+            
+        except ImportError:
+            raise ValueError(f"Scheduling algorithm class not found: {algorithm_path}")
+        except Exception as e:
+            raise ValueError(f"Error validating scheduling algorithm {algorithm_path}: {str(e)}")
 
-    def get_jobs(self):
-        return self._jobs
+    @property
+    def queue_name(self) -> str:
+        return self._queue_name
     
-    def get_network(self):
-        return self._network
-    
-    def get_router(self):
-        return self._router
-    
-    def get_scheduling_algorithm(self):
+    @property
+    def scheduling_algorithm(self) -> str:
         return self._scheduling_algorithm
     
-    def get_collect_garbage_job_time(self):
+    @property
+    def collect_garbage_job_time(self) -> float:
         return self._collect_garbage_job_time
+
+    def get_job_names(self) -> List[str]:
+        return list(self._jobs.keys())
+
+    def get_job_type(self, job_name: str) -> str:
+        return self._jobs[job_name]["job_type"]
     
-    def get_models(self):
-        return self._models
+    def get_job_source(self, job_name: str) -> str:
+        return self._jobs[job_name]["source"]
+    
+    def get_job_destination(self, job_name: str) -> str:
+        return self._jobs[job_name]["destination"]
+    
+    def get_network_list(self) -> List[str]:
+        return list(self._network.keys())
+    
+    def get_network_neighbors(self, source_ip: str) -> List[str]:
+        return self._network[source_ip]
+
+    @property
+    def router(self) -> List[str]:
+        return self._router
+
+    def get_models(self, ip: str) -> List[str]:
+        return self._models[ip]
