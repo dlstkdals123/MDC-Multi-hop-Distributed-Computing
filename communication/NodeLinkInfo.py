@@ -19,8 +19,6 @@ class NodeLinkInfo:
             computing_capacity (float): 노드의 평균 계산량.
             transfer_capacity (float): 노드의 평균 전송량.
         """
-        self.check_validate(ip, links, computing_capacity, transfer_capacity)
-
         self._ip = ip
         self._links = links
 
@@ -40,14 +38,18 @@ class NodeLinkInfo:
         if transfer_capacity < 0.0 or transfer_capacity > 1.0:
             raise ValueError("전송량은 0.0 ~ 1.0 사이의 실수여야 합니다.")
 
-    def get_ip(self):
+    @property
+    def ip(self):
         return self._ip
-
-    def get_links(self):
+    
+    @property
+    def links(self):
         return self._links
     
-    def get_computing_capacity(self):
+    @property
+    def computing_capacity(self):
         return self._computing_capacity
     
-    def get_transfer_capacity(self):
+    @property
+    def transfer_capacity(self):
         return self._transfer_capacity
