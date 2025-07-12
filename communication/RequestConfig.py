@@ -23,5 +23,6 @@ class RequestConfig:
         if not ip:
             raise ValueError("IP 주소는 빈 문자열이 될 수 없습니다.")
 
-    def get_ip(self):
+    @property
+    def ip(self):
         return self._ip

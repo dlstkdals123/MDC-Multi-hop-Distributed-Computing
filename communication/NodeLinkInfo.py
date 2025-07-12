@@ -25,14 +25,31 @@ class NodeLinkInfo:
         self._computing_capacity = computing_capacity
         self._transfer_capacity = transfer_capacity
 
-    def get_ip(self):
-        return self._ip
+    def check_validate(self, ip: str, links: Dict[LayerNodePair, float], computing_capacity: float, transfer_capacity: float):
+        """
+        IP 주소와 링크 정보가 올바른지 검증합니다.
+        """
+        if not ip:
+            raise ValueError("IP 주소는 빈 문자열이 될 수 없습니다.")
+        
+        if computing_capacity < 0.0 or computing_capacity > 1.0:
+            raise ValueError("계산량은 0.0 ~ 1.0 사이의 실수여야 합니다.")
+        
+        if transfer_capacity < 0.0 or transfer_capacity > 1.0:
+            raise ValueError("전송량은 0.0 ~ 1.0 사이의 실수여야 합니다.")
 
-    def get_links(self):
+    @property
+    def ip(self):
+        return self._ip
+    
+    @property
+    def links(self):
         return self._links
     
-    def get_computing_capacity(self):
+    @property
+    def computing_capacity(self):
         return self._computing_capacity
     
-    def get_transfer_capacity(self):
+    @property
+    def transfer_capacity(self):
         return self._transfer_capacity

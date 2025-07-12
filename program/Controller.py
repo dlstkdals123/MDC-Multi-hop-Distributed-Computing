@@ -171,7 +171,7 @@ class Controller(Program):
     def handle_config(self, topic, payload, publisher):
         # get source ip address
         node_info: RequestConfig = pickle.loads(payload)
-        ip = node_info.get_ip()
+        ip = node_info.ip
 
         print(f"ip: {ip} requested config.")
 
@@ -189,8 +189,8 @@ class Controller(Program):
 
     def handle_node_info(self, topic, payload, publisher):
         node_link_info: NodeLinkInfo = pickle.loads(payload)
-        node_ip = node_link_info.get_ip()
-        links = node_link_info.get_links()
+        node_ip = node_link_info.ip
+        links = node_link_info.links
         
         total_links = self._layered_graph.get_links(node_ip)
         for link in total_links:
@@ -199,8 +199,8 @@ class Controller(Program):
         self._layered_graph.set_graph(links)
         self._layered_graph.set_capacity(
             node_ip,
-            node_link_info.get_computing_capacity(),
-            node_link_info.get_transfer_capacity()
+            node_link_info.computing_capacity,
+            node_link_info.transfer_capacity
         )
 
         if self._job_info_dummy:
@@ -259,14 +259,14 @@ class Controller(Program):
     def handle_network_performance_info(self, topic, payload, publisher):
         network_performance: NetworkPerformance = pickle.loads(payload)
 
-        if network_performance.get_ip() == "192.168.1.5":
-            self._layered_graph.update_network_performance_info('end', network_performance.get_gpu_capacity())
+        if network_performance.ip == "192.168.1.5":
+            self._layered_graph.update_network_performance_info('end', network_performance.gpu_capacity)
 
-        elif network_performance.get_ip() == "192.168.1.7":
-            self._layered_graph.update_network_performance_info('edge', network_performance.get_gpu_capacity())
+        elif network_performance.ip == "192.168.1.7":
+            self._layered_graph.update_network_performance_info('edge', network_performance.gpu_capacity)
 
-        elif network_performance.get_ip() == "192.168.1.8":
-            self._layered_graph.update_network_performance_info('cloud', network_performance.get_gpu_capacity())
+        elif network_performance.ip == "192.168.1.8":
+            self._layered_graph.update_network_performance_info('cloud', network_performance.gpu_capacity)
 
     def notify_finish(self):
         for node_ip in self._network_config.get_network():
@@ -279,7 +279,7 @@ class Controller(Program):
     def handle_request_arrival_rate(self, topic, payload, publisher):
         # get source ip address
         node_info: RequestConfig = pickle.loads(payload)
-        ip = node_info.get_ip()
+        ip = node_info.ip
 
         arrival_rate_bytes = pickle.dumps(self._arrival_rate)
 

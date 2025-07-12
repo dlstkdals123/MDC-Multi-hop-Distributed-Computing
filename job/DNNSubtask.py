@@ -18,11 +18,7 @@ class DNNSubtask:
         return self._subtask_info
 
     def get_backlog(self):
-        if self._subtask_info.is_transmission():
-            return self.get_computing()
-        # computing dnn
-        elif self._subtask_info.is_computing():
-            return self.get_transfer()
+        return self.get_computing() if self._subtask_info.is_computing() else self.get_transfer()
         
     def get_computing(self):
         return self._computing

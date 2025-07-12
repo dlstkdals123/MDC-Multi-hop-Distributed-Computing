@@ -28,7 +28,7 @@ class NetworkConfig:
         self._collect_garbage_job_time: float = network_config["collect_garbage_job_time"]
         
         # Models 섹션이 있으면 추가
-        self._models = network_config.get("Models", {})
+        self._models = network_config["Models"]
 
     def check_validate(self, network_config: Dict[str, any]):
         """
@@ -71,11 +71,4 @@ class NetworkConfig:
         return self._collect_garbage_job_time
     
     def get_models(self):
-        """각 노드가 소지할 수 있는 모델들을 반환합니다."""
         return self._models
-    
-    def get_model_config(self, model_name: str):
-        """특정 모델의 설정을 반환합니다. 이는 Controller에서 ModelConfig를 통해 처리됩니다."""
-        # 이 메서드는 Controller에서 ModelConfig를 통해 처리되므로 None을 반환
-        # 실제 구현은 Controller에서 ModelConfig를 통해 처리
-        return None
