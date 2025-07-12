@@ -5,7 +5,6 @@ class ControllerConfig:
     Controller 설정 정보를 저장하는 클래스입니다.
 
     Attributes:
-        _controller_config (Dict[str, any]): 컨트롤러 설정 정보가 담긴 Json 형식의 딕셔너리.
         _experiment_name (str): 실험 이름
         _sync_time (int): 동기화 시간.
     """
@@ -17,10 +16,8 @@ class ControllerConfig:
         """
         self.check_validate(controller_config)
 
-        self._controller_config = controller_config
-
-        self._experiment_name = self._controller_config["experiment_name"]
-        self._sync_time = self._controller_config["sync_time"]
+        self._experiment_name = controller_config["experiment_name"]
+        self._sync_time = controller_config["sync_time"]
 
     def check_validate(self, controller_config: Dict[str, any]):
         """

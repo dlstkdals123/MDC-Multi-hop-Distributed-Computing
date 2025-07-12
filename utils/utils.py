@@ -1,4 +1,5 @@
 import subprocess, socket, re, os
+from typing import Dict
 
 import csv
 
@@ -58,6 +59,8 @@ def save_virtual_backlog(file_path, virtual_backlog):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
+    # print("save virtual backlog")
+    # print(virtual_backlog)
     sorted_virtual_backlog = sorted(virtual_backlog.items(), key=lambda item: item[0])
     links = [link.to_string() for link, _ in sorted_virtual_backlog]
     backlogs = [backlog for _, backlog in sorted_virtual_backlog]
@@ -80,8 +83,14 @@ def save_path(file_path, path):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
-    path = [node.to_string() for node in path]
-    path_string = ','.join(path)
+    path_list = []
+    for source_node, destination_node, model_name in path:
+        if model_name == "":
+            path_list.append(source_node.to_string() + "->" + destination_node.to_string())
+        else:
+            path_list.append(source_node.to_string() + ": " + model_name)
+
+    path_string = ','.join(path_list)
 
     # 파일에 데이터 쓰기
     with open(file_path, 'a', newline='') as csvfile:

@@ -1,10 +1,11 @@
-from typing import Dict, List, Tuple
+from typing import Tuple
 import torch
 
 from job import *
 from utils import *
 from communication import *
 from virtual_queue import VirtualQueue, AheadOutputQueue
+from config import NetworkConfig, ModelConfig
 
 import threading
 import time
@@ -19,35 +20,34 @@ except ImportError:
         return int(now.timestamp() * 1e9)
 
 class JobManager:
-    def __init__(self, address, network_info: NetworkInfo):
+    def __init__(self, address, network_config: NetworkConfig, model_config: ModelConfig):
         # TODO
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        self._network_info = network_info
+        self._network_config = network_config
+        self._model_config = model_config
+        self._dnn_models = DNNModels(model_config.get_model_names(), model_config, self._device, address)
 
         self._virtual_queue = VirtualQueue()
         self._ahead_of_time_outputs = AheadOutputQueue()
-        self._dnn_models = DNNModels(self._network_info, self._device, address)
         
         self.init_garbage_subtask_collector()
 
-    def is_subtask_exists(self, output: DNNOutput):
+    def is_subtask_exists(self, output: DNNOutput) -> bool:
         previous_subtask_info = output.get_subtask_info()
-        if self._virtual_queue.exist_subtask_info(previous_subtask_info):
-            return True
-        else:
-            return False
-        
-    def is_dnn_output_exists(self, subtask_info: SubtaskInfo):
-        if self._ahead_of_time_outputs.exist_dnn_output(subtask_info):
-            return True
-        else:
-            return False
+        return bool(self._virtual_queue.exist_subtask_info(previous_subtask_info))
+    
+    def update_dnn_output(self, dnn_output: DNNOutput):
+        previous_subtask_info = dnn_output.get_subtask_info()
+        current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
+        return DNNOutput(dnn_output.get_output(), current_subtask_info)
+    
+    def is_dnn_output_exists(self, subtask_info: SubtaskInfo) -> bool:
+        return bool(self._ahead_of_time_outputs.exist_dnn_output(subtask_info))
         
     # add dnn_output if schedule is not arrived yet
-    def pop_dnn_output(self, subtask_info: SubtaskInfo):
-        dnn_output = self._ahead_of_time_outputs.pop_dnn_output(subtask_info)
-        return dnn_output
+    def pop_dnn_output(self, subtask_info: SubtaskInfo) -> DNNOutput:
+        return self._ahead_of_time_outputs.pop_dnn_output(subtask_info)
         
     def init_garbage_subtask_collector(self):
         garbage_subtask_collector_thread = threading.Thread(target=self.garbage_subtask_collector, args=())
@@ -57,14 +57,14 @@ class JobManager:
         garbage_dnn_output_collector_thread.start()
 
     def garbage_subtask_collector(self):
-        collect_garbage_job_time = self._network_info.get_collect_garbage_job_time()
+        collect_garbage_job_time = self._network_config.get_collect_garbage_job_time()
         while True:
             time.sleep(collect_garbage_job_time)
 
             self._virtual_queue.garbage_subtask_collector(collect_garbage_job_time)
 
     def garbage_dnn_output_collector(self):
-        collect_garbage_job_time = self._network_info.get_collect_garbage_job_time()
+        collect_garbage_job_time = self._network_config.get_collect_garbage_job_time()
         while True:
             time.sleep(collect_garbage_job_time)
 
@@ -76,7 +76,7 @@ class JobManager:
     def run(self, output: DNNOutput, is_compressed: bool = False) -> Tuple[DNNOutput, float]:
         if is_compressed:
             job_name = output.get_subtask_info().get_job_name()
-            decompressed_shape = tuple(self._network_info.get_jobs()[job_name]["real_input"])
+            decompressed_shape = tuple(self._network_config.get_jobs()[job_name]["real_input"])
             real_data = torch.rand(decompressed_shape)
             output = DNNOutput(real_data, output.get_subtask_info())
 
@@ -106,15 +106,15 @@ class JobManager:
         
     # add subtask_info based SubtaskInfo
     def add_subtask(self, subtask_info: SubtaskInfo):
-        job_name = subtask_info.get_job_name()
-        model_index = subtask_info.get_model_index()
-        subtask_model = self._dnn_models.get_subtask(job_name, model_index) if subtask_info.is_computing() else None
-        computing = self._dnn_models.get_computing(job_name, model_index) * subtask_info.get_input_size()
-        transfer = self._dnn_models.get_transfer(job_name, model_index) * subtask_info.get_input_size()
+
+        model_name = subtask_info.get_model_name()
+        model: torch.nn.Module = self._dnn_models.get_model(model_name)
+        computing = self._dnn_models.get_computing_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_computing() else 0
+        transfer = self._dnn_models.get_transfer_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_transmission() and model_name != "" else 0
 
         subtask = DNNSubtask(
             subtask_info = subtask_info,
-            dnn_model = subtask_model,
+            dnn_model = model,
             computing = computing,
             transfer = transfer
         )

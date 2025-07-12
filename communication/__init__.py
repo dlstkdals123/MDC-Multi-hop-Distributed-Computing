@@ -1,5 +1,4 @@
-from communication.NetworkInfo import NetworkInfo
-from communication.RequestNetworkInfo import RequestNetworkInfo
+from communication.RequestConfig import RequestConfig
 from communication.NodeLinkInfo import NodeLinkInfo
 from communication.RequestBacklog import RequestBacklog
 from communication.RequestNetworkPerformance import RequestNetworkPerformance

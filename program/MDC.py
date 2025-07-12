@@ -2,24 +2,27 @@ import sys, os
  
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
+import queue
+import threading
 from program import Program
 from job import *
 from communication import *
-from job.JobManager import JobManager
 from utils.utils import get_ip_address
 from spec.GPUUtilManager import GPUUtilManager
+from config import NetworkConfig, ModelConfig
 
 import paho.mqtt.publish as publish
 import MQTTclient
 import pickle
 import time
+from typing import Dict, Any
 
 class MDC(Program):
-    def __init__(self, sub_config, pub_configs):
-        self.sub_config = sub_config
+    def __init__(self, sub_configs, pub_configs):
+        self.sub_configs = sub_configs
         self.pub_configs = pub_configs
         self._address = get_ip_address(["eth0", "wlan0"])
-        self._node_info = RequestNetworkInfo(self._address)
+        self._node_info = RequestConfig(self._address)
         self._controller_publisher = MQTTclient.Publisher(config={
             "ip" : "192.168.1.2",
             "port" : 1883
@@ -29,20 +32,21 @@ class MDC(Program):
         self.topic_dispatcher = {
             "job/dnn": self.handle_dnn,
             "job/subtask_info": self.handle_subtask_info,
-            "mdc/network_info" : self.handle_network_info,
+            "mdc/config" : self.handle_config,
             "mdc/node_info": self.handle_request_backlog,
             "mdc/finish": self.handle_finish,
             "mdc/network_performance_info": self.handle_requset_network_performance_info,
         }
 
         self.topic_dispatcher_checker = {
-            "job/dnn": [(self.check_network_info_exists, True)],
+            "job/dnn": [(self.check_network_config_exists, True)],
             "job/subtask_info": [(self.check_job_manager_exists, True)],
-            "mdc/network_info": [(self.check_job_manager_exists, False)],
+            "mdc/config": [(self.check_job_manager_exists, False)],
             "mdc/node_info": [(self.check_job_manager_exists, True)],
         }
 
-        self._network_info = None
+        self._network_config = None
+        self._model_config = None
         self._job_manager = None
         self._neighbors = None
         self._backlogs_zero_flag = False
@@ -50,19 +54,19 @@ class MDC(Program):
         self._capacity_manager = CapacityManager()
         self._gpu_util_manager = GPUUtilManager()
 
-        super().__init__(self.sub_config, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
+        super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
-        self.request_network_info()
+        self.request_config()
 
     # request network information to network controller
     # sending node info.
-    def request_network_info(self):
-        while self._network_info == None:
-            print("Requested network info..")
+    def request_config(self):
+        while self._network_config == None:
+            print("Requested config..")
             node_info_bytes = pickle.dumps(self._node_info)
 
-            # send NetworkInfo byte to source ip (response)
-            self._controller_publisher.publish("mdc/network_info", node_info_bytes)
+            # send config byte to source ip (response)
+            self._controller_publisher.publish("mdc/config", node_info_bytes)
 
             time.sleep(2)
 
@@ -75,13 +79,16 @@ class MDC(Program):
             dnn_output = self._job_manager.pop_dnn_output(subtask_info) # make another method
             self.run_dnn(dnn_output)
     
-    def handle_network_info(self, topic, data, publisher):
-        self._network_info: NetworkInfo = pickle.loads(data)
-        self._job_manager = JobManager(self._address, self._network_info)
+    def handle_config(self, topic, data, publisher):
+        config: Dict[str, Any] = pickle.loads(data)
+        self._network_config: NetworkConfig = config["network"]
+        self._model_config: ModelConfig = config["model"]
+
+        self._job_manager = JobManager(self._address, self._network_config, self._model_config)
 
         self.init_node_publisher()
 
-        print(f"Succesfully get network info.")
+        print(f"Succesfully get config.")
 
     def handle_requset_network_performance_info(self, topic, data, publisher):
         gpu_usage = self._gpu_util_manager.get_all_gpu_stats()["utilization"]
@@ -95,7 +102,7 @@ class MDC(Program):
         self._controller_publisher.publish("mdc/network_performance_info", network_performance_bytes)
 
     def init_node_publisher(self):
-        network = self._network_info.get_network()
+        network = self._network_config.get_network()
         neighbors = network[self._address]
 
         for neighbor in neighbors:
@@ -127,19 +134,14 @@ class MDC(Program):
         # send NodeLinkInfo byte to source ip (response)
         self._controller_publisher.publish("mdc/node_info", node_link_info_bytes)
 
-    def check_network_info_exists(self, data = None):
-        if self._network_info == None:
-            return False
+    def check_network_config_exists(self, data = None) -> bool:
+        return self._network_config is not None
+    
+    def check_model_config_exists(self, data = None) -> bool:
+        return self._model_config is not None
         
-        elif self._network_info != None:
-            return True
-        
-    def check_job_manager_exists(self, data = None):
-        if self._job_manager == None:
-            return False
-        
-        elif self._job_manager != None:
-            return True
+    def check_job_manager_exists(self, data = None) -> bool:
+        return self._job_manager is not None
 
     def handle_dnn(self, topic, data, publisher):
         previous_dnn_output: DNNOutput = pickle.loads(data)
@@ -150,45 +152,53 @@ class MDC(Program):
         time.sleep(5)
         os._exit(1)
 
-    def run_dnn(self, previous_dnn_output: DNNOutput):
-        # terminal node
-        if previous_dnn_output.is_terminal_destination(self._address) and not self._job_manager.is_subtask_exists(previous_dnn_output): 
-            subtask_info = previous_dnn_output.get_subtask_info()
-            subtask_info_bytes = pickle.dumps(subtask_info)
+    def run_dnn(self, dnn_output: DNNOutput):
+        while True:
 
-            # send subtask info to controller
-            self._controller_publisher.publish("job/response", subtask_info_bytes)
-
-        else: 
-            if self._job_manager.is_subtask_exists(previous_dnn_output):
-                # if cao
-                is_compressed = self._address == "192.168.1.8" and self._network_info.get_queue_name() == "cao"
-
-                dnn_output, computing_capacity = self._job_manager.run(output=previous_dnn_output, is_compressed=is_compressed)
-
+            # terminal node
+            if dnn_output.get_subtask_info().is_terminated():
                 subtask_info = dnn_output.get_subtask_info()
-                destination_ip = subtask_info.get_destination().get_ip()
+                subtask_info_bytes = pickle.dumps(subtask_info)
 
-                dnn_output.get_subtask_info().set_next_subtask_id()
+                # send subtask info to controller
+                self._controller_publisher.publish("job/response", subtask_info_bytes)
+                return
 
+            # subtask가 도착하기 전에 dnn_output이 온 경우
+            if not self._job_manager.is_subtask_exists(dnn_output):
+                self._job_manager.add_dnn_output(dnn_output)
+                return
+            
+            dnn_output = self._job_manager.update_dnn_output(dnn_output)
+
+            if dnn_output.get_subtask_info().is_transmission():
+                subtask_info = dnn_output.get_subtask_info()
+                subtask_info.set_next_source()
+                destination_ip = subtask_info.get_source().get_ip()
                 dnn_output_bytes = pickle.dumps(dnn_output)
                     
                 # send job to next node
                 publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
 
-                self._capacity_manager.update_computing_capacity(computing_capacity)
-            else:
-                self._job_manager.add_dnn_output(previous_dnn_output)
+                return
+
+            # if cao
+            is_compressed = self._address == "192.168.1.8" and self._network_config.get_queue_name() == "cao"
+
+            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output, is_compressed=is_compressed)
+            self._capacity_manager.update_computing_capacity(computing_capacity)
+
+            dnn_output.get_subtask_info().set_next_source()
 
        
 if __name__ == '__main__':
-    sub_config = {
+    sub_configs = {
             "ip": "127.0.0.1", 
             "port": 1883,
             "topics": [
                 ("job/dnn", 1),
                 ("job/subtask_info", 1),
-                ("mdc/network_info", 1),
+                ("mdc/config", 1),
                 ("mdc/node_info", 1),
                 ("mdc/finish", 1),
                 ("mdc/network_performance_info", 1),
@@ -198,5 +208,5 @@ if __name__ == '__main__':
     pub_configs = [
     ]
     
-    mdc = MDC(sub_config=sub_config, pub_configs=pub_configs)
+    mdc = MDC(sub_configs=sub_configs, pub_configs=pub_configs)
     mdc.start()

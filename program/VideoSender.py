@@ -28,7 +28,7 @@ TARGET_DEPTH = 3
 
 
 class VideoSender(MDC):
-    def __init__(self, sub_config, pub_configs, job_name):
+    def __init__(self, sub_configs, pub_configs, job_name):
         self._address = get_ip_address(["eth0", "wlan0"])
         self._frame = None
 
@@ -36,18 +36,18 @@ class VideoSender(MDC):
         self._job_info = None
         self._frame_list = dict()
 
-        super().__init__(sub_config, pub_configs)
+        super().__init__(sub_configs, pub_configs)
 
         self.topic_dispatcher["mdc/arrival_rate"] = self.handle_arrival_rate
 
 
     def init_job_info(self):
         source_ip = self._address
-        terminal_destination = self._network_info.get_jobs()[self._job_name]["destination"]
-        job_type = self._network_info.get_jobs()[self._job_name]["job_type"]
+        terminal_destination = self._network_config.get_jobs()[self._job_name]["destination"]
+        job_type = self._network_config.get_jobs()[self._job_name]["job_type"]
         job_name = self._job_name
         start_time = time_ns()
-        input_size = None # should be initiailzed
+        input_size = 1 * TARGET_DEPTH * TARGET_HEIGHT * TARGET_WIDTH # should be initiailzed
 
         job_info = JobInfo(source_ip, terminal_destination, job_type, job_name, start_time, input_size)
 
@@ -60,13 +60,13 @@ class VideoSender(MDC):
 
         subtask_layer_node = subtask_info.get_source()
 
-        if subtask_layer_node.get_ip() == self._address and subtask_layer_node.get_layer() == 0:
+        if subtask_layer_node.get_ip() == self._address:
             job_id = subtask_info.get_job_id()
             input_frame = DNNOutput(torch.tensor(self._frame_list[job_id]).float().view(1, TARGET_DEPTH, TARGET_HEIGHT, TARGET_WIDTH), subtask_info)
             dnn_output, computing_capacity = self._job_manager.run(input_frame)
             destination_ip = subtask_info.get_destination().get_ip()
 
-            dnn_output.get_subtask_info().set_next_subtask_id()
+            dnn_output.get_subtask_info().set_next_source()
 
             dnn_output_bytes = pickle.dumps(dnn_output)
                 
@@ -104,33 +104,31 @@ class VideoSender(MDC):
             self.send_frame()
 
     def set_job_info_time(self):
-        if self._network_info == None:
+        if not self._network_config:
             return False
         
-        else:
-            if self._job_info == None:
-                self.init_job_info()
-                return True
-            else:
-                self._job_info.set_start_time(time_ns())
-                return True
+        if not self._job_info:
+            self.init_job_info()
+            return True
+        
+        self._job_info.set_start_time(time_ns())
+        return True
             
     def set_job_info_input_size(self, frame: np.array):
-        if self._network_info == None:
+        if not self._network_config:
             return False
         
-        else:
-            if self._job_info == None:
-                self.init_job_info()
-                return True
-            else:
-                input_size = sys.getsizeof(torch.tensor(frame).storage())
-                self._job_info.set_input_size(input_size)
-                return True
+        if not self._job_info:
+            self.init_job_info()
+            return True
+        
+        input_size = sys.getsizeof(torch.tensor(frame).storage())
+        self._job_info.set_input_size(input_size)
+        return True
             
     def wait_until_can_send(self):
-        print("Waiting for network info.")
-        while not (self.check_job_manager_exists() and self.check_network_info_exists()):
+        print("Waiting for config.")
+        while not (self.check_job_manager_exists() and self.check_network_config_exists()):
             time.sleep(1.0)
             
     def run_camera_streamer(self):
@@ -160,13 +158,13 @@ class VideoSender(MDC):
         return 0.5
 
 if __name__ == '__main__':
-    sub_config = {
+    sub_configs = {
             "ip": "127.0.0.1", 
             "port": 1883,
             "topics": [
                 ("job/dnn", 1),
                 ("job/subtask_info", 1),
-                ("mdc/network_info", 1),
+                ("mdc/config", 1),
                 ("mdc/node_info", 1),
             ],
         }
@@ -175,5 +173,5 @@ if __name__ == '__main__':
 
     job_name = "test job 1"
 
-    sender = VideoSender(sub_config, pub_configs, job_name)
+    sender = VideoSender(sub_configs, pub_configs, job_name)
     sender.start()

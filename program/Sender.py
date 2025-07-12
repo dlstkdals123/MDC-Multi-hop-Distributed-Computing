@@ -7,8 +7,6 @@ import time
 from threading import Thread
 import paho.mqtt.publish as publish
 import numpy as np
-import posix_ipc
-import mmap
 import torch
 try:
     from time import time_ns
@@ -40,8 +38,8 @@ class Sender(MDC):
 
     def init_job_info(self, input_size: int):
         source_ip = self._address
-        terminal_destination = self._network_info.get_jobs()[self._job_name]["destination"]
-        job_type = self._network_info.get_jobs()[self._job_name]["job_type"]
+        terminal_destination = self._network_config.get_jobs()[self._job_name]["destination"]
+        job_type = self._network_config.get_jobs()[self._job_name]["job_type"]
         job_name = self._job_name
         start_time = time_ns()
         input_size = input_size 
@@ -102,33 +100,31 @@ class Sender(MDC):
                 self.handle_finish_from_agent()
 
     def set_job_info_time(self):
-        if self._network_info == None:
+        if not self._network_config:
             return False
         
-        else:
-            if self._job_info == None:
-                self.init_job_info()
-                return True
-            else:
-                self._job_info.set_start_time(time_ns())
-                return True
+        if not self._job_info:
+            self.init_job_info()
+            return True
+
+        self._job_info.set_start_time(time_ns())
+        return True
             
     def set_job_info_input_size(self, frame: np.array):
-        if self._network_info == None:
+        if not self._network_config:
             return False
         
-        else:
-            if self._job_info == None:
-                self.init_job_info()
-                return True
-            else:
-                input_size = sys.getsizeof(torch.tensor(frame).storage())
-                self._job_info.set_input_size(input_size)
-                return True
+        if not self._job_info:
+            self.init_job_info()
+            return True
+        
+        input_size = sys.getsizeof(torch.tensor(frame).storage())
+        self._job_info.set_input_size(input_size)
+        return True
             
     def wait_until_can_send(self):
         print("Waiting for network info.")
-        while not (self.check_job_manager_exists() and self.check_network_info_exists()):
+        while not (self.check_job_manager_exists() and self.check_config_exists()):
             time.sleep(1.0)
             
     def arrival_rate_getter(self):
@@ -142,7 +138,7 @@ class Sender(MDC):
         arrival_rate_thread.start()
 
     def init_communicator(self):
-        self._communicator = Communicator(queue_name=self._network_info.get_queue_name(), 
+        self._communicator = Communicator(queue_name=self._network_config.get_queue_name(), 
                                           buffer_size=4096, 
                                           is_agent=False,
                                           debug_mode=False)
