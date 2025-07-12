@@ -43,4 +43,4 @@ class DNNModels:
         return self._computing_ratio[model_name]
     
     def get_transfer_ratio(self, model_name: str):
-        return self._transfer_ratio[model_name]
+        return self._transfer_ratio[model_name] if model_name != "" else 1

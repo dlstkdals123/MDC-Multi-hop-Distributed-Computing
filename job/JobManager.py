@@ -110,7 +110,7 @@ class JobManager:
         model_name = subtask_info.get_model_name()
         model: torch.nn.Module = self._dnn_models.get_model(model_name)
         computing = self._dnn_models.get_computing_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_computing() else 0
-        transfer = self._dnn_models.get_transfer_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_transmission() and model_name != "" else 0
+        transfer = self._dnn_models.get_transfer_ratio(model_name) * subtask_info.get_input_size() if subtask_info.is_transmission() else 0
 
         subtask = DNNSubtask(
             subtask_info = subtask_info,
