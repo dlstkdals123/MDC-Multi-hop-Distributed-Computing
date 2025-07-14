@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 class ModelConfig:
     """
@@ -14,6 +14,7 @@ class ModelConfig:
             model_configs (Dict[str, any]): 모델 이름과 모델 설정 정보가 담긴 Json 형식의 딕셔너리.
         """
         self.check_validate(model_configs)
+        self.init_model_configs(model_configs)
 
         self._model_configs: Dict[str, any] = model_configs
 
@@ -31,8 +32,11 @@ class ModelConfig:
                 if key not in model_config:
                     raise ValueError(f"'{key}'가 누락되었습니다.")
 
+    def init_model_configs(self, model_configs: Dict[str, any]):
+        model_configs["input_size"] = tuple(model_configs["input_size"])
+
     def get_model_names(self) -> List[str]:
         return list(self._model_configs.keys())
         
-    def get_input_size(self, model_name: str) -> List[int]:
+    def get_input_size(self, model_name: str) -> Tuple[int, ...]:
         return self._model_configs[model_name]["input_size"]
