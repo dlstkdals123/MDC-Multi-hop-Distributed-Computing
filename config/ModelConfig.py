@@ -24,7 +24,7 @@ class ModelConfig:
         Raises:
             ValueError: 필수 정보가 누락되었을 때 발생합니다.
         """
-        required_keys = ["warmup", "input_size"]
+        required_keys = ["input_size"]
 
         for _, model_config in model_configs.items():
             for key in required_keys:
@@ -34,8 +34,5 @@ class ModelConfig:
     def get_model_names(self) -> List[str]:
         return list(self._model_configs.keys())
         
-    def get_warmup(self, model_name: str) -> str:
-        return self._model_configs[model_name]["warmup"]
-    
     def get_input_size(self, model_name: str) -> List[int]:
         return self._model_configs[model_name]["input_size"]

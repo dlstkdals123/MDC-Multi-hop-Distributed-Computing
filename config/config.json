@@ -32,7 +32,6 @@
     },
     "Model": {
         "yolov5": {
-            "warmup": "True",
             "input_size": [1, 3, 320, 320]
         }
     }

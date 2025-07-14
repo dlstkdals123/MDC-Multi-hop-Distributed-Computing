@@ -22,28 +22,25 @@ class DNNModels:
         for model_name in model_names:
             model = load_model(model_name).to(self._device)
             self._models[model_name] = model
-            
-            self.init_computing_and_transfer(model, model_config.get_input_size(model_name))
-            self.warmup(model, model_config.get_input_size(model_name))
 
-    def init_computing_and_transfer(self, model: torch.nn.Module, input_shape: List[int]):
-        with torch.no_grad():
-            FLOPs, _, _ = calculate_flops(model=model, 
-                                        input_shape=input_shape,
-                                        output_as_string=False,
-                                        output_precision=4)
+        self.init_computing_and_transfer(model_config)
 
-            self._computing[model_name] = FLOPs
+    def init_computing_and_transfer(self, model_config: ModelConfig):
+        for model_name, model in self._models.items():
+            input_shape = model_config.get_input_size(model_name)
 
-            x: torch.Tensor = torch.zeros(input_shape).to(self._device)
-            x: torch.Tensor = model(x)
+            with torch.no_grad():
+                FLOPs, _, _ = calculate_flops(model=model, 
+                                            input_shape=input_shape,
+                                            output_as_string=False,
+                                            output_precision=4)
 
-            self._transfer[model_name] = sys.getsizeof(x.storage())
-            
-    def warmup(self, model: torch.nn.Module, input_shape: List[int]):
-        with torch.no_grad():
-            x = torch.zeros(input_shape).to(self._device)
-            x : torch.Tensor = model(x)
+                self._computing[model_name] = FLOPs
+
+                x: torch.Tensor = torch.zeros(input_shape).to(self._device)
+                x: torch.Tensor = model(x)
+
+                self._transfer[model_name] = sys.getsizeof(x.storage())
 
     def get_model(self, model_name: str):
         return self._models[model_name]
