@@ -33,7 +33,8 @@ class ModelConfig:
                     raise ValueError(f"'{key}'가 누락되었습니다.")
 
     def init_model_configs(self, model_configs: Dict[str, any]):
-        model_configs["input_size"] = tuple(model_configs["input_size"])
+        for model_name, model_config in model_configs.items():
+            model_config["input_size"] = tuple(model_config["input_size"])
 
     def get_model_names(self) -> List[str]:
         return list(self._model_configs.keys())
