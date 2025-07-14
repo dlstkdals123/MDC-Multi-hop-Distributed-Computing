@@ -34,7 +34,7 @@ class DNNModels:
                                             input_shape=input_shape,
                                             output_as_string=False,
                                             output_precision=4,
-                                            print_result=False)
+                                            print_results=False)
 
                 self._computing[model_name] = FLOPs
 
