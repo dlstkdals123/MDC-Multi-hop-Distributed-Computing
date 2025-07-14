@@ -42,14 +42,14 @@ class VideoSender(MDC):
 
 
     def init_job_info(self):
-        source_ip = self._address
-        terminal_destination = self._network_config.get_job_destination(self._job_name)
-        job_type = self._network_config.get_job_type(self._job_name)
         job_name = self._job_name
+        job_type = self._network_config.get_job_type(job_name)
+        input_size = None # 나중에 send_frame에서 재설정
+        source_ip = self._address
+        terminal_destination = self._network_config.get_job_destination(job_name)
         start_time = time_ns()
-        input_size = 1 * TARGET_DEPTH * TARGET_HEIGHT * TARGET_WIDTH # should be initiailzed
 
-        job_info = JobInfo(source_ip, terminal_destination, job_type, job_name, start_time, input_size)
+        job_info = JobInfo(job_name, job_type, input_size, source_ip, terminal_destination, start_time)
 
         self._job_info = job_info
 
