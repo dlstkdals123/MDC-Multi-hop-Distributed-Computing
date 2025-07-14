@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 
 import torch
 import sys
@@ -33,14 +33,18 @@ class DNNModels:
                 FLOPs, _, _ = calculate_flops(model=model, 
                                             input_shape=input_shape,
                                             output_as_string=False,
-                                            output_precision=4)
+                                            output_precision=4,
+                                            print_result=False)
 
                 self._computing[model_name] = FLOPs
 
                 x: torch.Tensor = torch.zeros(input_shape).to(self._device)
-                x: torch.Tensor = model(x)
+                x: Union[torch.Tensor, List[torch.Tensor]] = model(x)
 
-                self._transfer[model_name] = sys.getsizeof(x.storage())
+                if isinstance(x, list):
+                    self._transfer[model_name] = sum(sys.getsizeof(x_prime.storage()) for x_prime in x)
+                else:
+                    self._transfer[model_name] = sys.getsizeof(x.storage())
 
     def get_model(self, model_name: str):
         return self._models[model_name]
