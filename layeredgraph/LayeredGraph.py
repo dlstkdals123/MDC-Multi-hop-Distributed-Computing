@@ -49,17 +49,14 @@ class LayeredGraph:
             self._capacity[source_ip][destination_ip] = capacity
     
     def update_path_backlog(self, job_info: JobInfo, path: List[Tuple[LayerNode, LayerNode, str]]) -> None:
-        input_size = job_info.get_input_size()
-        last_transfer_ratio = 1.0;
         for source_node, destination_node, model_name in path:
             link = LayerNodePair(source_node, destination_node)
             if source_node.is_same_node(destination_node):
-                ratio = self._dnn_models.get_computing_ratio(model_name)
-                last_transfer_ratio = self._dnn_models.get_transfer_ratio(model_name)
+                capacity = self._dnn_models.get_computing(model_name)
             else:
-                ratio = last_transfer_ratio
+                capacity = self._dnn_models.get_transfer(model_name)
             
-            self._layered_graph_backlog[link] += ratio * input_size
+            self._layered_graph_backlog[link] += capacity
         
     def update_graph(self):
         current_time = time.time()

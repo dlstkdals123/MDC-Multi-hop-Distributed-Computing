@@ -12,6 +12,7 @@ class DNNModels:
         self._models: Dict[str, torch.nn.Module] = {}
         self._computing: Dict[str, float] = {}
         self._transfer: Dict[str, float] = {}
+        self._input_bytes: Dict[str, int] = {}
 
         self._device = device
         self._address = address
@@ -27,24 +28,26 @@ class DNNModels:
 
     def init_computing_and_transfer(self, model_config: ModelConfig):
         for model_name, model in self._models.items():
-            input_shape = model_config.get_input_size(model_name)
+            input_size = model_config.get_input_size(model_name)
 
             with torch.no_grad():
                 FLOPs, _, _ = calculate_flops(model=model, 
-                                            input_shape=input_shape,
+                                            input_shape=input_size,
                                             output_as_string=False,
                                             output_precision=4,
                                             print_results=False)
 
                 self._computing[model_name] = FLOPs
 
-                x: torch.Tensor = torch.zeros(input_shape).to(self._device)
+                x: torch.Tensor = torch.zeros(input_size).to(self._device)
+                self._input_bytes[model_name] = x.numel() * x.element_size()
+
                 x: Union[torch.Tensor, List[torch.Tensor]] = model(x)
 
                 if isinstance(x, list):
-                    self._transfer[model_name] = sum(sys.getsizeof(x_prime.storage()) for x_prime in x)
+                    self._transfer[model_name] = sum(x_prime.numel() * x_prime.element_size() for x_prime in x)
                 else:
-                    self._transfer[model_name] = sys.getsizeof(x.storage())
+                    self._transfer[model_name] = x.numel() * x.element_size()
 
     def get_model(self, model_name: str):
         return self._models[model_name]
@@ -53,4 +56,4 @@ class DNNModels:
         return self._computing[model_name]
 
     def get_transfer(self, model_name: str):
-        return self._transfer[model_name]
+        return self._transfer[model_name] if model_name != "" else self._input_bytes[model_name]
