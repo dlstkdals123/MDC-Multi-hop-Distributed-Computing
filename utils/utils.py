@@ -119,20 +119,20 @@ def load_model(model_name) -> torch.nn.Module:
 
     if model_name == "yolov5":
         models = torch.nn.Sequential(P1(), P2(), P3(), P4())
-        return models, None
+        return models
     
     elif model_name == "resnet-18":
         model = resnet18(pretrained=True)
         model.eval()
-        return model, -1 # TODO
+        return model
     
     elif model_name == "resnet-50":
-        return None # TODO
+        return None
     
     elif model_name == "mobilenet_v2":
-        model = mobilenet_v2(pretrained=True, )
+        model = mobilenet_v2(pretrained=True)
         model.eval()
-        return model, -1 # TODO
+        return model
     
 def ensure_path_exists(path, is_file=False):
     """

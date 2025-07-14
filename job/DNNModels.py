@@ -1,15 +1,17 @@
 from typing import List, Dict
 
 import torch
+import sys
 
 from config.ModelConfig import ModelConfig
 from utils.utils import load_model
+from calflops import calculate_flops
 
 class DNNModels:
     def __init__(self, model_names: List[str], model_config: ModelConfig, device: str, address: str):
         self._models: Dict[str, torch.nn.Module] = {}
-        self._computing_ratio: Dict[str, float] = {}
-        self._transfer_ratio: Dict[str, float] = {}
+        self._computing: Dict[str, float] = {}
+        self._transfer: Dict[str, float] = {}
 
         self._device = device
         self._address = address
@@ -18,29 +20,36 @@ class DNNModels:
 
     def init_models(self, model_names: List[str], model_config: ModelConfig):
         for model_name in model_names:
-            model, _ = load_model(model_name)
-            # 모델을 올바른 디바이스로 이동
-            model = model.to(self._device)
+            model = load_model(model_name).to(self._device)
             self._models[model_name] = model
-            self._computing_ratio[model_name] = model_config.get_computing_ratio(model_name)
-            self._transfer_ratio[model_name] = model_config.get_transfer_ratio(model_name)
+            
+            self.init_computing_and_transfer(model, model_config.get_input_size(model_name))
+            self.warmup(model, model_config.get_input_size(model_name))
 
-            if model_config.get_warmup(model_name):
-                self.warmup(model_name, model_config.get_warmup_input(model_name))
-            
-    def warmup(self, model_name: str, warmup_input: any):
+    def init_computing_and_transfer(self, model: torch.nn.Module, input_shape: List[int]):
         with torch.no_grad():
-            x = torch.zeros(warmup_input).to(self._device)
+            FLOPs, _, _ = calculate_flops(model=model, 
+                                        input_shape=input_shape,
+                                        output_as_string=False,
+                                        output_precision=4)
+
+            self._computing[model_name] = FLOPs
+
+            x: torch.Tensor = torch.zeros(input_shape).to(self._device)
+            x: torch.Tensor = model(x)
+
+            self._transfer[model_name] = sys.getsizeof(x.storage())
             
-            # 모델을 올바른 디바이스로 이동
-            model = self._models[model_name].to(self._device)
+    def warmup(self, model: torch.nn.Module, input_shape: List[int]):
+        with torch.no_grad():
+            x = torch.zeros(input_shape).to(self._device)
             x : torch.Tensor = model(x)
 
     def get_model(self, model_name: str):
-        return None if model_name == "" else self._models[model_name]
+        return self._models[model_name]
 
-    def get_computing_ratio(self, model_name: str):
-        return self._computing_ratio[model_name]
-    
-    def get_transfer_ratio(self, model_name: str):
-        return self._transfer_ratio[model_name] if model_name != "" else 1
+    def get_computing(self, model_name: str):
+        return self._computing[model_name]
+
+    def get_transfer(self, model_name: str):
+        return self._transfer[model_name]
