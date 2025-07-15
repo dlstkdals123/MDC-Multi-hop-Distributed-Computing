@@ -8,7 +8,7 @@ class SubtaskInfo(JobInfo):
         self._model_name = model_name
         self._primary_path_index = primary_path_index
         self._terminal_index = terminal_index
-        super().__init__(job_info.get_job_id(), job_info.get_terminal_destination(), job_info.get_job_type(), job_info.get_job_name(), job_info.get_start_time(), job_info.get_input_size())
+        super().__init__(job_info.get_job_name(), job_info.get_job_type(), job_info.get_input_size(), job_info.get_source_ip(), job_info.get_terminal_destination(), job_info.get_start_time())
     
     def get_source(self):
         return self._source_layer_node

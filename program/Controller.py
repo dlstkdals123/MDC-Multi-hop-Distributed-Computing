@@ -7,7 +7,7 @@ from communication import *
 from config import ControllerConfig, NetworkConfig, ModelConfig
 from layeredgraph import LayeredGraph, LayerNode
 from job import JobInfo, SubtaskInfo
-from utils import save_latency, save_virtual_backlog, save_path
+from utils import save_latency, save_virtual_backlog, save_path, get_ip_address
 
 import pickle, json
 import paho.mqtt.publish as publish
@@ -19,6 +19,7 @@ class Controller(Program):
     def __init__(self, sub_configs, pub_configs):
         self.sub_configs = sub_configs
         self.pub_configs = pub_configs
+        self._address = get_ip_address(["eth0", "wlan0"])
 
         self.topic_dispatcher = {
             "mdc/config": self.handle_config,
@@ -85,7 +86,7 @@ class Controller(Program):
         os.makedirs(self._path_log_path, exist_ok=True)
         
     def init_layered_graph(self):
-        self._layered_graph = LayeredGraph(self._network_config, self._model_config)
+        self._layered_graph = LayeredGraph(self._network_config, self._model_config, self._address)
 
     def init_garbage_job_collector(self):
         callback_thread = threading.Thread(target=self.garbage_job_collector, args=())

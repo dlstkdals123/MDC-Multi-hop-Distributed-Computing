@@ -53,6 +53,9 @@ class NetworkConfig:
         
         # 스케줄링 알고리즘 클래스 존재 여부 검증
         self._validate_scheduling_algorithm(network_config["scheduling_algorithm"])
+        
+        # jobs 검증
+        self._validate_jobs(network_config["jobs"])
     
     def _validate_scheduling_algorithm(self, algorithm_path: str):
         """
@@ -78,6 +81,27 @@ class NetworkConfig:
             raise ValueError(f"Scheduling algorithm class not found: {algorithm_path}")
         except Exception as e:
             raise ValueError(f"Error validating scheduling algorithm {algorithm_path}: {str(e)}")
+
+    def _validate_jobs(self, jobs: Dict[str, any]):
+        """
+        jobs 설정이 올바른지 검증합니다.
+        
+        Args:
+            jobs (Dict[str, any]): jobs 설정 정보
+            
+        Raises:
+            ValueError: jobs 설정이 올바르지 않을 때 발생합니다.
+        """
+        if len(jobs) == 0:
+            raise ValueError("jobs cannot be empty")
+        
+        required_job_keys = ["job_type", "source", "destination"]
+        
+        # 필수 키 검증
+        for _, job_info in jobs.items():
+            for key in required_job_keys:
+                if key not in job_info:
+                    raise ValueError(f"Missing required key: {key}")
 
     @property
     def queue_name(self) -> str:
