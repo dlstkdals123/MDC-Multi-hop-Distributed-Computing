@@ -10,10 +10,10 @@ class RequestConfig:
         Args:
             ip (str): 노드의 IP 주소.
         """
-        self.check_validate(ip)
+        self._check_validate(ip)
         self._ip: str = ip
 
-    def check_validate(self, ip: str):
+    def _check_validate(self, ip: str):
         """
         IP 주소가 올바른지 검증합니다.
         """
