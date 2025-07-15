@@ -6,10 +6,6 @@ class RequestConfig:
         _ip (str): 노드의 IP 주소.
     """
     def __init__(self, ip: str):
-        """
-        Args:
-            ip (str): 노드의 IP 주소.
-        """
         self._check_validate(ip)
         self._ip: str = ip
 
