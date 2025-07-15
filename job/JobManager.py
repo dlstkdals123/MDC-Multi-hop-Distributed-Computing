@@ -115,17 +115,17 @@ class JobManager:
 
         model_name = subtask_info.model_name
         model: torch.nn.Module = self._dnn_models.get_model(model_name) if model_name != "" else None
-        computing = self._dnn_models.get_computing(model_name) if subtask_info.is_computing() else 0
+        computing_capacity = self._dnn_models.get_computing(model_name) if subtask_info.is_computing() else 0 # GFLOPs
         if subtask_info.is_transmission():
-            transfer = self._dnn_models.get_transfer(model_name) if model_name != "" else subtask_info.input_bytes
+            transfer_capacity = self._dnn_models.get_transfer(model_name) if model_name != "" else subtask_info.input_bytes # KB
         else:
-            transfer = 0
+            transfer_capacity = 0
 
         subtask = DNNSubtask(
             subtask_info = subtask_info,
             dnn_model = model,
-            computing = computing,
-            transfer = transfer
+            computing_capacity = computing_capacity,
+            transfer_capacity = transfer_capacity
         )
 
         success_add_subtask_info = self._virtual_queue.add_subtask_info(subtask_info, subtask)
