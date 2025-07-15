@@ -58,7 +58,10 @@ class LayeredGraph:
             if source_node.is_same_node(destination_node):
                 capacity = self._dnn_models.get_computing(model_name)
             else:
-                capacity = self._dnn_models.get_transfer(model_name)
+                if model_name == "":
+                    capacity = job_info.get_input_size()
+                else:
+                    capacity = self._dnn_models.get_transfer(model_name)
             
             self._layered_graph_backlog[link] += capacity
         

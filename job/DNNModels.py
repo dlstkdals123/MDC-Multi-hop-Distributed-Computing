@@ -12,7 +12,6 @@ class DNNModels:
         self._models: Dict[str, torch.nn.Module] = {}
         self._computing: Dict[str, float] = {}
         self._transfer: Dict[str, float] = {}
-        self._input_bytes: Dict[str, int] = {}
 
         self._device = device
         self._address = address
@@ -23,7 +22,7 @@ class DNNModels:
         for model_name in model_names:
             model = load_model(model_name).to(self._device)
             self._models[model_name] = model
-
+        
         self.init_computing_and_transfer(model_config)
 
     def init_computing_and_transfer(self, model_config: ModelConfig):
@@ -40,7 +39,7 @@ class DNNModels:
                 self._computing[model_name] = FLOPs
 
                 x: torch.Tensor = torch.zeros(input_size).to(self._device)
-                self._input_bytes[model_name] = x.numel() * x.element_size()
+                self._input_bytes = x.numel() * x.element_size()
 
                 x: Union[torch.Tensor, List[torch.Tensor]] = model(x)
 
@@ -56,4 +55,4 @@ class DNNModels:
         return self._computing[model_name]
 
     def get_transfer(self, model_name: str):
-        return self._transfer[model_name] if model_name != "" else self._input_bytes[model_name]
+        return self._transfer[model_name]
