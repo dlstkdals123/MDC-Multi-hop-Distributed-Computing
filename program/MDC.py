@@ -177,7 +177,7 @@ class MDC(Program):
                 dnn_output_bytes = pickle.dumps(dnn_output)
                     
                 # send job to next node
-                publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
+                publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
 
                 return
 

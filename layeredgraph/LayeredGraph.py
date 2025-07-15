@@ -59,7 +59,7 @@ class LayeredGraph:
                 capacity = self._dnn_models.get_computing(model_name)
             else:
                 if model_name == "":
-                    capacity = job_info.get_input_size()
+                    capacity = job_info.input_bytes
                 else:
                     capacity = self._dnn_models.get_transfer(model_name)
             
@@ -138,9 +138,9 @@ class LayeredGraph:
         
     def schedule(self, source_ip: str, job_info: JobInfo) -> List[Tuple[LayerNode, LayerNode, str]]:
         source_node = LayerNode(source_ip, self._network_config.get_models(source_ip))
-        destination_node = LayerNode(job_info.get_terminal_destination(), self._network_config.get_models(job_info.get_terminal_destination()))
+        destination_node = LayerNode(job_info.terminal_destination, self._network_config.get_models(job_info.terminal_destination))
 
-        input_size = job_info.get_input_size()
+        input_size = job_info.input_bytes
     
         # if self._algorithm_class == 'JDPCRA':
         #     path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._model_configs, self._expected_arrival_rate, self._network_performance_info, input_size)

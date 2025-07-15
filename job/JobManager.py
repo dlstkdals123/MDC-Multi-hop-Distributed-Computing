@@ -74,13 +74,13 @@ class JobManager:
 
     def run(self, output: DNNOutput, is_compressed: bool = False) -> Tuple[DNNOutput, float]:
         if is_compressed:
-            job_name = output.subtask_info.get_job_name()
+            job_name = output.subtask_info.job_name
             decompressed_shape = tuple(self._network_config.jobs[job_name]["real_input"])
             real_data = torch.rand(decompressed_shape)
             output = DNNOutput(real_data, output.subtask_info)
 
         previous_subtask_info = output.subtask_info
-        if previous_subtask_info.get_job_type() == "dnn":
+        if previous_subtask_info.job_type == "dnn":
             # get next destination
             subtask: DNNSubtask = self._virtual_queue.pop_subtask_info(previous_subtask_info)
 
@@ -110,7 +110,7 @@ class JobManager:
         model: torch.nn.Module = self._dnn_models.get_model(model_name) if model_name != "" else None
         computing = self._dnn_models.get_computing(model_name) if subtask_info.is_computing() else 0
         if subtask_info.is_transmission():
-            transfer = self._dnn_models.get_transfer(model_name) if model_name != "" else subtask_info.get_input_size()
+            transfer = self._dnn_models.get_transfer(model_name) if model_name != "" else subtask_info.input_bytes
         else:
             transfer = 0
 

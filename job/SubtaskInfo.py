@@ -8,7 +8,7 @@ class SubtaskInfo(JobInfo):
         self._model_name = model_name
         self._primary_path_index = primary_path_index
         self._terminal_index = terminal_index
-        super().__init__(job_info.get_job_name(), job_info.get_job_type(), job_info.get_input_size(), job_info.get_source_ip(), job_info.get_terminal_destination(), job_info.get_start_time())
+        super().__init__(job_info.job_name, job_info.job_type, job_info.input_bytes, job_info.source_ip, job_info.terminal_destination, job_info.get_start_time())
     
     def get_source(self):
         return self._source_layer_node
@@ -20,7 +20,7 @@ class SubtaskInfo(JobInfo):
         return self._model_name
         
     def get_subtask_id(self):
-        return self._delimeter.join([self.get_job_id(), self._source_layer_node.to_string(), str(self._primary_path_index)])
+        return self._delimeter.join([self.job_id, self._source_layer_node.to_string(), str(self._primary_path_index)])
     
     def set_next_source(self):
         if self._primary_path_index < self._terminal_index:

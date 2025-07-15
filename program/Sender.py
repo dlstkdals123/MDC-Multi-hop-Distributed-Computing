@@ -56,7 +56,7 @@ class Sender(MDC):
         subtask_layer_node = subtask_info.get_source()
 
         if subtask_layer_node.get_ip() == self._address and subtask_layer_node.get_layer() == 0:
-            job_id = subtask_info.get_job_id()
+            job_id = subtask_info.job_id
             input_frame = DNNOutput(torch.tensor(self._frame_list[job_id]).float(), subtask_info)
             del self._frame_list[job_id]
             dnn_output, computing_capacity = self._job_manager.run(input_frame)
@@ -67,8 +67,8 @@ class Sender(MDC):
             dnn_output_bytes = pickle.dumps(dnn_output)
                 
             # send job to next node
-            # self._node_publisher[destination_ip].publish(f"job/{subtask_info.get_job_type()}", dnn_output_bytes)
-            publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
+            # self._node_publisher[destination_ip].publish(f"job/{subtask_info.job_type}", dnn_output_bytes)
+            publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
 
             self._capacity_manager.update_computing_capacity(computing_capacity)
 
@@ -161,7 +161,7 @@ class Sender(MDC):
 
         self.set_job_info_time()
         job_info_bytes = pickle.dumps(self._job_info)
-        self._frame_list[self._job_info.get_job_id()] = frame
+        self._frame_list[self._job_info.job_id] = frame
 
         self._controller_publisher.publish("job/request_scheduling", job_info_bytes)
     
