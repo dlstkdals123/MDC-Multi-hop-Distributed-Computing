@@ -20,13 +20,12 @@ except ImportError:
         return int(now.timestamp() * 1e9)
 
 class JobManager:
-    def __init__(self, address, network_config: NetworkConfig, model_config: ModelConfig):
-        # TODO
+    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig):
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self._network_config = network_config
         self._model_config = model_config
-        self._dnn_models = DNNModels(model_config.get_model_names(), model_config, self._device, address)
+        self._dnn_models = DNNModels(model_config.get_model_names(), model_config, self._device)
 
         self._virtual_queue = VirtualQueue()
         self._ahead_of_time_outputs = AheadOutputQueue()

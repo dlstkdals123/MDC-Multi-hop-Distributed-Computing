@@ -86,7 +86,7 @@ class Controller(Program):
         os.makedirs(self._path_log_path, exist_ok=True)
         
     def init_layered_graph(self):
-        self._layered_graph = LayeredGraph(self._network_config, self._model_config, self._address)
+        self._layered_graph = LayeredGraph(self._network_config, self._model_config)
 
     def init_garbage_job_collector(self):
         callback_thread = threading.Thread(target=self.garbage_job_collector, args=())
