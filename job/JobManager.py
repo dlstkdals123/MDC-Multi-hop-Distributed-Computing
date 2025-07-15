@@ -33,13 +33,13 @@ class JobManager:
         self.init_garbage_subtask_collector()
 
     def is_subtask_exists(self, output: DNNOutput) -> bool:
-        previous_subtask_info = output.get_subtask_info()
+        previous_subtask_info = output.subtask_info
         return bool(self._virtual_queue.exist_subtask_info(previous_subtask_info))
     
     def update_dnn_output(self, dnn_output: DNNOutput):
-        previous_subtask_info = dnn_output.get_subtask_info()
+        previous_subtask_info = dnn_output.subtask_info
         current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
-        return DNNOutput(dnn_output.get_output(), current_subtask_info)
+        return DNNOutput(dnn_output.output(), current_subtask_info)
     
     def is_dnn_output_exists(self, subtask_info: SubtaskInfo) -> bool:
         return bool(self._ahead_of_time_outputs.exist_dnn_output(subtask_info))
@@ -74,18 +74,18 @@ class JobManager:
 
     def run(self, output: DNNOutput, is_compressed: bool = False) -> Tuple[DNNOutput, float]:
         if is_compressed:
-            job_name = output.get_subtask_info().get_job_name()
+            job_name = output.subtask_info.get_job_name()
             decompressed_shape = tuple(self._network_config.jobs[job_name]["real_input"])
             real_data = torch.rand(decompressed_shape)
-            output = DNNOutput(real_data, output.get_subtask_info())
+            output = DNNOutput(real_data, output.subtask_info)
 
-        previous_subtask_info = output.get_subtask_info()
+        previous_subtask_info = output.subtask_info
         if previous_subtask_info.get_job_type() == "dnn":
             # get next destination
             subtask: DNNSubtask = self._virtual_queue.pop_subtask_info(previous_subtask_info)
 
             # get output data == get current subtask's input
-            data = output.get_output()
+            data = output.output()
 
             if isinstance(data, list):
                 data = [d.to(self._device) for d in data]
@@ -128,9 +128,9 @@ class JobManager:
         
     # add dnn_output if schedule is not arrived yet
     def add_dnn_output(self, previous_dnn_output: DNNOutput):
-        subtask_info = previous_dnn_output.get_subtask_info()
+        subtask_info = previous_dnn_output.subtask_info
         success_add_dnn_output = self._ahead_of_time_outputs.add_dnn_output(subtask_info, previous_dnn_output)
         
         if not success_add_dnn_output:
-            raise Exception(f"DNNOutput already exists. : {previous_dnn_output.get_subtask_info().get_subtask_id()}")
+            raise Exception(f"DNNOutput already exists. : {previous_dnn_output.subtask_info.get_subtask_id()}")
 

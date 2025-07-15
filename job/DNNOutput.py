@@ -1,28 +1,29 @@
 import torch
 
-from communication import *
 from job import SubtaskInfo
-from layeredgraph import LayerNode
 
 class DNNOutput:
+    """
+    모델의 출력을 저장하는 클래스입니다.
+
+    Attributes:
+        _output (torch.Tensor): 모델의 출력.
+        _subtask_info (SubtaskInfo): 서브태스크 정보.
+    """
     def __init__(self, data: torch.Tensor, subtask_info: SubtaskInfo) -> None:
-        # output tensor
         self._output = data
-
-        # subtask info
         self._subtask_info = subtask_info
-        
-        # delimeter
-        self._delimeter = "-"
 
-    def get_subtask_info(self):
+    @property
+    def subtask_info(self) -> SubtaskInfo:
         return self._subtask_info
 
-    def get_output(self):
+    @property
+    def output(self) -> torch.Tensor:
         return self._output
         
     def __eq__(self, other):
-        return self.get_subtask_info().get_subtask_id() == other.get_subtask_info().get_subtask_id()
+        return self.subtask_info.get_subtask_id() == other.subtask_info.get_subtask_id()
     
     def __hash__(self):
-        return hash(self.get_subtask_info().get_subtask_id())
+        return hash(self.subtask_info.get_subtask_id())
