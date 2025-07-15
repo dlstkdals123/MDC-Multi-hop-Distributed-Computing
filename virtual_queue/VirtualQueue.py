@@ -79,9 +79,9 @@ class VirtualQueue:
             link = subtask_info.get_link()
 
             if link in links:
-                links[link] += subtask.get_backlog()
+                links[link] += subtask.backlog
             else:
-                links[link] = subtask.get_backlog()
+                links[link] = subtask.backlog
 
         self.mutex.release()
 

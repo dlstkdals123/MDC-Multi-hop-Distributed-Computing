@@ -99,7 +99,7 @@ class JobManager:
 
             end_time = time_ns() / 1_000_000_000 # ns to s
 
-            computing_capacity = subtask.get_backlog() / (end_time - start_time + 1e-05) if subtask.get_backlog() > 0 else 0
+            computing_capacity = subtask.backlog / (end_time - start_time + 1e-05) if subtask.backlog > 0 else 0
 
             return dnn_output, computing_capacity
         
