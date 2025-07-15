@@ -1,7 +1,6 @@
 from typing import List, Dict, Union
 
 import torch
-import sys
 
 from config.ModelConfig import ModelConfig
 from utils.utils import load_model
