@@ -106,7 +106,7 @@ class JobManager:
     # add subtask_info based SubtaskInfo
     def add_subtask(self, subtask_info: SubtaskInfo):
 
-        model_name = subtask_info.get_model_name()
+        model_name = subtask_info.model_name
         model: torch.nn.Module = self._dnn_models.get_model(model_name) if model_name != "" else None
         computing = self._dnn_models.get_computing(model_name) if subtask_info.is_computing() else 0
         if subtask_info.is_transmission():

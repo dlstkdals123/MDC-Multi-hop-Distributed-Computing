@@ -173,7 +173,7 @@ class MDC(Program):
             if dnn_output.subtask_info.is_transmission():
                 subtask_info = dnn_output.subtask_info
                 subtask_info.set_next_source()
-                destination_ip = subtask_info.get_source().get_ip()
+                destination_ip = subtask_info.source.get_ip()
                 dnn_output_bytes = pickle.dumps(dnn_output)
                     
                 # send job to next node

@@ -77,8 +77,8 @@ class LayeredGraph:
         links_job_num = {}
 
         for link in self._layer_node_pairs:
-            source_ip = link.get_source().get_ip()
-            dest_ip = link.get_destination().get_ip()
+            source_ip = link.source.get_ip()
+            dest_ip = link.destination.get_ip()
             
             if source_ip not in links_job_num:
                 links_job_num[source_ip] = {}
@@ -92,8 +92,8 @@ class LayeredGraph:
 
     def _update_backlog(self, elapsed_time: float, links_job_num: Dict[str, Dict[str, int]]):
         for link in self._layer_node_pairs:
-            source_ip = link.get_source().get_ip()
-            dest_ip = link.get_destination().get_ip()
+            source_ip = link.source.get_ip()
+            dest_ip = link.destination.get_ip()
             
             job_count = links_job_num[source_ip][dest_ip]
             capacity = self._capacity[source_ip][dest_ip]
@@ -259,11 +259,11 @@ class LayeredGraph:
         }
 
         for link in self._layer_node_pairs:
-            if link.get_source().get_ip() == "192.168.1.5":
+            if link.source.get_ip() == "192.168.1.5":
                 node_name = "end"   
-            elif link.get_source().get_ip() == "192.168.1.7":
+            elif link.source.get_ip() == "192.168.1.7":
                 node_name = "edge"
-            elif link.get_source().get_ip() == "192.168.1.8":
+            elif link.source.get_ip() == "192.168.1.8":
                 node_name = "cloud"
 
             if link.is_same_node(): # computing

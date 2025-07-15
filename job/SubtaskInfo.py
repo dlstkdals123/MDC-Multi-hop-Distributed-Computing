@@ -20,33 +20,36 @@ class SubtaskInfo(JobInfo):
         self._terminal_index = terminal_index
         super().__init__(job_info.job_name, job_info.job_type, job_info.input_bytes, job_info.source_ip, job_info.terminal_destination, job_info.start_time)
     
-    def get_source(self):
+    @property
+    def source(self) -> LayerNode:
         return self._source_layer_node
     
-    def get_destination(self):
+    @property
+    def destination(self) -> LayerNode:
         return self._destination_layer_node
     
-    def get_model_name(self):
+    @property
+    def model_name(self) -> str:
         return self._model_name
         
-    def get_subtask_id(self):
+    def get_subtask_id(self) -> str:
         return self._delimeter.join([self.job_id, self._source_layer_node.to_string(), str(self._primary_path_index)])
+
+    def get_link(self) -> LayerNodePair:
+        return LayerNodePair(self._source_layer_node, self._destination_layer_node)
     
     def set_next_source(self):
         if self._primary_path_index < self._terminal_index:
             self._source_layer_node = self._destination_layer_node
             self._primary_path_index += 1
     
-    def get_link(self):
-        return LayerNodePair(self._source_layer_node, self._destination_layer_node)
-    
-    def is_transmission(self):
-        return not self.is_computing()
-    
-    def is_computing(self):
+    def is_computing(self) -> bool:
         return self._source_layer_node.is_same_node(self._destination_layer_node)
 
-    def is_terminated(self):
+    def is_transmission(self) -> bool:
+        return not self.is_computing()
+    
+    def is_terminated(self) -> bool:
         return self._primary_path_index == self._terminal_index
     
     def __hash__(self):
