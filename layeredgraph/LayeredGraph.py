@@ -1,8 +1,9 @@
 from typing import Dict, List, Tuple
 
 from layeredgraph import LayerNode, LayerNodePair
-from config import NetworkConfig
-from job import JobInfo, DNNModels
+from config import NetworkConfig, ModelConfig
+from job import JobInfo
+from job.DNNModels import DNNModels
 from scheduling import *
 
 import importlib
@@ -11,11 +12,14 @@ import numpy as np
 import copy
 import pandas as pd
 import glob
+import torch
 
 class LayeredGraph:
-    def __init__(self, network_config: NetworkConfig, dnn_models: DNNModels):
+    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig, address: str):
+        self._device = "cuda" if torch.cuda.is_available() else "cpu"
+
         self._network_config = network_config
-        self._dnn_models = dnn_models
+        self._dnn_models = DNNModels(model_config.get_model_names(), model_config, self._device, address)
         self._layered_graph = dict()
         self._layered_graph_backlog = dict()
         self._layer_nodes = []
