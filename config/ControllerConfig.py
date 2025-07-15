@@ -14,12 +14,12 @@ class ControllerConfig:
         Args:
             controller_config (Dict[str, any]): 컨트롤러 설정 정보가 담긴 Json 형식의 딕셔너리.
         """
-        self.check_validate(controller_config)
+        self._check_validate(controller_config)
 
         self._experiment_name: str = controller_config["experiment_name"]
         self._sync_time: float = float(controller_config["sync_time"])
 
-    def check_validate(self, controller_config: Dict[str, any]):
+    def _check_validate(self, controller_config: Dict[str, any]):
         """
         config.json의 Controller 정보가 올바른지 검증합니다.
         

@@ -19,7 +19,7 @@ class NetworkConfig:
         Args:
             network_config (Dict[str, any]): 네트워크 설정 정보가 담긴 Json 형식의 딕셔너리.
         """
-        self.check_validate(network_config)
+        self._check_validate(network_config)
 
         self._queue_name: str = network_config["queue_name"]
         self._scheduling_algorithm: str = network_config["scheduling_algorithm"]
@@ -29,7 +29,7 @@ class NetworkConfig:
         self._router: List[str] = network_config["router"]
         self._models: Dict[str, any] = network_config["models"]
 
-    def check_validate(self, network_config: Dict[str, any]):
+    def _check_validate(self, network_config: Dict[str, any]):
         """
         config.json의 Controller 정보가 올바른지 검증합니다.
         

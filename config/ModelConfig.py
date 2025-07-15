@@ -13,12 +13,12 @@ class ModelConfig:
         Args:
             model_configs (Dict[str, any]): 모델 이름과 모델 설정 정보가 담긴 Json 형식의 딕셔너리.
         """
-        self.check_validate(model_configs)
-        self.init_model_configs(model_configs)
+        self._check_validate(model_configs)
+        self._init_model_configs(model_configs)
 
         self._model_configs: Dict[str, any] = model_configs
 
-    def check_validate(self, model_configs: Dict[str, any]):
+    def _check_validate(self, model_configs: Dict[str, any]):
         """
         config.json의 Model 정보가 올바른지 검증합니다.
         
@@ -32,7 +32,7 @@ class ModelConfig:
                 if key not in model_config:
                     raise ValueError(f"'{key}'가 누락되었습니다.")
 
-    def init_model_configs(self, model_configs: Dict[str, any]):
+    def _init_model_configs(self, model_configs: Dict[str, any]):
         for model_name, model_config in model_configs.items():
             model_config["input_size"] = tuple(model_config["input_size"])
 
