@@ -84,7 +84,7 @@ class MDC(Program):
         self._network_config: NetworkConfig = config["network"]
         self._model_config: ModelConfig = config["model"]
 
-        self._job_manager = JobManager(self._address, self._network_config, self._model_config)
+        self._job_manager = JobManager(self._network_config, self._model_config)
 
         self.init_node_publisher()
 
