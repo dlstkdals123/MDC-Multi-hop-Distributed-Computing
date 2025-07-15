@@ -181,10 +181,7 @@ class MDC(Program):
 
                 return
 
-            # if cao
-            is_compressed = self._address == "192.168.1.8" and self._network_config.queue_name == "cao"
-
-            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output, is_compressed=is_compressed)
+            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output)
             self._capacity_manager.update_computing_capacity(computing_capacity)
 
             dnn_output.subtask_info.set_next_source()

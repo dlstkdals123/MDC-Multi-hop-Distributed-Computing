@@ -8,18 +8,18 @@ class CapacityManager:
     Attributes:
         _sample_num (int): 샘플링할 데이터 개수.
         _last_sent (int): 마지막 전송량 (KB).
-        _last_transfer_time (float): 마지막 전송 시간 (s).
+        _last_transfer_time (float): 마지막 전송 시간 (ms).
         _computing_count (int): 계산량 업데이트 횟수.
-        _computing_capacity_avg (float): 계산량 평균 (GFLOPs/s).
+        _computing_capacity_avg (float): 계산량 평균 (GFLOPs/ms).
         _transfer_count (int): 전송량 업데이트 횟수.
-        _transfer_capacity_avg (float): 전송량 평균 (KB/s).
+        _transfer_capacity_avg (float): 전송량 평균 (KB/ms).
     """
     def __init__(self):
 
         self._sample_num: int = 100
 
         self._last_sent: int = psutil.net_io_counters().bytes_sent / 1024
-        self._last_transfer_time: float = time.time()
+        self._last_transfer_time: float = time.time() * 1_000 # ms
 
         self._transfer_count: int = 0
         self._transfer_capacity_avg: float = 0
@@ -38,7 +38,7 @@ class CapacityManager:
 
     def _check_and_get_current_transfer_capacity(self) -> float:
         cur_sent = psutil.net_io_counters().bytes_sent / 1024
-        cur_time = time.time()
+        cur_time = time.time() * 1_000 # ms
 
         sent_delta = (cur_sent - self._last_sent) / (cur_time - self._last_transfer_time) if cur_time - self._last_transfer_time > 0 else 0
 

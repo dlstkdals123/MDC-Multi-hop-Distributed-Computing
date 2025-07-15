@@ -33,9 +33,9 @@ class DNNModels:
             model = load_model(model_name).to(device)
             self._models[model_name] = model
         
-        self._init_computing_and_transfer(model_config)
+        self._init_computing_and_transfer(model_config, device)
 
-    def _init_computing_and_transfer(self, model_config: ModelConfig):
+    def _init_computing_and_transfer(self, model_config: ModelConfig, device: str):
         for model_name, model in self._models.items():
             input_size = model_config.get_input_size(model_name)
 
@@ -48,7 +48,7 @@ class DNNModels:
 
                 self._computing[model_name] = FLOPs * 1e-9 # GFLOPs
 
-                x: torch.Tensor = torch.zeros(input_size).to(self._device)
+                x: torch.Tensor = torch.zeros(input_size).to(device)
 
                 x: Union[torch.Tensor, List[torch.Tensor]] = model(x)
 

@@ -1,5 +1,6 @@
 from typing import Tuple, Dict
 from job import DNNSubtask, SubtaskInfo
+from layeredgraph import LayerNodePair
 
 import threading
 try:
@@ -70,13 +71,13 @@ class VirtualQueue:
 
         return subtask
     
-    def get_backlogs(self):
+    def get_backlogs(self) -> Dict[LayerNodePair, float]:
         links = {}
         self.mutex.acquire()
         for subtask_info, (subtask, _) in self.subtask_infos.items():
             subtask: DNNSubtask
 
-            link = subtask_info.get_link()
+            link: LayerNodePair = subtask_info.get_link()
 
             if link in links:
                 links[link] += subtask.backlog
