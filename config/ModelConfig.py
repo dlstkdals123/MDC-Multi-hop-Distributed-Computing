@@ -9,10 +9,6 @@ class ModelConfig:
     """
 
     def __init__(self, model_configs: Dict[str, any]):
-        """
-        Args:
-            model_configs (Dict[str, any]): 모델 이름과 모델 설정 정보가 담긴 Json 형식의 딕셔너리.
-        """
         self._check_validate(model_configs)
         self._init_model_configs(model_configs)
 
