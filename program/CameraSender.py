@@ -129,8 +129,8 @@ class CameraSender(MDC):
             self.init_job_info()
             return True
         
-        input_size = sys.getsizeof(torch.tensor(frame).storage())
-        self._job_info.set_input_size(input_size)
+        input_bytes = sys.getsizeof(torch.tensor(frame).storage()) / 1024 # KB
+        self._job_info.set_input_bytes(input_bytes)
         return True
             
     def wait_until_can_send(self):
