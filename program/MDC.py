@@ -118,8 +118,8 @@ class MDC(Program):
 
         links = self._job_manager.get_backlogs()
 
-        computing_capacity = self._capacity_manager.get_computing_capacity()
-        transfer_capacity = self._capacity_manager.get_transfer_capacity()
+        computing_capacity = self._capacity_manager.get_computing_capacity_avg()
+        transfer_capacity = self._capacity_manager.get_transfer_capacity_avg()
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 
