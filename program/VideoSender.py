@@ -26,6 +26,8 @@ TARGET_WIDTH = 320
 TARGET_HEIGHT = 320
 TARGET_DEPTH = 3
 
+KB_PER_BYTE = 1024
+
 
 class VideoSender(MDC):
     def __init__(self, sub_configs, pub_configs, job_name):
@@ -122,7 +124,7 @@ class VideoSender(MDC):
             self.init_job_info()
             return True
         
-        input_bytes = sys.getsizeof(torch.tensor(frame).storage()) / 1024 # KB
+        input_bytes = sys.getsizeof(torch.tensor(frame).storage()) / KB_PER_BYTE # KB
         self._job_info.set_input_bytes(input_bytes)
         return True
             

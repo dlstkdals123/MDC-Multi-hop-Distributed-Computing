@@ -1,6 +1,9 @@
 import psutil
 import time
 
+MS_PER_SECOND = 1_000
+KB_PER_BYTE = 1024
+
 class CapacityManager:
     """
     노드의 계산량과 전송량을 모니터링하고 관리하는 클래스입니다.
@@ -18,8 +21,8 @@ class CapacityManager:
 
         self._sample_num: int = 100
 
-        self._last_sent: int = psutil.net_io_counters().bytes_sent / 1024
-        self._last_transfer_time: float = time.time() * 1_000 # ms
+        self._last_sent: int = psutil.net_io_counters().bytes_sent / KB_PER_BYTE
+        self._last_transfer_time: float = time.time() * MS_PER_SECOND # ms
 
         self._transfer_count: int = 0
         self._transfer_capacity_avg: float = 0
@@ -37,8 +40,8 @@ class CapacityManager:
         self._transfer_capacity_avg = self._transfer_capacity_avg + (transfer_capacity - self._transfer_capacity_avg) / effective_n
 
     def _check_and_get_current_transfer_capacity(self) -> float:
-        cur_sent = psutil.net_io_counters().bytes_sent / 1024
-        cur_time = time.time() * 1_000 # ms
+        cur_sent = psutil.net_io_counters().bytes_sent / KB_PER_BYTE
+        cur_time = time.time() * MS_PER_SECOND # ms
 
         sent_delta = (cur_sent - self._last_sent) / (cur_time - self._last_transfer_time) if cur_time - self._last_transfer_time > 0 else 0
 

@@ -6,6 +6,8 @@ from config.ModelConfig import ModelConfig
 from utils.utils import load_model
 from calflops import calculate_flops
 
+KB_PER_BYTE = 1024
+
 class DNNModels:
     """
     모델 정보를 관리하는 클래스입니다.
@@ -53,9 +55,9 @@ class DNNModels:
                 x: Union[torch.Tensor, List[torch.Tensor]] = model(x)
 
                 if isinstance(x, list):
-                    self._transfer[model_name] = sum(x_prime.numel() * x_prime.element_size() for x_prime in x) / 1024 # KB
+                    self._transfer[model_name] = sum(x_prime.numel() * x_prime.element_size() for x_prime in x) / KB_PER_BYTE # KB
                 else:
-                    self._transfer[model_name] = x.numel() * x.element_size() / 1024 # KB
+                    self._transfer[model_name] = x.numel() * x.element_size() / KB_PER_BYTE # KB
 
     def get_model(self, model_name: str) -> torch.nn.Module:
         return self._models[model_name]

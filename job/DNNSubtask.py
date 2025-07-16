@@ -24,9 +24,23 @@ class DNNSubtask:
         return self._subtask_info
     
     def get_backlog(self) -> float:
+        """
+        서브태스크가 계산일 경우 계산량을 반환합니다. (GFLOPs)
+        서브태스크가 전송일 경우 전송량을 반환합니다. (KB)
+        """
         return self._computing_capacity if self._subtask_info.is_computing() else self._transfer_capacity
     
     def run(self, data: torch.Tensor) -> DNNOutput:
+        """
+        data를 입력으로 받아, 서브태스크를 실행합니다.
+        서브태스크가 계산일 경우 모델을 계산하고, 전송일 경우 데이터를 복사하여 DNNOutput 객체를 생성합니다.
+
+        Args:
+            data (torch.Tensor): 서브태스크의 입력 데이터.
+
+        Returns:
+            DNNOutput: 서브태스크의 출력. (서브태스크가 계산일 경우 모델 계산 결과, 전송일 경우 복사된 데이터)
+        """
         if self._subtask_info.is_transmission():
             # 단순히 데이터를 복사하여 DNNOutput 객체를 생성합니다.
             if isinstance(data, list):
