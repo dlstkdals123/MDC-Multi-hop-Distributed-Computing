@@ -1,5 +1,4 @@
 # 📌 Pull Request
-
 closed #번호
 
 ## 🔍 변경 사항
