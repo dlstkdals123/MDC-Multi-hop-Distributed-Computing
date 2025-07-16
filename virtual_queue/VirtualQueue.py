@@ -49,7 +49,7 @@ class VirtualQueue:
         self.mutex.acquire()
         subtask, _ = self.subtask_infos[subtask_info]
         self.mutex.release()
-        return subtask.get_subtask_info
+        return subtask.subtask_info
 
     def del_subtask_info(self, subtask_info):
         self.mutex.acquire()
@@ -80,9 +80,9 @@ class VirtualQueue:
             link: LayerNodePair = subtask_info.get_link()
 
             if link in links:
-                links[link] += subtask.backlog
+                links[link] += subtask.get_backlog()
             else:
-                links[link] = subtask.backlog
+                links[link] = subtask.get_backlog()
 
         self.mutex.release()
 

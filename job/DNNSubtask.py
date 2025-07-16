@@ -20,7 +20,10 @@ class DNNSubtask:
         self._transfer_capacity = transfer_capacity
 
     @property
-    def backlog(self) -> float:
+    def subtask_info(self) -> SubtaskInfo:
+        return self._subtask_info
+    
+    def get_backlog(self) -> float:
         return self._computing_capacity if self._subtask_info.is_computing() else self._transfer_capacity
     
     def run(self, data: torch.Tensor) -> DNNOutput:

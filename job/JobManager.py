@@ -55,7 +55,7 @@ class JobManager:
         # 따라서 해당 서브태스크와 똑같은 ID에 대한 서브태스크를 가상큐에서 가져와, DNNOutput을 업데이트합니다.
         previous_subtask_info = dnn_output.subtask_info
         current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
-        return DNNOutput(dnn_output.output(), current_subtask_info)
+        return DNNOutput(dnn_output.output, current_subtask_info)
         
     def pop_dnn_output(self, subtask_info: SubtaskInfo) -> DNNOutput:
         # 대기큐에서 서브태스크 정보를 기다리고 있는 DNNOutput을 pop합니다.
@@ -91,8 +91,8 @@ class JobManager:
             
             subtask: DNNSubtask = self._virtual_queue.pop_subtask_info(subtask_info)
 
-            # 아직 run하지 않은 data이므로 output() == 사용해야 할 input data
-            data = output.output()
+            # 아직 run하지 않은 data이므로 output == 사용해야 할 input data
+            data = output.output
 
             if isinstance(data, list):
                 data = [d.to(self._device) for d in data]
@@ -106,7 +106,7 @@ class JobManager:
 
             end_time = time.time() * 1_000 # ms
 
-            computing_capacity = subtask.backlog / (end_time - start_time + 1e-05) if subtask.backlog > 0 else 0
+            computing_capacity = subtask.get_backlog() / (end_time - start_time + 1e-05) if subtask.get_backlog() > 0 else 0
 
             return dnn_output, computing_capacity
         
