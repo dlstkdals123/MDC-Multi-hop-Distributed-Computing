@@ -84,7 +84,7 @@ class MDC(Program):
         self._network_config: NetworkConfig = config["network"]
         self._model_config: ModelConfig = config["model"]
 
-        self._job_manager = JobManager(self._address, self._network_config, self._model_config)
+        self._job_manager = JobManager(self._network_config, self._model_config)
 
         self.init_node_publisher()
 
@@ -118,8 +118,8 @@ class MDC(Program):
 
         links = self._job_manager.get_backlogs()
 
-        computing_capacity = self._capacity_manager.get_computing_capacity()
-        transfer_capacity = self._capacity_manager.get_transfer_capacity()
+        computing_capacity = self._capacity_manager.get_computing_capacity_avg()
+        transfer_capacity = self._capacity_manager.get_transfer_capacity_avg()
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 
@@ -155,8 +155,8 @@ class MDC(Program):
         while True:
 
             # terminal node
-            if dnn_output.get_subtask_info().is_terminated():
-                subtask_info = dnn_output.get_subtask_info()
+            if dnn_output.subtask_info.is_terminated():
+                subtask_info = dnn_output.subtask_info
                 subtask_info_bytes = pickle.dumps(subtask_info)
 
                 # send subtask info to controller
@@ -170,24 +170,21 @@ class MDC(Program):
             
             dnn_output = self._job_manager.update_dnn_output(dnn_output)
 
-            if dnn_output.get_subtask_info().is_transmission():
-                subtask_info = dnn_output.get_subtask_info()
+            if dnn_output.subtask_info.is_transmission():
+                subtask_info = dnn_output.subtask_info
                 subtask_info.set_next_source()
-                destination_ip = subtask_info.get_source().get_ip()
+                destination_ip = subtask_info.source.get_ip()
                 dnn_output_bytes = pickle.dumps(dnn_output)
                     
                 # send job to next node
-                publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
+                publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
 
                 return
 
-            # if cao
-            is_compressed = self._address == "192.168.1.8" and self._network_config.queue_name == "cao"
-
-            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output, is_compressed=is_compressed)
+            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output)
             self._capacity_manager.update_computing_capacity(computing_capacity)
 
-            dnn_output.get_subtask_info().set_next_source()
+            dnn_output.subtask_info.set_next_source()
 
        
 if __name__ == '__main__':

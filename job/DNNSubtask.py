@@ -1,44 +1,42 @@
-from typing import List
-
 import torch
 
 from job import SubtaskInfo, DNNOutput
 
-# DNNSubtask has subtask info, dnn model's pointer.
 class DNNSubtask:
-    def __init__(self, subtask_info: SubtaskInfo, dnn_model: torch.nn.Module, computing: float, transfer: float):
+    """
+    서브태스크 정보와 모델 및 계산량, 전송량을 저장하는 클래스입니다.
+
+    Attributes:
+        _subtask_info (SubtaskInfo): 서브태스크 정보.
+        _dnn_model (torch.nn.Module): 실제 모델.
+        _computing_capacity (float): 모델의 계산량 (GFLOPs).
+        _transfer_capacity (float): 전송량 (KB).
+    """
+    def __init__(self, subtask_info: SubtaskInfo, dnn_model: torch.nn.Module, computing_capacity: float, transfer_capacity: float):
         self._subtask_info = subtask_info
         self._dnn_model = dnn_model
 
-        # computing and transfer capacity
-        self._computing = computing
-        self._transfer = transfer
+        self._computing_capacity = computing_capacity
+        self._transfer_capacity = transfer_capacity
 
-    def get_subtask_info(self):
+    @property
+    def subtask_info(self) -> SubtaskInfo:
         return self._subtask_info
-
-    def get_backlog(self):
-        return self.get_computing() if self._subtask_info.is_computing() else self.get_transfer()
-        
-    def get_computing(self):
-        return self._computing
     
-    def get_transfer(self):
-        return self._transfer
+    def get_backlog(self) -> float:
+        return self._computing_capacity if self._subtask_info.is_computing() else self._transfer_capacity
     
-    # should distinct transimission vs. computing
-    def run(self, data: torch.Tensor):
-        # transimission
+    def run(self, data: torch.Tensor) -> DNNOutput:
         if self._subtask_info.is_transmission():
-            # just copy the data and make DNNOutput object
+            # 단순히 데이터를 복사하여 DNNOutput 객체를 생성합니다.
             if isinstance(data, list):
                 data = [d.to("cpu") for d in data]
             else:
                 data = data.to("cpu")
 
             dnn_output = DNNOutput(data, self._subtask_info)
-        # computing dnn
-        elif self._subtask_info.is_computing():
+        else:
+            # 모델 계산
             with torch.no_grad():
                 output: torch.Tensor = self._dnn_model(data)
 

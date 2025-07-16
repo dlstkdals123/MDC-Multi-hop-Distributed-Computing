@@ -1,60 +1,61 @@
 import psutil
 import time
-try:
-    from time import time_ns
-except ImportError:
-    from datetime import datetime
-    # For compatibility with Python 3.6
-    def time_ns():
-        now = datetime.now()
-        return int(now.timestamp() * 1e9)
 
 class CapacityManager:
+    """
+    노드의 계산량과 전송량을 모니터링하고 관리하는 클래스입니다.
+
+    Attributes:
+        _sample_num (int): 샘플링할 데이터 개수.
+        _last_sent (int): 마지막 전송량 (KB).
+        _last_transfer_time (float): 마지막 전송 시간 (ms).
+        _computing_count (int): 계산량 업데이트 횟수.
+        _computing_capacity_avg (float): 계산량 평균 (GFLOPs/ms).
+        _transfer_count (int): 전송량 업데이트 횟수.
+        _transfer_capacity_avg (float): 전송량 평균 (KB/ms).
+    """
     def __init__(self):
-        self._sample_num = 100
 
-        # self._received = psutil.net_io_counters().bytes_recv
-        self._sent = psutil.net_io_counters().bytes_sent
-        self._last_transfer_check_time = time.time()
+        self._sample_num: int = 100
 
-        self._computing_capacities = []
-        self._transfer_capacities = []
+        self._last_sent: int = psutil.net_io_counters().bytes_sent / 1024
+        self._last_transfer_time: float = time.time() * 1_000 # ms
 
-        self._computing_capacity_avg = 0
-        self._transfer_capacity_avg = 0
+        self._transfer_count: int = 0
+        self._transfer_capacity_avg: float = 0
+        
+        self._computing_count: int = 0
+        self._computing_capacity_avg: float = 0
 
-    def _check_and_get_current_transfer_capacity(self):
-        # cur_received = psutil.net_io_counters().bytes_recv
-        cur_sent = psutil.net_io_counters().bytes_sent
-        cur_time = time.time()
+    def update_transfer_capacity(self) -> None:
+        transfer_capacity = self._check_and_get_current_transfer_capacity()
+        
+        self._transfer_count += 1
+        
+        # 증분 평균 계산
+        effective_n = min(self._transfer_count, self._sample_num)
+        self._transfer_capacity_avg = self._transfer_capacity_avg + (transfer_capacity - self._transfer_capacity_avg) / effective_n
 
-        sent_delta = (cur_sent - self._sent) / (cur_time - self._last_transfer_check_time) if cur_time - self._last_transfer_check_time > 1e-10 else 0
+    def _check_and_get_current_transfer_capacity(self) -> float:
+        cur_sent = psutil.net_io_counters().bytes_sent / 1024
+        cur_time = time.time() * 1_000 # ms
 
-        self._sent = cur_sent
-        self._last_transfer_check_time = cur_time
+        sent_delta = (cur_sent - self._last_sent) / (cur_time - self._last_transfer_time) if cur_time - self._last_transfer_time > 0 else 0
+
+        self._last_sent = cur_sent
+        self._last_transfer_time = cur_time
 
         return sent_delta
 
-    def update_computing_capacity(self, computing_capacity):
-        self._computing_capacities.append(computing_capacity)
+    def update_computing_capacity(self, computing_capacity: float) -> None:
+        self._computing_count += 1
+        
+        # 증분 평균 계산
+        effective_n = min(self._computing_count, self._sample_num)
+        self._computing_capacity_avg = self._computing_capacity_avg + (computing_capacity - self._computing_capacity_avg) / effective_n
 
-        self._computing_capacities = self._computing_capacities[-self._sample_num:]
-
-        self._computing_capacity_avg = sum(self._computing_capacities) / len(self._computing_capacities)
-
-    def update_transfer_capacity(self):
-        transfer_capacity = self._check_and_get_current_transfer_capacity()
-
-        self._transfer_capacities.append(transfer_capacity)
-
-        self._transfer_capacities = self._transfer_capacities[-self._sample_num:]
-
-        self._transfer_capacity_avg = sum(self._transfer_capacities) / len(self._transfer_capacities)
-
-    def get_computing_capacity(self):
+    def get_computing_capacity_avg(self) -> float:
         return self._computing_capacity_avg
     
-    def get_transfer_capacity(self):
+    def get_transfer_capacity_avg(self) -> float:
         return self._transfer_capacity_avg
-        
-

@@ -15,11 +15,11 @@ import glob
 import torch
 
 class LayeredGraph:
-    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig, address: str):
+    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig):
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
-
+        
         self._network_config = network_config
-        self._dnn_models = DNNModels(model_config.get_model_names(), model_config, self._device, address)
+        self._dnn_models = DNNModels(model_config.get_model_names(), model_config, self._device)
         self._layered_graph = dict()
         self._layered_graph_backlog = dict()
         self._layer_nodes = []
@@ -59,7 +59,7 @@ class LayeredGraph:
                 capacity = self._dnn_models.get_computing(model_name)
             else:
                 if model_name == "":
-                    capacity = job_info.get_input_size()
+                    capacity = job_info.input_bytes
                 else:
                     capacity = self._dnn_models.get_transfer(model_name)
             
@@ -77,8 +77,8 @@ class LayeredGraph:
         links_job_num = {}
 
         for link in self._layer_node_pairs:
-            source_ip = link.get_source().get_ip()
-            dest_ip = link.get_destination().get_ip()
+            source_ip = link.source.get_ip()
+            dest_ip = link.destination.get_ip()
             
             if source_ip not in links_job_num:
                 links_job_num[source_ip] = {}
@@ -92,8 +92,8 @@ class LayeredGraph:
 
     def _update_backlog(self, elapsed_time: float, links_job_num: Dict[str, Dict[str, int]]):
         for link in self._layer_node_pairs:
-            source_ip = link.get_source().get_ip()
-            dest_ip = link.get_destination().get_ip()
+            source_ip = link.source.get_ip()
+            dest_ip = link.destination.get_ip()
             
             job_count = links_job_num[source_ip][dest_ip]
             capacity = self._capacity[source_ip][dest_ip]
@@ -138,9 +138,9 @@ class LayeredGraph:
         
     def schedule(self, source_ip: str, job_info: JobInfo) -> List[Tuple[LayerNode, LayerNode, str]]:
         source_node = LayerNode(source_ip, self._network_config.get_models(source_ip))
-        destination_node = LayerNode(job_info.get_terminal_destination(), self._network_config.get_models(job_info.get_terminal_destination()))
+        destination_node = LayerNode(job_info.terminal_destination, self._network_config.get_models(job_info.terminal_destination))
 
-        input_size = job_info.get_input_size()
+        input_size = job_info.input_bytes
     
         # if self._algorithm_class == 'JDPCRA':
         #     path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._model_configs, self._expected_arrival_rate, self._network_performance_info, input_size)
@@ -259,11 +259,11 @@ class LayeredGraph:
         }
 
         for link in self._layer_node_pairs:
-            if link.get_source().get_ip() == "192.168.1.5":
+            if link.source.get_ip() == "192.168.1.5":
                 node_name = "end"   
-            elif link.get_source().get_ip() == "192.168.1.7":
+            elif link.source.get_ip() == "192.168.1.7":
                 node_name = "edge"
-            elif link.get_source().get_ip() == "192.168.1.8":
+            elif link.source.get_ip() == "192.168.1.8":
                 node_name = "cloud"
 
             if link.is_same_node(): # computing

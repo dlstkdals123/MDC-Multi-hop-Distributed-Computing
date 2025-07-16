@@ -64,20 +64,20 @@ class CameraSender(MDC):
 
         self._job_manager.add_subtask(subtask_info)
 
-        subtask_layer_node = subtask_info.get_source()
+        subtask_layer_node = subtask_info.source
 
         if subtask_layer_node.get_ip() == self._address and subtask_layer_node.get_layer() == 0:
-            job_id = subtask_info.get_job_id()
+            job_id = subtask_info.job_id
             input_frame = DNNOutput(torch.tensor(self._frame_list[job_id]).float().view(1, TARGET_DEPTH, TARGET_HEIGHT, TARGET_WIDTH), subtask_info)
             dnn_output, computing_capacity = self._job_manager.run(input_frame)
-            destination_ip = subtask_info.get_destination().get_ip()
+            destination_ip = subtask_info.destination.get_ip()
 
-            dnn_output.get_subtask_info().set_next_subtask_id()
+            dnn_output.subtask_info.set_next_subtask_id()
 
             dnn_output_bytes = pickle.dumps(dnn_output)
                 
             # send job to next node
-            publish.single(f"job/{subtask_info.get_job_type()}", dnn_output_bytes, hostname=destination_ip)
+            publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
 
             self._capacity_manager.update_computing_capacity(computing_capacity)
 
@@ -129,8 +129,8 @@ class CameraSender(MDC):
             self.init_job_info()
             return True
         
-        input_size = sys.getsizeof(torch.tensor(frame).storage())
-        self._job_info.set_input_size(input_size)
+        input_bytes = sys.getsizeof(torch.tensor(frame).storage()) / 1024 # KB
+        self._job_info.set_input_bytes(input_bytes)
         return True
             
     def wait_until_can_send(self):
@@ -146,7 +146,7 @@ class CameraSender(MDC):
         current_frame = self._frame
         if self.set_job_info_time() and self.set_job_info_input_size(current_frame):
             job_info_bytes = pickle.dumps(self._job_info)
-            self._frame_list[self._job_info.get_job_id()] = current_frame
+            self._frame_list[self._job_info.job_id] = current_frame
 
             self._controller_publisher.publish("job/request_scheduling", job_info_bytes)
 

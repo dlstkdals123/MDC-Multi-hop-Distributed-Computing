@@ -86,7 +86,7 @@ class Controller(Program):
         os.makedirs(self._path_log_path, exist_ok=True)
         
     def init_layered_graph(self):
-        self._layered_graph = LayeredGraph(self._network_config, self._model_config, self._address)
+        self._layered_graph = LayeredGraph(self._network_config, self._model_config)
 
     def init_garbage_job_collector(self):
         callback_thread = threading.Thread(target=self.garbage_job_collector, args=())
@@ -206,7 +206,7 @@ class Controller(Program):
 
         if self._job_info_dummy:
             path = self._layered_graph.schedule(
-                self._job_info_dummy.get_source_ip(), 
+                self._job_info_dummy.source_ip, 
                 self._job_info_dummy
             )
             self._arrival_rate = self._layered_graph.get_arrival_rate(path)
@@ -221,9 +221,9 @@ class Controller(Program):
             self._job_info_dummy = job_info
 
         # register start time
-        self._job_list[job_info.get_job_id()] = time.time_ns()
+        self._job_list[job_info.job_id] = time.time_ns()
 
-        path = self._layered_graph.schedule(job_info.get_source_ip(), job_info)
+        path = self._layered_graph.schedule(job_info.source_ip, job_info)
         self._arrival_rate = self._layered_graph.get_arrival_rate(path)
         self._layered_graph.update_path_backlog(job_info=job_info, path=path)
         path_log_file_path = f"{self._path_log_path}/path.csv"
@@ -240,7 +240,7 @@ class Controller(Program):
             
     def handle_response(self, topic, payload, publisher):
         subtask_info: SubtaskInfo = pickle.loads(payload)
-        job_id = subtask_info.get_job_id()
+        job_id = subtask_info.job_id
         self._job_list_mutex.acquire()
         start_time = self._job_list[job_id]
         del self._job_list[job_id]
@@ -248,7 +248,7 @@ class Controller(Program):
         finish_time = time.time_ns()
 
         latency = finish_time - start_time
-        latency_log_file_path = f"{self._latency_log_path}/{subtask_info.get_job_name()}.csv"
+        latency_log_file_path = f"{self._latency_log_path}/{subtask_info.job_name}.csv"
         save_latency(latency_log_file_path, latency)
 
         if job_id == self._last_job_id:
@@ -290,7 +290,7 @@ class Controller(Program):
     def handle_finish(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)
 
-        self._last_job_id = job_info.get_job_id()
+        self._last_job_id = job_info.job_id
 
     def start(self):
         self.init_garbage_job_collector()

@@ -5,16 +5,18 @@ class LayerNodePair:
         self._source = source
         self._destination = destination
 
-    def to_string(self):
+    def to_string(self) -> str:
         return f"{self._source.to_string()}->{self._destination.to_string()}"
     
-    def get_source(self):
+    @property
+    def source(self) -> LayerNode:
         return self._source
     
-    def get_destination(self):
+    @property
+    def destination(self) -> LayerNode:
         return self._destination
     
-    def is_same_node(self):
+    def is_same_node(self) -> bool:
         return self._source.is_same_node(self._destination)
     
     def __hash__(self):
