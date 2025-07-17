@@ -116,9 +116,8 @@ class VideoSender(MDC):
     def send_frame(self):
         current_frame = self._frame
 
-        if not self._job_info:
-            input_bytes = current_frame.nbytes / KB_PER_BYTE
-            self.init_job_info(input_bytes)
+        input_bytes = current_frame.nbytes / KB_PER_BYTE
+        self.init_job_info(input_bytes)
 
         job_info_bytes = pickle.dumps(self._job_info)
         self._frame_list[self._job_info.job_id] = current_frame
