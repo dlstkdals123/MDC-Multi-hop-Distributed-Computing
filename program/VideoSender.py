@@ -43,15 +43,14 @@ class VideoSender(MDC):
         self.topic_dispatcher["mdc/arrival_rate"] = self.handle_arrival_rate
 
 
-    def init_job_info(self):
+    def init_job_info(self, input_bytes: float):
         job_name = self._job_name
         job_type = self._network_config.get_job_type(job_name)
-        input_size = None # 나중에 send_frame에서 재설정
         source_ip = self._address
         terminal_destination = self._network_config.get_job_destination(job_name)
-        start_time = time_ns()
+        start_time = time_ns() # 식별자를 위해서 ns 단위로 설정
 
-        job_info = JobInfo(job_name, job_type, input_size, source_ip, terminal_destination, start_time)
+        job_info = JobInfo(job_name, job_type, input_bytes, source_ip, terminal_destination, start_time)
 
         self._job_info = job_info
 
@@ -104,29 +103,6 @@ class VideoSender(MDC):
             time.sleep(sleep_time)
 
             self.send_frame()
-
-    def set_job_info_time(self):
-        if not self._network_config:
-            return False
-        
-        if not self._job_info:
-            self.init_job_info()
-            return True
-        
-        self._job_info.set_start_time(time_ns())
-        return True
-            
-    def set_job_info_input_size(self, frame: np.array):
-        if not self._network_config:
-            return False
-        
-        if not self._job_info:
-            self.init_job_info()
-            return True
-        
-        input_bytes = frame.nbytes / KB_PER_BYTE # KB
-        self._job_info.set_input_bytes(input_bytes)
-        return True
             
     def wait_until_can_send(self):
         print("Waiting for config.")
@@ -139,11 +115,15 @@ class VideoSender(MDC):
 
     def send_frame(self):
         current_frame = self._frame
-        if self.set_job_info_time() and self.set_job_info_input_size(current_frame):
-            job_info_bytes = pickle.dumps(self._job_info)
-            self._frame_list[self._job_info.job_id] = current_frame
 
-            self._controller_publisher.publish("job/request_scheduling", job_info_bytes)
+        if not self._job_info:
+            input_bytes = current_frame.nbytes / KB_PER_BYTE
+            self.init_job_info(input_bytes)
+
+        job_info_bytes = pickle.dumps(self._job_info)
+        self._frame_list[self._job_info.job_id] = current_frame
+
+        self._controller_publisher.publish("job/request_scheduling", job_info_bytes)
     
     def arrival_rate_getter(self):
         node_info_bytes = pickle.dumps(self._node_info)
