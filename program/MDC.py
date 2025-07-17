@@ -153,10 +153,10 @@ class MDC(Program):
 
     def run_dnn(self, dnn_output: DNNOutput):
         while True:
+            subtask_info = dnn_output.subtask_info
 
             # terminal node
-            if dnn_output.subtask_info.is_terminated():
-                subtask_info = dnn_output.subtask_info
+            if subtask_info.is_terminated():
                 subtask_info_bytes = pickle.dumps(subtask_info)
 
                 # send subtask info to controller
@@ -169,22 +169,22 @@ class MDC(Program):
                 return
             
             dnn_output = self._job_manager.update_dnn_output(dnn_output)
+            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output)
 
-            if dnn_output.subtask_info.is_transmission():
-                subtask_info = dnn_output.subtask_info
+            subtask_info = dnn_output.subtask_info
+
+            if subtask_info.is_transmission():
+                destination_ip = subtask_info.destination.get_ip()
                 subtask_info.set_next_source()
-                destination_ip = subtask_info.source.get_ip()
                 dnn_output_bytes = pickle.dumps(dnn_output)
-                    
+
                 # send job to next node
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
-
                 return
+            else:
+                self._capacity_manager.update_computing_capacity(computing_capacity)
 
-            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output)
-            self._capacity_manager.update_computing_capacity(computing_capacity)
-
-            dnn_output.subtask_info.set_next_source()
+            subtask_info.set_next_source()
 
        
 if __name__ == '__main__':

@@ -21,7 +21,7 @@ class LayeredGraph:
         self._network_config = network_config
         self._dnn_models = DNNModels(model_config.get_model_names(), model_config, self._device)
         self._layered_graph = dict()
-        self._layered_graph_backlog = dict()
+        self._layered_graph_backlog: Dict[LayerNodePair, float] = dict()
         self._layer_nodes = []
         self._layer_node_pairs: List[LayerNodePair] = []
         self._scheduling_algorithm = None
@@ -63,6 +63,7 @@ class LayeredGraph:
                 else:
                     capacity = self._dnn_models.get_transfer(model_name)
             
+            # GFLOPs or KB
             self._layered_graph_backlog[link] += capacity
         
     def update_graph(self):
@@ -176,7 +177,10 @@ class LayeredGraph:
 
         return links
     
-    def get_layered_graph_backlog(self):
+    def get_layered_graph_backlog(self) -> Dict[LayerNodePair, float]:
+        """
+        레이어드 그래프의 각 링크의 백로그를 반환합니다. (GFLOPs or KB)
+        """
         return self._layered_graph_backlog
     
     def get_arrival_rate(self, path: List[Tuple[LayerNode, LayerNode, str]]) -> float:

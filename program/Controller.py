@@ -1,4 +1,4 @@
-import sys, os, time
+import sys, os
  
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -9,11 +9,15 @@ from layeredgraph import LayeredGraph, LayerNode
 from job import JobInfo, SubtaskInfo
 from utils import save_latency, save_virtual_backlog, save_path, get_ip_address
 
+import time
 import pickle, json
 import paho.mqtt.publish as publish
 import threading
+
 from datetime import datetime
 from typing import Dict
+
+MS_PER_SEC = 1_000
 
 class Controller(Program):
     def __init__(self, sub_configs, pub_configs):
@@ -46,7 +50,8 @@ class Controller(Program):
         self._real_arrival_rate = 0
         self._send_num = 0
         
-        self._job_list = {}
+        # job_id: start_time (ms)
+        self._job_list: Dict[str, int] = {}
         self._job_list_mutex = threading.Lock()
 
         self._is_first_scheduling = True
@@ -93,20 +98,19 @@ class Controller(Program):
         callback_thread.start()
 
     def garbage_job_collector(self):
-        collect_garbage_job_time = self._network_config.collect_garbage_job_time
+        collect_garbage_job_time = self._network_config.collect_garbage_job_time # sec
         for job_name in self._network_config.get_job_names():
             while True:
-                time.sleep(collect_garbage_job_time)
+                time.sleep(collect_garbage_job_time) # sec
                 
-                cur_time = time.time_ns()
+                cur_time = time.time() * MS_PER_SEC # ms
                 
                 self._job_list_mutex.acquire()
                 try:
-                    keys_to_delete = [job_id for job_id, start_time_nano in self._job_list.items() 
-                                    if cur_time - start_time_nano >= collect_garbage_job_time * 1_000_000_000]
-                    
+                    keys_to_delete = [job_id for job_id, start_time in self._job_list.items() 
+                                    if cur_time - start_time >= collect_garbage_job_time * MS_PER_SEC] # ms
                     for k in keys_to_delete:
-                        latency = collect_garbage_job_time * 1_000_000_000
+                        latency = collect_garbage_job_time * MS_PER_SEC # ms
                         latency_log_file_path = f"{self._latency_log_path}/{job_name}.csv"
                         save_latency(latency_log_file_path, latency)
                         del self._job_list[k]
@@ -221,7 +225,7 @@ class Controller(Program):
             self._job_info_dummy = job_info
 
         # register start time
-        self._job_list[job_info.job_id] = time.time_ns()
+        self._job_list[job_info.job_id] = time.time() * MS_PER_SEC # ms
 
         path = self._layered_graph.schedule(job_info.source_ip, job_info)
         self._arrival_rate = self._layered_graph.get_arrival_rate(path)
@@ -245,7 +249,7 @@ class Controller(Program):
         start_time = self._job_list[job_id]
         del self._job_list[job_id]
         self._job_list_mutex.release()
-        finish_time = time.time_ns()
+        finish_time = time.time() * MS_PER_SEC # ms
 
         latency = finish_time - start_time
         latency_log_file_path = f"{self._latency_log_path}/{subtask_info.job_name}.csv"
