@@ -225,7 +225,7 @@ class Controller(Program):
             self._job_info_dummy = job_info
 
         # register start time
-        self._job_list[job_info.job_id] = time.time_ns()
+        self._job_list[job_info.job_id] = time.time() * MS_PER_SEC # ms
 
         path = self._layered_graph.schedule(job_info.source_ip, job_info)
         self._arrival_rate = self._layered_graph.get_arrival_rate(path)
@@ -249,7 +249,7 @@ class Controller(Program):
         start_time = self._job_list[job_id]
         del self._job_list[job_id]
         self._job_list_mutex.release()
-        finish_time = time.time_ns()
+        finish_time = time.time() * MS_PER_SEC # ms
 
         latency = finish_time - start_time
         latency_log_file_path = f"{self._latency_log_path}/{subtask_info.job_name}.csv"
