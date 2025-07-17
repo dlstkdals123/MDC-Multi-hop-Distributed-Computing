@@ -124,7 +124,7 @@ class VideoSender(MDC):
             self.init_job_info()
             return True
         
-        input_bytes = sys.getsizeof(torch.tensor(frame).storage()) / KB_PER_BYTE # KB
+        input_bytes = frame.nbytes / KB_PER_BYTE # KB
         self._job_info.set_input_bytes(input_bytes)
         return True
             
