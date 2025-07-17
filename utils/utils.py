@@ -38,7 +38,7 @@ def get_ip_address_linux(interface_name='eth0'):
         return "Failed to execute ip command or interface not found"
     
 
-def save_latency(file_path, latency):
+def save_latency(file_path: str, latency: float):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
@@ -50,14 +50,17 @@ def save_latency(file_path, latency):
         if not file_exists:
             writer.writerow(["latency (ms)"])
         
-        # 데이터 행을 파일에 씁니다.
-        writer.writerow([latency])
+        # 데이터 행을 파일에 씁니다. 소수점 둘째자리까지 반올림
+        writer.writerow([round(latency, 2)])
 
 def save_virtual_backlog(file_path, virtual_backlog):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
     sorted_virtual_backlog = sorted(virtual_backlog.items(), key=lambda item: item[0])
+    links = [link.to_string() for link, _ in sorted_virtual_backlog]
+    backlogs = [backlog for _, backlog in sorted_virtual_backlog]
+
     sum_GFLOPs = 0 # GFLOPs
     sum_KB = 0 # KB
     
@@ -77,8 +80,8 @@ def save_virtual_backlog(file_path, virtual_backlog):
     sum_GFLOPs_avg = sum_GFLOPs / computing_count if computing_count > 0 else 0
     sum_KB_avg = sum_KB / transmission_count if transmission_count > 0 else 0
 
-    headers = ["sum_GFLOPs", "avg_GFLOPs", "sum_KB", "avg_KB"]
-    datas = [sum_GFLOPs, sum_GFLOPs_avg, sum_KB, sum_KB_avg]
+    headers = ["sum_GFLOPs", "avg_GFLOPs", "sum_KB", "avg_KB"] + links
+    datas = [sum_GFLOPs, sum_GFLOPs_avg, sum_KB, sum_KB_avg] + backlogs
 
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -94,12 +97,10 @@ def save_path(file_path, path):
 
     path_list = []
     for source_node, destination_node, model_name in path:
-        if model_name == "":
-            path_list.append(f"(computing) {source_node.to_string()}")
+        if source_node.is_same_node(destination_node):
+            path_list.append(f"(computing) {source_node.to_string()}: {model_name}")
         else:
-            path_list.append(f"(transmission) {source_node.to_string()}->{destination_node.to_string()}: {model_name}")
-
-    path_string = ','.join(path_list)
+            path_list.append(f"(transmission) {source_node.to_string()}->{destination_node.to_string()}")
 
     # 파일에 데이터 쓰기
     with open(file_path, 'a', newline='') as csvfile:
@@ -109,8 +110,8 @@ def save_path(file_path, path):
         if not file_exists:
             writer.writerow(["path"])
         
-        # 데이터 행을 파일에 씁니다.
-        writer.writerow([path_string])
+        # 각 path를 별도 컬럼으로 저장
+        writer.writerow(path_list)
        
 def split_model(model: torch.nn.Module, split_point, flatten_index: int) -> torch.nn.Module:
     start, end = split_point
