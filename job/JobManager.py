@@ -71,9 +71,6 @@ class JobManager:
 
         Args:
             dnn_output (DNNOutput): 업데이트할 DNNOutput.
-
-        Returns:
-            DNNOutput: 업데이트된 DNNOutput.
         """
         previous_subtask_info = dnn_output.subtask_info
         current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
