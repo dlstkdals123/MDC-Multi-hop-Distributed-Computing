@@ -42,15 +42,13 @@ def save_latency(file_path, latency):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
-    latency = f"{latency / 1_000_000} ms"
-
     # 파일에 데이터 쓰기
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
         
         # 파일이 새로 만들어진 경우 열 이름을 씁니다.
         if not file_exists:
-            writer.writerow(["latency"])
+            writer.writerow(["latency (ms)"])
         
         # 데이터 행을 파일에 씁니다.
         writer.writerow([latency])
@@ -59,17 +57,28 @@ def save_virtual_backlog(file_path, virtual_backlog):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
-    # print("save virtual backlog")
-    # print(virtual_backlog)
     sorted_virtual_backlog = sorted(virtual_backlog.items(), key=lambda item: item[0])
-    links = [link.to_string() for link, _ in sorted_virtual_backlog]
-    backlogs = [backlog for _, backlog in sorted_virtual_backlog]
+    sum_GFLOPs = 0 # GFLOPs
+    sum_KB = 0 # KB
+    
+    computing_count = 0
+    transmission_count = 0
 
-    backlog_sum = sum(backlogs)
-    backlog_avg = backlog_sum / len(backlogs) if backlogs else 0
+    for idx, (link, backlog) in enumerate(sorted_virtual_backlog):
+        if link.is_same_node():
+            sorted_virtual_backlog[idx] = (f"(computing) {link.source.to_string()}", backlog)
+            sum_GFLOPs += backlog # GFLOPs
+            computing_count += 1
+        else:
+            sorted_virtual_backlog[idx] = (f"(transmission) {link.to_string()}", backlog)
+            sum_KB += backlog # KB
+            transmission_count += 1
+            
+    sum_GFLOPs_avg = sum_GFLOPs / computing_count if computing_count > 0 else 0
+    sum_KB_avg = sum_KB / transmission_count if transmission_count > 0 else 0
 
-    headers = ["sum", "avg"] + links
-    datas = [backlog_sum, backlog_avg] + backlogs
+    headers = ["sum_GFLOPs", "avg_GFLOPs", "sum_KB", "avg_KB"]
+    datas = [sum_GFLOPs, sum_GFLOPs_avg, sum_KB, sum_KB_avg]
 
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -86,9 +95,9 @@ def save_path(file_path, path):
     path_list = []
     for source_node, destination_node, model_name in path:
         if model_name == "":
-            path_list.append(source_node.to_string() + "->" + destination_node.to_string())
+            path_list.append(f"(computing) {source_node.to_string()}")
         else:
-            path_list.append(source_node.to_string() + ": " + model_name)
+            path_list.append(f"(transmission) {source_node.to_string()}->{destination_node.to_string()}: {model_name}")
 
     path_string = ','.join(path_list)
 

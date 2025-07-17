@@ -63,7 +63,13 @@ class DNNModels:
         return self._models[model_name]
 
     def get_computing(self, model_name: str) -> float:
+        """
+        모델 이름을 입력으로 받아, 모델의 계산량을 반환합니다. (GFLOPs)
+        """
         return self._computing[model_name]
 
     def get_transfer(self, model_name: str) -> float:
+        """
+        모델 이름을 입력으로 받아, 모델의 전송량을 반환합니다. (KB)
+        """
         return self._transfer[model_name]
