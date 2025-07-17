@@ -47,12 +47,6 @@ class JobInfo:
     @property
     def start_time(self) -> int:
         return self._start_time
-    
-    def set_input_bytes(self, input_bytes: float):
-        self._input_bytes = input_bytes
-
-    def set_start_time(self, start_time: int):
-        self._start_time = start_time
 
     def __str__(self):
         return self.job_id

@@ -21,6 +21,10 @@ class DNNOutput:
     @property
     def output(self) -> torch.Tensor:
         return self._output
+
+    @subtask_info.setter
+    def subtask_info(self, subtask_info: SubtaskInfo):
+        self._subtask_info = subtask_info
         
     def __eq__(self, other):
         return self.subtask_info.get_subtask_id() == other.subtask_info.get_subtask_id()
