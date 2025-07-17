@@ -168,23 +168,23 @@ class MDC(Program):
                 self._job_manager.add_dnn_output(dnn_output)
                 return
             
-            updated_dnn_output = self._job_manager.update_dnn_output(dnn_output)
-            result_dnn_output, computing_capacity = self._job_manager.run(output=updated_dnn_output)
+            dnn_output = self._job_manager.update_dnn_output(dnn_output)
+            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output)
 
-            result_subtask_info = result_dnn_output.subtask_info
+            subtask_info = dnn_output.subtask_info
 
-            if result_subtask_info.is_transmission():
-                destination_ip = result_subtask_info.destination.get_ip()
-                result_subtask_info.set_next_source()
-                result_dnn_output_bytes = pickle.dumps(result_dnn_output)
+            if subtask_info.is_transmission():
+                destination_ip = subtask_info.destination.get_ip()
+                subtask_info.set_next_source()
+                dnn_output_bytes = pickle.dumps(dnn_output)
 
                 # send job to next node
-                publish.single(f"job/{result_subtask_info.job_type}", result_dnn_output_bytes, hostname=destination_ip)
+                publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
                 return
             else:
                 self._capacity_manager.update_computing_capacity(computing_capacity)
 
-            result_subtask_info.set_next_source()
+            subtask_info.set_next_source()
 
        
 if __name__ == '__main__':
