@@ -116,8 +116,8 @@ class JobManager:
         """
         서브태스크를 실행하고, 단위 시간당 계산량 또는 전송량을 반환합니다.
 
-        (서브태스크가 계산일 경우 단위 시간당 계산량을 반환합니다. (GFLOPs/ms))
-        (서브태스크가 전송일 경우 단위 시간당 전송량을 반환합니다. (KB/ms)))
+        서브태스크가 계산일 경우 단위 시간당 계산량을 반환합니다. (GFLOPs/ms)
+        서브태스크가 전송일 경우 단위 시간당 전송량을 반환합니다. (KB/ms))
 
         Args:
             output (DNNOutput): 실행할 서브태스크의 출력.
@@ -144,8 +144,6 @@ class JobManager:
 
             end_time = time.time() * MS_PER_SECOND # ms
 
-            # 서브태스크가 계산일 경우 단위 시간당 계산량을 반환합니다. (GFLOPs/ms)
-            # 서브태스크가 전송일 경우 단위 시간당 전송량을 반환합니다. (KB/ms)
             capacity = subtask.get_backlog() / (end_time - start_time) if subtask.get_backlog() > 0 and end_time - start_time > 0 else 0
 
             return dnn_output, capacity

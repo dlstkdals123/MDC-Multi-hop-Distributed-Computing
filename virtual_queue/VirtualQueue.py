@@ -68,8 +68,11 @@ class VirtualQueue:
     
     def get_backlogs(self) -> Dict[LayerNodePair, float]:
         """
-        지금까지 
+        대기중인 서브태스크에 대해서 출발지와 도착지에 대한 백로그 총합을 반환합니다.
+        백로그는 서브태스크의 계산량 또는 전송량을 의미합니다.
 
+        Returns:
+            Dict[LayerNodePair, float]: 대기중인 서브태스크의 백로그 총합.
         """
         links = {}
         self.mutex.acquire()
