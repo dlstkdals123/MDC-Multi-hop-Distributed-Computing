@@ -3,14 +3,9 @@ from job import DNNSubtask, SubtaskInfo
 from layeredgraph import LayerNodePair
 
 import threading
-try:
-    from time import time_ns
-except ImportError:
-    from datetime import datetime
-    # For compatibility with Python 3.6
-    def time_ns():
-        now = datetime.now()
-        return int(now.timestamp() * 1e9)
+import time
+
+MS_PER_SECOND = 1_000
 
 class VirtualQueue:
     def __init__(self):
@@ -18,9 +13,9 @@ class VirtualQueue:
         self.mutex = threading.Lock()
 
     def garbage_subtask_collector(self, collect_garbage_job_time: int):
-        cur_time = time_ns()
+        cur_time = time.time() * MS_PER_SECOND # ms
         self.mutex.acquire()
-        keys_to_delete = [subtask_info for subtask_info, (dnn_subtask, start_time_nano) in self.subtask_infos.items() if cur_time - start_time_nano >= collect_garbage_job_time * 1_000_000_000]
+        keys_to_delete = [subtask_info for subtask_info, (dnn_subtask, start_time_nano) in self.subtask_infos.items() if cur_time - start_time_nano >= collect_garbage_job_time * MS_PER_SECOND]
 
         for k in keys_to_delete:
             del self.subtask_infos[k]
@@ -41,7 +36,7 @@ class VirtualQueue:
             return False
         
         else:
-            cur_time = time_ns()
+            cur_time = time.time() * MS_PER_SECOND # ms
             self.subtask_infos[subtask_info] = (subtask, cur_time)
             return True
 
@@ -72,6 +67,13 @@ class VirtualQueue:
         return subtask
     
     def get_backlogs(self) -> Dict[LayerNodePair, float]:
+        """
+        대기중인 서브태스크에 대해서 출발지와 도착지에 대한 백로그 총합을 반환합니다.
+        백로그는 서브태스크의 계산량 또는 전송량을 의미합니다.
+
+        Returns:
+            Dict[LayerNodePair, float]: 대기중인 서브태스크의 백로그 총합.
+        """
         links = {}
         self.mutex.acquire()
         for subtask_info, (subtask, _) in self.subtask_infos.items():

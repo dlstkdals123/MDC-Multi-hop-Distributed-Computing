@@ -35,7 +35,7 @@ class MDC(Program):
             "mdc/config" : self.handle_config,
             "mdc/node_info": self.handle_request_backlog,
             "mdc/finish": self.handle_finish,
-            "mdc/network_performance_info": self.handle_requset_network_performance_info,
+            "mdc/network_performance_info": self.handle_request_network_performance_info,
         }
 
         self.topic_dispatcher_checker = {
@@ -90,7 +90,7 @@ class MDC(Program):
 
         print(f"Succesfully get config.")
 
-    def handle_requset_network_performance_info(self, topic, data, publisher):
+    def handle_request_network_performance_info(self, topic, data, publisher):
         gpu_usage = self._gpu_util_manager.get_all_gpu_stats()["utilization"]
         gpu_capacity = 1 - gpu_usage
 
@@ -168,7 +168,7 @@ class MDC(Program):
                 self._job_manager.add_dnn_output(dnn_output)
                 return
             
-            dnn_output = self._job_manager.update_dnn_output(dnn_output)
+            self._job_manager.update_dnn_output(dnn_output)
             dnn_output, computing_capacity = self._job_manager.run(output=dnn_output)
 
             subtask_info = dnn_output.subtask_info

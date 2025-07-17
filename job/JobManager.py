@@ -64,20 +64,17 @@ class JobManager:
         """
         return bool(self._ahead_of_time_outputs.exist_dnn_output(subtask_info))
 
-    def update_dnn_output(self, dnn_output: DNNOutput) -> DNNOutput:
+    def update_dnn_output(self, dnn_output: DNNOutput) -> None:
         """
         막 도착한 DNNOutput의 서브태스크는 잘못된 목적지와 모델 정보를 가지고 있습니다.
         따라서 해당 서브태스크와 똑같은 ID에 대한 서브태스크를 가상큐에서 가져와, DNNOutput을 업데이트합니다.
 
         Args:
             dnn_output (DNNOutput): 업데이트할 DNNOutput.
-
-        Returns:
-            DNNOutput: 업데이트된 DNNOutput.
         """
         previous_subtask_info = dnn_output.subtask_info
         current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
-        return DNNOutput(dnn_output.output, current_subtask_info)
+        dnn_output.subtask_info = current_subtask_info
         
     def pop_dnn_output(self, subtask_info: SubtaskInfo) -> DNNOutput:
         """
@@ -119,8 +116,8 @@ class JobManager:
         """
         서브태스크를 실행하고, 단위 시간당 계산량 또는 전송량을 반환합니다.
 
-        (서브태스크가 계산일 경우 단위 시간당 계산량을 반환합니다. (GFLOPs/ms))
-        (서브태스크가 전송일 경우 단위 시간당 전송량을 반환합니다. (KB/ms)))
+        서브태스크가 계산일 경우 단위 시간당 계산량을 반환합니다. (GFLOPs/ms)
+        서브태스크가 전송일 경우 단위 시간당 전송량을 반환합니다. (KB/ms))
 
         Args:
             output (DNNOutput): 실행할 서브태스크의 출력.
@@ -147,8 +144,6 @@ class JobManager:
 
             end_time = time.time() * MS_PER_SECOND # ms
 
-            # 서브태스크가 계산일 경우 단위 시간당 계산량을 반환합니다. (GFLOPs/ms)
-            # 서브태스크가 전송일 경우 단위 시간당 전송량을 반환합니다. (KB/ms)
             capacity = subtask.get_backlog() / (end_time - start_time) if subtask.get_backlog() > 0 and end_time - start_time > 0 else 0
 
             return dnn_output, capacity
