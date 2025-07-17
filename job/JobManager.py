@@ -64,7 +64,7 @@ class JobManager:
         """
         return bool(self._ahead_of_time_outputs.exist_dnn_output(subtask_info))
 
-    def update_dnn_output(self, dnn_output: DNNOutput) -> DNNOutput:
+    def update_dnn_output(self, dnn_output: DNNOutput) -> None:
         """
         막 도착한 DNNOutput의 서브태스크는 잘못된 목적지와 모델 정보를 가지고 있습니다.
         따라서 해당 서브태스크와 똑같은 ID에 대한 서브태스크를 가상큐에서 가져와, DNNOutput을 업데이트합니다.
@@ -77,7 +77,7 @@ class JobManager:
         """
         previous_subtask_info = dnn_output.subtask_info
         current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
-        return DNNOutput(dnn_output.output, current_subtask_info)
+        dnn_output.subtask_info = current_subtask_info
         
     def pop_dnn_output(self, subtask_info: SubtaskInfo) -> DNNOutput:
         """

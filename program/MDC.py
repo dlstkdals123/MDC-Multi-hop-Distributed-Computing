@@ -168,7 +168,7 @@ class MDC(Program):
                 self._job_manager.add_dnn_output(dnn_output)
                 return
             
-            dnn_output = self._job_manager.update_dnn_output(dnn_output)
+            self._job_manager.update_dnn_output(dnn_output)
             dnn_output, computing_capacity = self._job_manager.run(output=dnn_output)
 
             subtask_info = dnn_output.subtask_info
