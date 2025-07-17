@@ -138,6 +138,11 @@ class JobManager:
 
             start_time = time.time() * MS_PER_SECOND # ms
 
+            if isinstance(data, list):
+                data = [d.to(self._device) for d in data]
+            else:
+                data = data.to(self._device)
+                
             dnn_output = subtask.run(data)
 
             end_time = time.time() * MS_PER_SECOND # ms
