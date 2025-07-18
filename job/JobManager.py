@@ -36,7 +36,7 @@ class JobManager:
 
         self._network_config = network_config
         self._model_config = model_config
-        self._dnn_models: DNNModels = DNNModels(model_config.get_model_names(), model_config, self._device)
+        self._dnn_models: DNNModels = DNNModels(model_config, self._device)
 
         self._virtual_queue: VirtualQueue = VirtualQueue()
         self._ahead_of_time_outputs: AheadOutputQueue = AheadOutputQueue()
