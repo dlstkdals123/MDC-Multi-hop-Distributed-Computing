@@ -1,6 +1,6 @@
 from job import JobInfo
 from layeredgraph import LayerNode, LayerNodePair
-from typing import List, Tuple
+
 class SubtaskInfo(JobInfo):
     """
     서브태스크의 정보를 저장하는 클래스입니다.
@@ -18,7 +18,7 @@ class SubtaskInfo(JobInfo):
         self._model_name = model_name
         self._primary_path_index = primary_path_index
         self._terminal_index = terminal_index
-        super().__init__(job_info.job_name, job_info.job_type, job_info.input_bytes, job_info.source_ip, job_info.terminal_destination, job_info.start_time)
+        super().__init__(job_info.job_name, job_info.job_type, job_info.input_bytes, job_info.source_ip, job_info.terminal_ip, job_info.start_time)
     
     @property
     def source(self) -> LayerNode:

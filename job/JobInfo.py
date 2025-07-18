@@ -7,16 +7,16 @@ class JobInfo:
         _job_type (str): 작업 타입.
         _input_bytes (float): 입력 크기. 일반적으로 source의 이미지 크기 (KB).
         _source_ip (str): 작업 소스 IP.
-        _terminal_destination (str): 작업 종착지 IP.
+        _terminal_ip (str): 작업 종착지 IP.
         _start_time (int): 작업 시작 시간 (ns). 동일한 작업에 대한 식별자.
     """
-    def __init__(self, job_name: str, job_type: str, input_bytes: float, source_ip: str, terminal_destination: str,  start_time: int):
+    def __init__(self, job_name: str, job_type: str, input_bytes: float, source_ip: str, terminal_ip: str,  start_time: int):
         self._job_name = job_name
         self._job_type = job_type
-        self._input_bytes = input_bytes
+        self._input_bytes = input_bytes # KB
         self._source_ip = source_ip
-        self._terminal_destination = terminal_destination
-        self._start_time = start_time
+        self._terminal_ip = terminal_ip
+        self._start_time = start_time # ns
 
         self._delimeter = "_"
 
@@ -33,8 +33,8 @@ class JobInfo:
         return self._delimeter.join([self._job_name, str(self._start_time)])
     
     @property
-    def terminal_destination(self) -> str:
-        return self._terminal_destination
+    def terminal_ip(self) -> str:
+        return self._terminal_ip
     
     @property
     def job_type(self) -> str:

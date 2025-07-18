@@ -10,7 +10,7 @@ class CapacityManager:
 
     Attributes:
         _sample_num (int): 샘플링할 데이터 개수.
-        _last_sent (int): 마지막 전송량 (KB).
+        _last_sent (float): 마지막 전송량 (KB).
         _last_transfer_time (float): 마지막 전송 시간 (ms).
         _computing_count (int): 계산량 업데이트 횟수.
         _computing_capacity_avg (float): 계산량 평균 (GFLOPs/ms).
@@ -21,7 +21,7 @@ class CapacityManager:
 
         self._sample_num: int = 100
 
-        self._last_sent: int = psutil.net_io_counters().bytes_sent / KB_PER_BYTE
+        self._last_sent: float = psutil.net_io_counters().bytes_sent / KB_PER_BYTE
         self._last_transfer_time: float = time.time() * MS_PER_SECOND # ms
 
         self._transfer_count: int = 0
