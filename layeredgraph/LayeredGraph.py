@@ -19,7 +19,7 @@ class LayeredGraph:
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
         
         self._network_config = network_config
-        self._dnn_models = DNNModels(model_config.get_model_names(), model_config, self._device)
+        self._dnn_models = DNNModels(model_config, self._device)
         self._layered_graph = dict()
         self._layered_graph_backlog: Dict[LayerNodePair, float] = dict()
         self._layer_nodes = []

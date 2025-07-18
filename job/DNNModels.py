@@ -17,7 +17,7 @@ class DNNModels:
         _computing (Dict[str, float]): 모델 이름과 계산량 (GFLOPs).
         _transfer (Dict[str, float]): 모델 이름과 전송량 (KB).
     """
-    def __init__(self, model_names: List[str], model_config: ModelConfig, device: str):
+    def __init__(self, model_config: ModelConfig, device: str):
         """
         Args:
             model_names (List[str]): 모델 이름들.
@@ -28,9 +28,10 @@ class DNNModels:
         self._computing: Dict[str, float] = {}
         self._transfer: Dict[str, float] = {}
 
-        self._init_models(model_names, model_config, device)
+        self._init_models(model_config, device)
 
-    def _init_models(self, model_names: List[str], model_config: ModelConfig, device: str):
+    def _init_models(self, model_config: ModelConfig, device: str):
+        model_names = model_config.get_model_names()
         for model_name in model_names:
             model = load_model(model_name).to(device)
             self._models[model_name] = model
