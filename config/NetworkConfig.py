@@ -8,7 +8,7 @@ class NetworkConfig:
     Attributes:
         _queue_name (str): 큐 이름.
         _scheduling_algorithm (str): 스케줄링 알고리즘 이름.
-        _collect_garbage_job_time (float): 가비지 컬렉션 작업 시간.
+        _collect_garbage_job_time (int): 가비지 컬렉션 작업 시간. (sec)
         _jobs (Dict[str, any]): 작업 정보.
         _network (Dict[str, any]): 네트워크 정보.
         _router (Dict[str, any]): 라우터 정보.
@@ -23,7 +23,7 @@ class NetworkConfig:
 
         self._queue_name: str = network_config["queue_name"]
         self._scheduling_algorithm: str = network_config["scheduling_algorithm"]
-        self._collect_garbage_job_time: float = float(network_config["collect_garbage_job_time"])
+        self._collect_garbage_job_time: int = int(network_config["collect_garbage_job_time"])
         self._jobs: Dict[str, any] = network_config["jobs"]
         self._network: Dict[str, any] = network_config["network"]
         self._router: List[str] = network_config["router"]
@@ -112,7 +112,7 @@ class NetworkConfig:
         return self._scheduling_algorithm
     
     @property
-    def collect_garbage_job_time(self) -> float:
+    def collect_garbage_job_time(self) -> int:
         return self._collect_garbage_job_time
 
     def get_job_names(self) -> List[str]:

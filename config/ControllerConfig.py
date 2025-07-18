@@ -6,7 +6,7 @@ class ControllerConfig:
 
     Attributes:
         _experiment_name (str): 실험 이름
-        _sync_time (int): 동기화 시간.
+        _sync_time (int): 동기화 시간. (sec)
     """
         
     def __init__(self, controller_config: Dict[str, any]):

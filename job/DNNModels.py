@@ -1,4 +1,4 @@
-from typing import List, Dict, Union
+from typing import List, Dict
 
 import torch
 
@@ -52,7 +52,7 @@ class DNNModels:
 
                 x: torch.Tensor = torch.zeros(input_size).to(device)
 
-                x: Union[torch.Tensor, List[torch.Tensor]] = model(x)
+                x = model(x)
 
                 if isinstance(x, list):
                     self._transfer[model_name] = sum(x_prime.numel() * x_prime.element_size() for x_prime in x) / KB_PER_BYTE # KB

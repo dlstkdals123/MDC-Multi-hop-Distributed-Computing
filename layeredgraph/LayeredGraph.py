@@ -137,21 +137,9 @@ class LayeredGraph:
         self._algorithm_class = module_path.split(".")[-1]
         self._scheduling_algorithm = getattr(importlib.import_module(module_path), self._algorithm_class)()
         
-    def schedule(self, source_ip: str, job_info: JobInfo) -> List[Tuple[LayerNode, LayerNode, str]]:
-        source_node = LayerNode(source_ip, self._network_config.get_models(source_ip))
-        destination_node = LayerNode(job_info.terminal_destination, self._network_config.get_models(job_info.terminal_destination))
-
-        input_size = job_info.input_bytes
-    
-        # if self._algorithm_class == 'JDPCRA':
-        #     path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._model_configs, self._expected_arrival_rate, self._network_performance_info, input_size)
-        
-        # elif self._algorithm_class == 'TLDOC':
-        #     if self._configs == None:
-        #         idle_power = self.load_config()
-        #         self._scheduling_algorithm.init_parameter(self._configs[0], self._configs[1], idle_power, self._model_configs)
-        #     self._scheduling_algorithm.set_t_wait(self.get_t_wait())
-        #     path = self._scheduling_algorithm.get_path(source_node, destination_node, self._layered_graph, self._expected_arrival_rate, self._network_performance_info, input_size)
+    def schedule(self, job_info: JobInfo) -> List[Tuple[LayerNode, LayerNode, str]]:
+        source_node = LayerNode(job_info.source_ip, self._network_config.get_models(job_info.source_ip))
+        destination_node = LayerNode(job_info.terminal_ip, self._network_config.get_models(job_info.terminal_ip))
         
         if self._algorithm_class == 'RandomSelection':
             self._scheduling_algorithm: RandomSelection
