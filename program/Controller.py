@@ -30,9 +30,7 @@ class Controller(Program):
             "mdc/node_info": self.handle_node_info,
             "job/request_scheduling": self.handle_request_scheduling,
             "job/response": self.handle_response,
-            "mdc/arrival_rate": self.handle_request_arrival_rate,
             "mdc/finish": self.handle_finish,
-            "mdc/network_performance_info": self.handle_network_performance_info,
         }
 
         self.topic_dispatcher_checker = {}
@@ -46,9 +44,6 @@ class Controller(Program):
         self._controller_config: ControllerConfig = None
         self._model_config: ModelConfig = None
         self._layered_graph = None
-        self._arrival_rate = 0
-        self._real_arrival_rate = 0
-        self._send_num = 0
         
         # job_id: start_time (ms)
         self._job_list: Dict[str, int] = {}
@@ -162,17 +157,6 @@ class Controller(Program):
                 except:
                     pass
 
-    def init_measure_arrival_rate(self):
-        measure_arrival_rate_thread = threading.Thread(target=self.measure_arrival_rate, args=())
-        measure_arrival_rate_thread.start()
-
-    def measure_arrival_rate(self):
-        while True:
-            time.sleep(1)
-            self._real_arrival_rate = self._send_num / 30
-            self._layered_graph.update_expected_arrival_rate(self._real_arrival_rate)
-            self._send_num = 0
-
     def handle_config(self, topic, payload, publisher):
         # get source ip address
         node_info: RequestConfig = pickle.loads(payload)
@@ -210,13 +194,10 @@ class Controller(Program):
 
         if self._job_info_dummy:
             path = self._layered_graph.schedule(
-                self._job_info_dummy.source_ip, 
                 self._job_info_dummy
             )
-            self._arrival_rate = self._layered_graph.get_arrival_rate(path)
 
     def handle_request_scheduling(self, topic, payload, publisher):
-        self._send_num += 1 # for measure real arrival rate
         job_info: JobInfo = pickle.loads(payload)
 
         if self._is_first_scheduling:
@@ -228,7 +209,6 @@ class Controller(Program):
         self._job_list[job_info.job_id] = time.time() * MS_PER_SECOND # ms
 
         path = self._layered_graph.schedule(job_info)
-        self._arrival_rate = self._layered_graph.get_arrival_rate(path)
         self._layered_graph.update_path_backlog(job_info=job_info, path=path)
         path_log_file_path = f"{self._path_log_path}/path.csv"
         save_path(path_log_file_path, path)
@@ -261,18 +241,6 @@ class Controller(Program):
             time.sleep(5)
             os._exit(1)
 
-    def handle_network_performance_info(self, topic, payload, publisher):
-        network_performance: NetworkPerformance = pickle.loads(payload)
-
-        if network_performance.ip == "192.168.1.5":
-            self._layered_graph.update_network_performance_info('end', network_performance.gpu_capacity)
-
-        elif network_performance.ip == "192.168.1.7":
-            self._layered_graph.update_network_performance_info('edge', network_performance.gpu_capacity)
-
-        elif network_performance.ip == "192.168.1.8":
-            self._layered_graph.update_network_performance_info('cloud', network_performance.gpu_capacity)
-
     def notify_finish(self):
         for node_ip in self._network_config.get_network_list():
             # send finish to nodes
@@ -280,16 +248,6 @@ class Controller(Program):
                 publish.single("mdc/finish", b"", hostname=node_ip)
             except:
                 pass
-
-    def handle_request_arrival_rate(self, topic, payload, publisher):
-        # get source ip address
-        node_info: RequestConfig = pickle.loads(payload)
-        ip = node_info.ip
-
-        arrival_rate_bytes = pickle.dumps(self._arrival_rate)
-
-        # send arrival_rate byte to source ip (response)
-        publish.single("mdc/arrival_rate", arrival_rate_bytes, hostname=ip)
 
     def handle_finish(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)
@@ -300,7 +258,6 @@ class Controller(Program):
         self.init_garbage_job_collector()
         self.init_sync_backlog()
         self.init_sync_network_performance()
-        self.init_measure_arrival_rate()
 
 
 if __name__ == '__main__':
@@ -313,9 +270,7 @@ if __name__ == '__main__':
                 ("job/response", 1),
                 ("mdc/node_info", 1),
                 ("job/request_scheduling", 1),
-                ("mdc/arrival_rate", 1),
                 ("mdc/finish", 1),
-                ("mdc/network_performance_info", 1),
             ],
         }
     
