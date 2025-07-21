@@ -42,7 +42,7 @@ class DNNSubtask:
             DNNOutput: 서브태스크의 출력. (서브태스크가 계산일 경우 모델 계산 결과, 전송일 경우 복사된 데이터)
         """
         if self._subtask_info.is_transmission():
-            # 단순히 데이터를 복사하여 DNNOutput 객체를 생성합니다.
+            # 단순히 데이터를 DNNOutput 객체로 변환합니다.
             if isinstance(data, list):
                 data = [d.to("cpu") for d in data]
             else:

@@ -31,6 +31,9 @@ class DNNModels:
         self._init_models(model_config, device)
 
     def _init_models(self, model_config: ModelConfig, device: str):
+        """
+        모델을 초기화하고, 계산량과 전송량을 계산합니다.
+        """
         model_names = model_config.get_model_names()
         for model_name in model_names:
             model = load_model(model_name).to(device)
@@ -39,6 +42,11 @@ class DNNModels:
         self._init_computing_and_transfer(model_config, device)
 
     def _init_computing_and_transfer(self, model_config: ModelConfig, device: str):
+        """
+        모델의 계산량과 전송량을 계산합니다.
+        계산량은 FLOPs을 계산하여 GFLOPs로 변환합니다.
+        전송량은 모델의 출력 크기를 계산하여 KB로 변환합니다.
+        """
         for model_name, model in self._models.items():
             input_size = model_config.get_input_size(model_name)
 
