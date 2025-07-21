@@ -52,7 +52,6 @@ class MDC(Program):
         self._backlogs_zero_flag = False
 
         self._capacity_manager = CapacityManager()
-        self._gpu_util_manager = GPUUtilManager()
 
         super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
@@ -89,17 +88,6 @@ class MDC(Program):
         self.init_node_publisher()
 
         print(f"Succesfully get config.")
-
-    def handle_request_network_performance_info(self, topic, data, publisher):
-        gpu_usage = self._gpu_util_manager.get_all_gpu_stats()["utilization"]
-        gpu_capacity = 1 - gpu_usage
-
-        network_performance = NetworkPerformance(ip=self._address, gpu_capacity=gpu_capacity)
-
-        network_performance_bytes = pickle.dumps(network_performance)
-        
-        # send NetworkPerformance byte to source ip (response)
-        self._controller_publisher.publish("mdc/network_performance_info", network_performance_bytes)
 
     def init_node_publisher(self):
         neighbors = self._network_config.get_network_neighbors(self._address)

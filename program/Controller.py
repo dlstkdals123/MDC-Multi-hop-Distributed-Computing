@@ -31,7 +31,6 @@ class Controller(Program):
             "job/request_scheduling": self.handle_request_scheduling,
             "job/response": self.handle_response,
             "mdc/finish": self.handle_finish,
-            "mdc/network_performance_info": self.handle_network_performance_info,
         }
 
         self.topic_dispatcher_checker = {}
@@ -242,18 +241,6 @@ class Controller(Program):
             time.sleep(5)
             os._exit(1)
 
-    def handle_network_performance_info(self, topic, payload, publisher):
-        network_performance: NetworkPerformance = pickle.loads(payload)
-
-        if network_performance.ip == "192.168.1.5":
-            self._layered_graph.update_network_performance_info('end', network_performance.gpu_capacity)
-
-        elif network_performance.ip == "192.168.1.7":
-            self._layered_graph.update_network_performance_info('edge', network_performance.gpu_capacity)
-
-        elif network_performance.ip == "192.168.1.8":
-            self._layered_graph.update_network_performance_info('cloud', network_performance.gpu_capacity)
-
     def notify_finish(self):
         for node_ip in self._network_config.get_network_list():
             # send finish to nodes
@@ -284,7 +271,6 @@ if __name__ == '__main__':
                 ("mdc/node_info", 1),
                 ("job/request_scheduling", 1),
                 ("mdc/finish", 1),
-                ("mdc/network_performance_info", 1),
             ],
         }
     
