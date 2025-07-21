@@ -57,8 +57,10 @@ class CapacityManager:
         effective_n = min(self._computing_count, self._sample_num)
         self._computing_capacity_avg = self._computing_capacity_avg + (computing_capacity - self._computing_capacity_avg) / effective_n
 
-    def get_computing_capacity_avg(self) -> float:
+    @property
+    def computing_capacity_avg(self) -> float:
         return self._computing_capacity_avg
     
-    def get_transfer_capacity_avg(self) -> float:
+    @property
+    def transfer_capacity_avg(self) -> float:
         return self._transfer_capacity_avg
