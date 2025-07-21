@@ -8,7 +8,6 @@ from program import Program
 from job import *
 from communication import *
 from utils.utils import get_ip_address
-from spec.GPUUtilManager import GPUUtilManager
 from config import NetworkConfig, ModelConfig
 
 import paho.mqtt.publish as publish
@@ -35,7 +34,6 @@ class MDC(Program):
             "mdc/config" : self.handle_config,
             "mdc/node_info": self.handle_request_backlog,
             "mdc/finish": self.handle_finish,
-            "mdc/network_performance_info": self.handle_request_network_performance_info,
         }
 
         self.topic_dispatcher_checker = {
@@ -185,7 +183,6 @@ if __name__ == '__main__':
                 ("mdc/config", 1),
                 ("mdc/node_info", 1),
                 ("mdc/finish", 1),
-                ("mdc/network_performance_info", 1),
             ],
         }
     
