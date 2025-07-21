@@ -141,22 +141,6 @@ class Controller(Program):
                 except:
                     pass
 
-    def init_sync_network_performance(self):
-        sync_network_performance_thread = threading.Thread(target=self.sync_network_performance, args=())
-        sync_network_performance_thread.start()
-
-    def sync_network_performance(self):
-        while True:
-            time.sleep(self._controller_config.sync_time)
-            for node_ip in self._network_config.get_network_list():
-                # send RequestBacklog byte to source ip (response)
-                request_network_performance = RequestNetworkPerformance()
-                request_network_performance_bytes = pickle.dumps(request_network_performance)
-                try:
-                    publish.single("mdc/network_performance_info", request_network_performance_bytes, hostname=node_ip)
-                except:
-                    pass
-
     def handle_config(self, topic, payload, publisher):
         # get source ip address
         node_info: RequestConfig = pickle.loads(payload)
@@ -257,8 +241,6 @@ class Controller(Program):
     def start(self):
         self.init_garbage_job_collector()
         self.init_sync_backlog()
-        self.init_sync_network_performance()
-
 
 if __name__ == '__main__':
 
