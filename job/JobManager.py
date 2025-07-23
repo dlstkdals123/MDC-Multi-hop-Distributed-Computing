@@ -114,16 +114,14 @@ class JobManager:
 
     def run(self, output: DNNOutput) -> Tuple[DNNOutput, float]:
         """
-        서브태스크를 실행하고, 단위 시간당 계산량 또는 전송량을 반환합니다.
-
-        서브태스크가 계산일 경우 단위 시간당 계산량을 반환합니다. (GFLOPs/ms)
-        서브태스크가 전송일 경우 단위 시간당 전송량을 반환합니다. (KB/ms))
+        서브태스크를 실행하고, 단위 시간당 계산량을 반환합니다. (GFLOPs/ms)
+        서브태스크가 전송일 경우 0을 반환합니다.
 
         Args:
             output (DNNOutput): 실행할 서브태스크의 출력.
 
         Returns:
-            Tuple[DNNOutput, float]: 실행 결과와 단위 시간당 계산량 또는 전송량. (GFLOPs/ms 또는 KB/ms)
+            Tuple[DNNOutput, float]: 실행 결과와 단위 시간당 계산량. (GFLOPs/ms)
         """
         subtask_info = output.subtask_info
         if subtask_info.job_type == "dnn":
@@ -144,7 +142,7 @@ class JobManager:
 
             end_time = time.time() * MS_PER_SECOND # ms
 
-            capacity = subtask.get_backlog() / (end_time - start_time) if subtask.get_backlog() > 0 and end_time - start_time > 0 else 0
+            capacity = subtask.get_backlog() / (end_time - start_time) if subtask.is_computing() and end_time - start_time > 0 else 0
 
             return dnn_output, capacity
         
