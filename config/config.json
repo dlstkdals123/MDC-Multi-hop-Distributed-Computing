@@ -1,38 +1,36 @@
 {
-    "Network": {
-        "queue_name": "LRLO",
-        "scheduling_algorithm": "scheduling/RandomSelection.py",
-        "collect_garbage_job_time": 300,
-        "jobs": {
-            "test job 1": {
-                "job_type": "dnn",
-                "source": "192.168.1.5",
-                "destination": "192.168.1.8"
-            }
-        },
-        "network": {
-            "192.168.1.5": ["192.168.1.6", "192.168.1.7"],
-            "192.168.1.6": ["192.168.1.8"],
-            "192.168.1.7": ["192.168.1.8"],
-            "192.168.1.8": []
-        },
-        "router": [
-            "192.168.1.5"
-        ],
-        "models": {
-            "192.168.1.5": [],
-            "192.168.1.6": ["yolov5"],
-            "192.168.1.7": ["yolov5"],
-            "192.168.1.8": ["yolov5"]
-        }
+  "Network": {
+    "queue_name": "LRLO",
+    "scheduling_algorithm": "scheduling/RandomSelection.py",
+    "collect_garbage_job_time": 300,
+    "jobs": {
+      "test job 1": {
+        "job_type": "dnn",
+        "source": "192.168.1.5",
+        "destination": "192.168.1.8"
+      }
     },
-    "Controller": {
-        "experiment_name": "LRLO_JN_V_30000000",
-        "sync_time": 1.0
+    "network": {
+      "192.168.1.5": ["192.168.1.6", "192.168.1.7"],
+      "192.168.1.6": ["192.168.1.8"],
+      "192.168.1.7": ["192.168.1.8"],
+      "192.168.1.8": []
     },
-    "Model": {
-        "yolov5": {
-            "input_size": [1, 3, 320, 320]
-        }
+    "router": ["192.168.1.5"],
+    "models": {
+      "192.168.1.5": [],
+      "192.168.1.6": ["yolov5"],
+      "192.168.1.7": ["yolov5"],
+      "192.168.1.8": ["yolov5"]
     }
+  },
+  "Controller": {
+    "experiment_name": "LRLO-JN-V-30000000",
+    "sync_time": 1.0
+  },
+  "Model": {
+    "yolov5": {
+      "input_size": [1, 3, 320, 320]
+    }
+  }
 }
