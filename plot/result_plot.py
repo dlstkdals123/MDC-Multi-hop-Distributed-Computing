@@ -6,11 +6,32 @@ import argparse
 matplotlib.rc('font', family='Malgun Gothic')
 plt.rcParams['axes.unicode_minus'] = False  # 마이너스 깨짐 방지
 
-def plot_backlog(n_samples=None, save_plot=True):
+# 색상 정의
+TOTAL_COLOR = '#1f77b4'  # 파란색
+AVG_COLOR = '#ff7f0e'    # 주황색
+NODE_COLORS = {
+    '1': '#2ca02c',   # 초록색
+    '2': '#d62728',   # 빨간색
+    '3': '#9467bd',   # 보라색
+    '4': '#8c564b',   # 갈색
+    '5': '#e377c2',   # 분홍색
+    '6': '#7f7f7f',   # 회색
+    '7': '#bcbd22',   # 연두색
+    '8': '#17becf'    # 청록색
+}
+
+def plot_backlog(result_dir, n_samples=None, save_plot=True):
     # 파일 경로
-    results_dir = os.path.join(os.path.dirname(__file__), '../results')
-    latest_result = max([os.path.join(results_dir, d) for d in os.listdir(results_dir)], key=os.path.getmtime)
-    csv_path = os.path.join(latest_result, 'backlog/total_backlog.csv')
+    csv_path = os.path.join(result_dir, 'backlog/total_backlog.csv')
+    if not os.path.exists(csv_path):
+        print(f"백로그 파일이 없습니다: {csv_path}")
+        return
+
+    # 결과 저장 디렉토리 생성
+    result_dir_name = os.path.basename(result_dir)
+    samples_str = f"_samples{n_samples}" if n_samples is not None else ""
+    plot_dir = os.path.join(os.path.dirname(__file__), f'plots_{result_dir_name}')
+    os.makedirs(plot_dir, exist_ok=True)
 
     # CSV 파일 읽기
     df = pd.read_csv(csv_path)
@@ -33,8 +54,8 @@ def plot_backlog(n_samples=None, save_plot=True):
 
     # 전체 GFLOPs/KB 플롯
     plt.figure(figsize=(14, 6))
-    plt.plot(time, df['sum_GFLOPs'], label='Total GFLOPs/ms')
-    plt.plot(time, df['avg_GFLOPs'], label='Average GFLOPs/ms')
+    plt.plot(time, df['sum_GFLOPs'], label='Total GFLOPs/ms', color=TOTAL_COLOR)
+    plt.plot(time, df['avg_GFLOPs'], label='Average GFLOPs/ms', color=AVG_COLOR)
     plt.ylabel('GFLOPs/ms')
     plt.xlabel('Time step')
     plt.title('전체 연산량 분석: 총합 및 평균 GFLOPs')
@@ -42,14 +63,14 @@ def plot_backlog(n_samples=None, save_plot=True):
     plt.tight_layout()
     
     if save_plot:
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'total_gflops.png'))
+        plt.savefig(os.path.join(plot_dir, f'total_gflops_{result_dir_name}{samples_str}.png'))
         plt.clf()
     else:
         plt.show()
 
     plt.figure(figsize=(14, 6))
-    plt.plot(time, df['sum_KB'], label='Total KB/ms')
-    plt.plot(time, df['avg_KB'], label='Average KB/ms')
+    plt.plot(time, df['sum_KB'], label='Total KB/ms', color=TOTAL_COLOR)
+    plt.plot(time, df['avg_KB'], label='Average KB/ms', color=AVG_COLOR)
     plt.ylabel('KB/ms')
     plt.xlabel('Time step')
     plt.title('전체 데이터 전송량 분석: 총합 및 평균 KB')
@@ -57,7 +78,7 @@ def plot_backlog(n_samples=None, save_plot=True):
     plt.tight_layout()
     
     if save_plot:
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'total_kb.png'))
+        plt.savefig(os.path.join(plot_dir, f'total_kb_{result_dir_name}{samples_str}.png'))
         plt.clf()
     else:
         plt.show()
@@ -65,7 +86,8 @@ def plot_backlog(n_samples=None, save_plot=True):
     # GFLOPs/ms (계산) 플롯
     plt.figure(figsize=(14, 6))
     for col in gflops_cols:
-        plt.plot(time, df[col], label=f"{col} (GFLOPs/ms)")
+        node_num = col.split('->')[0].split('.')[-1]  # IP 주소의 마지막 숫자
+        plt.plot(time, df[col], label=f"{col} (GFLOPs/ms)", color=NODE_COLORS[node_num])
     plt.ylabel('Backlog (GFLOPs/ms)')
     plt.xlabel('Time step')
     plt.title('노드별 연산 처리량 분석: 시간에 따른 백로그 변화')
@@ -73,7 +95,7 @@ def plot_backlog(n_samples=None, save_plot=True):
     plt.tight_layout()
     
     if save_plot:
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'backlog_gflops.png'))
+        plt.savefig(os.path.join(plot_dir, f'backlog_gflops_{result_dir_name}{samples_str}.png'))
         plt.clf()
     else:
         plt.show()
@@ -81,7 +103,8 @@ def plot_backlog(n_samples=None, save_plot=True):
     # KB/ms (전송) 플롯
     plt.figure(figsize=(14, 6))
     for col in kb_cols:
-        plt.plot(time, df[col], label=f"{col} (KB/ms)")
+        node_num = col.split('->')[0].split('.')[-1]  # 시작 노드의 IP 마지막 숫자
+        plt.plot(time, df[col], label=f"{col} (KB/ms)", color=NODE_COLORS[node_num])
     plt.ylabel('Backlog (KB/ms)')
     plt.xlabel('Time step')
     plt.title('노드 간 데이터 전송량 동향: 시간별 백로그 추이')
@@ -89,20 +112,28 @@ def plot_backlog(n_samples=None, save_plot=True):
     plt.tight_layout()
     
     if save_plot:
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'backlog_kb.png'))
+        plt.savefig(os.path.join(plot_dir, f'backlog_kb_{result_dir_name}{samples_str}.png'))
         plt.clf()
     else:
         plt.show()
 
     if save_plot:
-        print('백로그 플롯이 plot/backlog_gflops.png, plot/backlog_kb.png, plot/total_gflops.png, plot/total_kb.png로 저장되었습니다.')
+        print(f'백로그 플롯이 plots_{result_dir_name} 폴더에 저장되었습니다.')
 
-def plot_latency(n_samples=None, save_plot=True):
+def plot_latency(result_dir, n_samples=None, save_plot=True):
     # 파일 경로
-    results_dir = os.path.join(os.path.dirname(__file__), '../results')
-    latest_result = max([os.path.join(results_dir, d) for d in os.listdir(results_dir)], key=os.path.getmtime)
-    latency_path = os.path.join(latest_result, 'latency/test job 1.csv')
-    path_path = os.path.join(latest_result, 'path/path.csv')
+    latency_path = os.path.join(result_dir, 'latency/test job 1.csv')
+    path_path = os.path.join(result_dir, 'path/path.csv')
+    
+    if not os.path.exists(latency_path) or not os.path.exists(path_path):
+        print(f"지연시간 또는 경로 파일이 없습니다: {result_dir}")
+        return
+
+    # 결과 저장 디렉토리 생성
+    result_dir_name = os.path.basename(result_dir)
+    samples_str = f"_samples{n_samples}" if n_samples is not None else ""
+    plot_dir = os.path.join(os.path.dirname(__file__), f'plots_{result_dir_name}')
+    os.makedirs(plot_dir, exist_ok=True)
 
     # latency 값 읽기
     latency_df = pd.read_csv(latency_path)
@@ -120,6 +151,16 @@ def plot_latency(n_samples=None, save_plot=True):
         mid = len(paths) // 2
         half_samples = n_samples // 2
         paths = paths[mid-half_samples:mid+half_samples]
+
+    # latency와 path를 동시에 필터링 (300초 이상 제거)
+    filtered_latency = []
+    filtered_paths = []
+    for lat, p in zip(latency_values, paths):
+        if lat < 300000:
+            filtered_latency.append(lat)
+            filtered_paths.append(p)
+    latency_values = filtered_latency
+    paths = filtered_paths
 
     def shorten_path(path):
         import re
@@ -148,7 +189,17 @@ def plot_latency(n_samples=None, save_plot=True):
     plt.figure(figsize=(16, 8))
     labels = list(data_by_path.keys())
     data = [data_by_path[k] for k in labels]
-    plt.boxplot(data, tick_labels=labels, vert=True, showmeans=True)
+    
+    # boxplot 색상 설정
+    boxprops = dict(color=TOTAL_COLOR)
+    whiskerprops = dict(color=TOTAL_COLOR)
+    flierprops = dict(marker='o', markerfacecolor=TOTAL_COLOR, markersize=4)
+    medianprops = dict(color='red')
+    meanprops = dict(marker='D', markerfacecolor=AVG_COLOR, markersize=8)
+    
+    plt.boxplot(data, tick_labels=labels, vert=True, showmeans=True,
+                boxprops=boxprops, whiskerprops=whiskerprops, flierprops=flierprops,
+                medianprops=medianprops, meanprops=meanprops)
     plt.ylabel('Latency (ms)')
     plt.xlabel('Path')
     plt.title('작업 경로별 지연시간 패턴 분석: 분포도 기반 성능 비교')
@@ -156,9 +207,9 @@ def plot_latency(n_samples=None, save_plot=True):
     plt.tight_layout()
     
     if save_plot:
-        plt.savefig(os.path.join(os.path.dirname(__file__), 'latency_by_path.png'))
+        plt.savefig(os.path.join(plot_dir, f'latency_by_path_{result_dir_name}{samples_str}.png'))
         plt.clf()
-        print('경로별 latency boxplot이 plot/latency_by_path.png로 저장되었습니다.')
+        print(f'경로별 latency boxplot이 plots_{result_dir_name} 폴더에 저장되었습니다.')
     else:
         plt.show()
 
@@ -168,5 +219,10 @@ if __name__ == "__main__":
     parser.add_argument('--show', action='store_true', help='화면에 플롯 표시 (기본값: 파일로 저장)')
     args = parser.parse_args()
 
-    plot_backlog(n_samples=args.samples, save_plot=not args.show)
-    plot_latency(n_samples=args.samples, save_plot=not args.show)
+    results_dir = os.path.join(os.path.dirname(__file__), '../results')
+    result_dirs = [os.path.join(results_dir, d) for d in os.listdir(results_dir)]
+    
+    for result_dir in result_dirs:
+        print(f"\n{os.path.basename(result_dir)} 분석 중...")
+        plot_backlog(result_dir, n_samples=args.samples, save_plot=not args.show)
+        plot_latency(result_dir, n_samples=args.samples, save_plot=not args.show)
