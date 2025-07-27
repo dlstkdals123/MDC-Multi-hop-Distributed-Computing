@@ -20,56 +20,29 @@ class LayeredGraph:
         
         self._network_config = network_config
         self._dnn_models = DNNModels(model_config, self._device)
+        
         self._layered_graph = dict()
         self._layered_graph_backlog: Dict[LayerNodePair, float] = dict()
-        self._layer_nodes = []
-        self._layer_node_pairs: List[LayerNodePair] = []
+
         self._scheduling_algorithm = None
-        self._capacity = dict()
 
         self.init_graph()
         self.init_algorithm()
         
 
-    def set_graph(self, links: Dict[LayerNodePair, float]) -> None:
+    def set_backlogs(self, links: Dict[LayerNodePair, float]) -> None:
         for link, backlog in links.items():
-            self.set_link(link, backlog)
-
-    def set_capacity(self, source_ip: str, computing_capacity: float, transfer_capacity: float) -> None:
-        for destination_ip in self._capacity[source_ip]:
-            capacity = computing_capacity if source_ip == destination_ip else transfer_capacity
-            self._capacity[source_ip][destination_ip] = capacity
-    
-    def update_path_backlog(self, job_info: JobInfo, path: List[Tuple[LayerNode, LayerNode, str]]) -> None:
-        for source_node, destination_node, model_name in path:
-            link = LayerNodePair(source_node, destination_node)
-            if source_node.is_same_node(destination_node):
-                capacity = self._dnn_models.get_computing(model_name)
-            else:
-                if model_name == "":
-                    capacity = job_info.input_bytes
-                else:
-                    capacity = self._dnn_models.get_transfer(model_name)
-            
-            # GFLOPs or KB
-            self._layered_graph_backlog[link] += capacity
-
-    def set_link(self, link: LayerNodePair, backlog: float):
-        self._layered_graph_backlog[link] = backlog
+            self._layered_graph_backlog[link] = backlog
 
     def init_graph(self):
         for source_ip in self._network_config.get_network_list():
             source = LayerNode(source_ip, self._network_config.get_models(source_ip))
-            self._layer_nodes.append(source)
             self._layered_graph.setdefault(source, [])
-            self._capacity.setdefault(source_ip, {})
 
             for destination_ip in self._network_config.get_network_neighbors(source_ip):
-                self._capacity[source_ip].setdefault(destination_ip, 0)
                 destination = LayerNode(destination_ip, self._network_config.get_models(destination_ip))
                 self._layered_graph[source].append(destination)
                 link = LayerNodePair(source, destination)
-                self._layer_node_pairs.append(link)
                 self._layered_graph_backlog.setdefault(link, 0)
 
         for source_ip in self._network_config.get_network_list():
@@ -77,10 +50,8 @@ class LayeredGraph:
                 continue
             
             source = LayerNode(source_ip, self._network_config.get_models(source_ip))
-            self._capacity[source_ip].setdefault(source_ip, 0)
             self._layered_graph.setdefault(source, [])
             self._layered_graph[source].append(source)
-            self._layer_node_pairs.append(LayerNodePair(source, source))
             self._layered_graph_backlog.setdefault(LayerNodePair(source, source), 0)
 
     def init_algorithm(self):

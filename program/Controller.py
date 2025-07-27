@@ -168,12 +168,7 @@ class Controller(Program):
         for link in total_links:
             links.setdefault(link, 0)
             
-        self._layered_graph.set_graph(links)
-        self._layered_graph.set_capacity(
-            node_ip,
-            node_link_info.computing_capacity,
-            node_link_info.transfer_capacity
-        )
+        self._layered_graph.set_backlogs(links)
 
         if self._job_info_dummy:
             path = self._layered_graph.schedule(
@@ -192,7 +187,6 @@ class Controller(Program):
         self._job_list[job_info.job_id] = time.time() * MS_PER_SECOND # ms
 
         path = self._layered_graph.schedule(job_info)
-        self._layered_graph.update_path_backlog(job_info=job_info, path=path)
         path_log_file_path = f"{self._path_log_path}/path.csv"
         save_path(path_log_file_path, path)
         
