@@ -114,16 +114,6 @@ class Controller(Program):
                 finally:
                     self._job_list_mutex.release()
 
-    def init_record_virtual_backlog(self):
-        record_virtual_backlog_thread = threading.Thread(target=self.record_virtual_backlog, args=())
-        record_virtual_backlog_thread.start()
-
-    def record_virtual_backlog(self):
-        backlog_log_file_path = f"{self._backlog_log_path}/total_backlog.csv"
-        while True:
-            time.sleep(0.1)
-            save_virtual_backlog(backlog_log_file_path, self._layered_graph.get_layered_graph_backlog())
-
     def init_sync_backlog(self):
         sync_backlog_thread = threading.Thread(target=self.sync_backlog, args=())
         sync_backlog_thread.start()
@@ -170,11 +160,13 @@ class Controller(Program):
             
         self._layered_graph.set_backlogs(links)
 
+        backlog_log_file_path = f"{self._backlog_log_path}/total_backlog.csv"
+        save_virtual_backlog(backlog_log_file_path, self._layered_graph.get_layered_graph_backlog())
+
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)
 
         if self._is_first_scheduling:
-            self.init_record_virtual_backlog()
             self._is_first_scheduling = False
             self._job_info_dummy = job_info
 
