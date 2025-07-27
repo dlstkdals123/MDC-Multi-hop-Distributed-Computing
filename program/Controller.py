@@ -190,10 +190,9 @@ class Controller(Program):
         path_log_file_path = f"{self._path_log_path}/path.csv"
         save_path(path_log_file_path, path)
         
-        for i in range(len(path)):
-            source = path[i][0]
-            destination = path[i][1]
-            model_name = path[i][2]
+        for i, (layer_node_pair, model_name) in enumerate(path):
+            source = layer_node_pair.source
+            destination = layer_node_pair.destination
             subtask_info = SubtaskInfo(job_info, source, destination, model_name, i, len(path))
             subtask_info_bytes = pickle.dumps(subtask_info)
             # send SubtaskInfo byte to source ip

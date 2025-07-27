@@ -96,11 +96,11 @@ def save_path(file_path, path):
     file_exists = os.path.exists(file_path)
 
     path_list = []
-    for source_node, destination_node, model_name in path:
-        if source_node.is_same_node(destination_node):
-            path_list.append(f"(computing) {source_node.to_string()}: {model_name}")
+    for layer_node_pair, model_name in path:
+        if layer_node_pair.is_same_node():
+            path_list.append(f"(computing) {layer_node_pair.to_string()}: {model_name}")
         else:
-            path_list.append(f"(transmission) {source_node.to_string()}->{destination_node.to_string()}")
+            path_list.append(f"(transmission) {layer_node_pair.to_string()}")
 
     # 파일에 데이터 쓰기
     with open(file_path, 'a', newline='') as csvfile:

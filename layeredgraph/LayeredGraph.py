@@ -7,11 +7,6 @@ from job.DNNModels import DNNModels
 from scheduling import *
 
 import importlib
-import time
-import numpy as np
-import copy
-import pandas as pd
-import glob
 import torch
 
 class LayeredGraph:
@@ -35,33 +30,41 @@ class LayeredGraph:
             self._layered_graph_backlog[link] = backlog
 
     def init_graph(self):
+        # 이웃 노드 초기화
         for source_ip in self._network_config.get_network_list():
-            source = LayerNode(source_ip, self._network_config.get_models(source_ip))
+            source = self._get_layer_node(source_ip)
             self._layered_graph.setdefault(source, [])
 
             for destination_ip in self._network_config.get_network_neighbors(source_ip):
-                destination = LayerNode(destination_ip, self._network_config.get_models(destination_ip))
+                destination = self._get_layer_node(destination_ip)
                 self._layered_graph[source].append(destination)
-                link = LayerNodePair(source, destination)
+                link = self._get_layer_node_pair(source_ip, destination_ip)
                 self._layered_graph_backlog.setdefault(link, 0)
 
+        # 자기 자신 추가
         for source_ip in self._network_config.get_network_list():
             if source_ip in self._network_config.router:
                 continue
             
-            source = LayerNode(source_ip, self._network_config.get_models(source_ip))
+            source = self._get_layer_node(source_ip)
             self._layered_graph.setdefault(source, [])
             self._layered_graph[source].append(source)
-            self._layered_graph_backlog.setdefault(LayerNodePair(source, source), 0)
+            self._layered_graph_backlog.setdefault(self._get_layer_node_pair(source_ip, source_ip), 0)
 
     def init_algorithm(self):
         module_path = self._network_config.scheduling_algorithm.replace(".py", "").replace("/", ".")
         self._algorithm_class = module_path.split(".")[-1]
         self._scheduling_algorithm = getattr(importlib.import_module(module_path), self._algorithm_class)()
+
+    def _get_layer_node(self, ip: str) -> LayerNode:
+        return LayerNode(ip, self._network_config.get_models(ip))
+
+    def _get_layer_node_pair(self, source_ip: str, destination_ip: str) -> LayerNodePair:
+        return LayerNodePair(self._get_layer_node(source_ip), self._get_layer_node(destination_ip))
         
-    def schedule(self, job_info: JobInfo) -> List[Tuple[LayerNode, LayerNode, str]]:
-        source_node = LayerNode(job_info.source_ip, self._network_config.get_models(job_info.source_ip))
-        destination_node = LayerNode(job_info.terminal_ip, self._network_config.get_models(job_info.terminal_ip))
+    def schedule(self, job_info: JobInfo) -> List[Tuple[LayerNodePair, str]]:
+        source_node = self._get_layer_node(job_info.source_ip)
+        destination_node = self._get_layer_node(job_info.terminal_ip)
         
         if self._algorithm_class == 'RandomSelection':
             self._scheduling_algorithm: RandomSelection
@@ -77,7 +80,7 @@ class LayeredGraph:
     # return : LayerNodePair(192.168.1.5-0, 192.168.1.6-0), LayerNodePair(192.168.1.5-1, 192.168.1.6-1) ...
     def get_links(self, layer_node_ip: str):
         links = []
-        layer_node = LayerNode(layer_node_ip, self._network_config.get_models(layer_node_ip))
+        layer_node = self._get_layer_node(layer_node_ip)
 
         neighbors = self._layered_graph[layer_node]
         for neighbor in neighbors:
