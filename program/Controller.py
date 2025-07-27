@@ -122,7 +122,6 @@ class Controller(Program):
         backlog_log_file_path = f"{self._backlog_log_path}/total_backlog.csv"
         while True:
             time.sleep(0.1)
-            self._layered_graph.update_graph()
             save_virtual_backlog(backlog_log_file_path, self._layered_graph.get_layered_graph_backlog())
 
     def init_sync_backlog(self):

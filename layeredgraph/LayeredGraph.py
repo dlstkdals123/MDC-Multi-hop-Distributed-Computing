@@ -25,7 +25,6 @@ class LayeredGraph:
         self._layer_nodes = []
         self._layer_node_pairs: List[LayerNodePair] = []
         self._scheduling_algorithm = None
-        self._previous_update_time = time.time()
         self._capacity = dict()
 
         self.init_graph()
@@ -33,7 +32,6 @@ class LayeredGraph:
         
 
     def set_graph(self, links: Dict[LayerNodePair, float]) -> None:
-        self._previous_update_time = time.time()
         for link, backlog in links.items():
             self.set_link(link, backlog)
 
@@ -55,43 +53,6 @@ class LayeredGraph:
             
             # GFLOPs or KB
             self._layered_graph_backlog[link] += capacity
-        
-    def update_graph(self):
-        current_time = time.time()
-        elapsed_time = current_time - self._previous_update_time
-        
-        links_job_num = self._count_active_jobs()
-        self._update_backlog(elapsed_time, links_job_num)
-        self._previous_update_time = time.time()
-
-    def _count_active_jobs(self) -> Dict[str, Dict[str, int]]:
-        links_job_num = {}
-
-        for link in self._layer_node_pairs:
-            source_ip = link.source.get_ip()
-            dest_ip = link.destination.get_ip()
-            
-            if source_ip not in links_job_num:
-                links_job_num[source_ip] = {}
-            if dest_ip not in links_job_num[source_ip]:
-                links_job_num[source_ip][dest_ip] = 0
-                
-            if self._layered_graph_backlog[link] > 0:
-                links_job_num[source_ip][dest_ip] += 1
-        
-        return links_job_num
-
-    def _update_backlog(self, elapsed_time: float, links_job_num: Dict[str, Dict[str, int]]):
-        for link in self._layer_node_pairs:
-            source_ip = link.source.get_ip()
-            dest_ip = link.destination.get_ip()
-            
-            job_count = links_job_num[source_ip][dest_ip]
-            capacity = self._capacity[source_ip][dest_ip]
-
-            if job_count > 0:
-                computing_delta = elapsed_time * capacity / job_count
-                self._layered_graph_backlog[link] = max(0, self._layered_graph_backlog[link] - computing_delta)
 
     def set_link(self, link: LayerNodePair, backlog: float):
         self._layered_graph_backlog[link] = backlog
