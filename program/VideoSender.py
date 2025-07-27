@@ -93,7 +93,8 @@ class VideoSender(MDC):
             sleep_time = self.get_sleep_time()
             time.sleep(sleep_time)
 
-            self.send_frame()
+            if self._frame is not None:
+                self.send_frame()
             
     def wait_until_can_send(self):
         print("Waiting for config.")
@@ -117,7 +118,7 @@ class VideoSender(MDC):
 
     def get_sleep_time(self) -> float:
         # implement any frame drop logic
-        return 0.5
+        return 0.01
 
 if __name__ == '__main__':
     sub_configs = {
