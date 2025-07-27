@@ -170,11 +170,6 @@ class Controller(Program):
             
         self._layered_graph.set_backlogs(links)
 
-        if self._job_info_dummy:
-            path = self._layered_graph.schedule(
-                self._job_info_dummy
-            )
-
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)
 
@@ -187,6 +182,10 @@ class Controller(Program):
         self._job_list[job_info.job_id] = time.time() * MS_PER_SECOND # ms
 
         path = self._layered_graph.schedule(job_info)
+
+        if path[-1][1] == "":
+            return
+        
         path_log_file_path = f"{self._path_log_path}/path.csv"
         save_path(path_log_file_path, path)
         
