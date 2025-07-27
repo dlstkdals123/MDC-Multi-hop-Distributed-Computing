@@ -46,7 +46,7 @@ class RandomSelection:
             if len(not_visited_model_names) == 0:
                 random_neighbor = random.choice(neighbor_list)
                 possible_paths.append((LayerNodePair(current_node, random_neighbor), last_model_name))
-                current_node = possible_paths[-1][1]
+                current_node = random_neighbor
                 continue
 
             # 사용하지 않은 모델 중 하나를 선택하기
@@ -64,7 +64,7 @@ class RandomSelection:
             
             # 다음 노드로 이동
             random_neighbor = random.choice(neighbor_list)
-            possible_paths.append(LayerNodePair(current_node, random_neighbor), last_model_name)
-            current_node = possible_paths[-1][1]
+            possible_paths.append((LayerNodePair(current_node, random_neighbor), last_model_name))
+            current_node = random_neighbor
 
         return possible_paths
