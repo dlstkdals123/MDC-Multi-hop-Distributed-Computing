@@ -49,7 +49,7 @@ class MDC(Program):
         self._neighbors = None
         self._backlogs_zero_flag = False
 
-        self._capacity_manager = PerformanceManager()
+        self._performance_manager = PerformanceManager()
 
         super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
@@ -100,12 +100,12 @@ class MDC(Program):
 
     def handle_request_backlog(self, topic, data, publisher):
         # transfer capacity check current capacity every sync time.
-        self._capacity_manager.update_transfer_capacity()
+        self._performance_manager.update_transfer_performance()
 
         links = self._job_manager.get_backlogs()
 
-        computing_performance = self._capacity_manager.computing_performance
-        transfer_performance = self._capacity_manager.transfer_performance
+        computing_performance = self._performance_manager.computing_performance
+        transfer_performance = self._performance_manager.transfer_performance
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 
@@ -168,7 +168,7 @@ class MDC(Program):
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
                 return
             else:
-                self._capacity_manager.update_computing_capacity(computing_capacity)
+                self._performance_manager.update_computing_performance(computing_capacity)
 
             subtask_info.set_next_source()
 

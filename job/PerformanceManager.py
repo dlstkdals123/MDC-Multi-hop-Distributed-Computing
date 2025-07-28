@@ -13,23 +13,23 @@ class PerformanceManager:
         _last_transfer_time (float): 마지막 전송 시간 (ms).
 
         _alpha (float): EMA 가중치
-        _transfer_capacity (float): 전송량 (KB/ms)
-        _computing_capacity (float): 계산량 (GFLOPs/ms)
+        _transfer_performance (float): 전송량 (KB/ms)
+        _computing_performance (float): 계산량 (GFLOPs/ms)
     """
     def __init__(self):
         self._last_sent: float = psutil.net_io_counters().bytes_sent / KB_PER_BYTE
         self._last_transfer_time: float = time.time() * MS_PER_SECOND # ms
 
         self._alpha: float = 0.9
-        self._transfer_capacity: float = 0
-        self._computing_capacity: float = 0
+        self._transfer_performance: float = 0
+        self._computing_performance: float = 0
 
-    def update_transfer_capacity(self) -> None:
-        transfer_capacity = self._check_and_get_current_transfer_capacity()
+    def update_transfer_performance(self) -> None:
+        transfer_performance = self._check_and_get_current_transfer_performance()
         
-        self._transfer_capacity = self._alpha * self._transfer_capacity + (1 - self._alpha) * transfer_capacity
+        self._transfer_performance = self._alpha * self._transfer_performance + (1 - self._alpha) * transfer_performance
 
-    def _check_and_get_current_transfer_capacity(self) -> float:
+    def _check_and_get_current_transfer_performance(self) -> float:
         cur_sent = psutil.net_io_counters().bytes_sent / KB_PER_BYTE
         cur_time = time.time() * MS_PER_SECOND # ms
 
@@ -40,13 +40,13 @@ class PerformanceManager:
 
         return sent_delta
 
-    def update_computing_capacity(self, computing_capacity: float) -> None:
-        self._computing_capacity = self._alpha * self._computing_capacity + (1 - self._alpha) * computing_capacity
+    def update_computing_performance(self, computing_performance: float) -> None:
+        self._computing_performance = self._alpha * self._computing_performance + (1 - self._alpha) * computing_performance
 
     @property
-    def computing_capacity(self) -> float:
-        return self._computing_capacity
+    def computing_performance(self) -> float:
+        return self._computing_performance
     
     @property
-    def transfer_capacity(self) -> float:
-        return self._transfer_capacity
+    def transfer_performance(self) -> float:
+        return self._transfer_performance
