@@ -49,7 +49,7 @@ class MDC(Program):
         self._neighbors = None
         self._backlogs_zero_flag = False
 
-        self._capacity_manager = CapacityManager()
+        self._capacity_manager = PerformanceManager()
 
         super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
@@ -104,15 +104,15 @@ class MDC(Program):
 
         links = self._job_manager.get_backlogs()
 
-        computing_capacity = self._capacity_manager.computing_capacity_avg
-        transfer_capacity = self._capacity_manager.transfer_capacity_avg
+        computing_capacity = self._capacity_manager.computing_capacity
+        transfer_capacity = self._capacity_manager.transfer_capacity
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 
             links = links, 
             computing_capacity = computing_capacity, 
             transfer_capacity = transfer_capacity
-            )
+        )
         
         node_link_info_bytes = pickle.dumps(node_link_info)
 
