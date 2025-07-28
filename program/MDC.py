@@ -2,11 +2,10 @@ import sys, os
  
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-import queue
-import threading
 from program import Program
-from job import *
-from communication import *
+from job import JobManager, SubtaskInfo, DNNOutput
+from communication import RequestConfig, NodeLinkInfo
+from job.PerformanceManager import PerformanceManager
 from utils.utils import get_ip_address
 from config import NetworkConfig, ModelConfig
 
