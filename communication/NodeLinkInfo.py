@@ -1,6 +1,6 @@
 from typing import Dict
 from layeredgraph import LayerNodePair
-from job.Performance import Performance
+from communication.Performance import Performance
 
 class NodeLinkInfo:
     """

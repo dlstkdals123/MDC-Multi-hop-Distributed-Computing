@@ -2,7 +2,8 @@ from typing import Dict, List, Tuple
 
 from layeredgraph import LayerNode, LayerNodePair
 from config import NetworkConfig, ModelConfig
-from job import JobInfo, Performance
+from job import JobInfo
+from communication.Performance import Performance
 from job.DNNModels import DNNModels
 from scheduling import *
 

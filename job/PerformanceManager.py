@@ -1,6 +1,6 @@
 import psutil
 import time
-from job.Performance import Performance
+from communication.Performance import Performance
 
 NANO_SECOND = 1_000_000_000
 KB_PER_BYTE = 1024
