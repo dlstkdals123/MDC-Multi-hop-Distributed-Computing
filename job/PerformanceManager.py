@@ -1,7 +1,7 @@
 import psutil
 import time
 
-MS_PER_SECOND = 1_000
+NANO_SECOND = 1_000_000_000
 KB_PER_BYTE = 1024
 
 class PerformanceManager:
@@ -10,15 +10,15 @@ class PerformanceManager:
 
     Attributes:
         _last_sent (float): 마지막 전송량 (KB).
-        _last_transfer_time (float): 마지막 전송 시간 (ms).
+        _last_transfer_time (float): 마지막 전송 시간 (ns).
 
         _alpha (float): EMA 가중치
-        _transfer_performance (float): 전송량 (KB/ms)
-        _computing_performance (float): 계산량 (GFLOPs/ms)
+        _transfer_performance (float): 전송량 (KB/s)
+        _computing_performance (float): 계산량 (GFLOPs/s)
     """
     def __init__(self):
         self._last_sent: float = psutil.net_io_counters().bytes_sent / KB_PER_BYTE
-        self._last_transfer_time: float = time.time() * MS_PER_SECOND # ms
+        self._last_transfer_time: float = time.time() * NANO_SECOND
 
         self._alpha: float = 0.9
         self._transfer_performance: float = 0
@@ -31,9 +31,11 @@ class PerformanceManager:
 
     def _check_and_get_current_transfer_performance(self) -> float:
         cur_sent = psutil.net_io_counters().bytes_sent / KB_PER_BYTE
-        cur_time = time.time() * MS_PER_SECOND # ms
+        cur_time = time.time() * NANO_SECOND
 
+        # KB/s
         sent_delta = (cur_sent - self._last_sent) / (cur_time - self._last_transfer_time) if cur_time - self._last_transfer_time > 0 else 0
+        sent_delta *= NANO_SECOND
 
         self._last_sent = cur_sent
         self._last_transfer_time = cur_time

@@ -7,6 +7,8 @@ import torch
 from torchvision.models import resnet18, mobilenet_v2
 from yolov5.Yolov5 import P1, P2, P3, P4
 
+NANO_PER_MILLISECOND = 1_000_000
+
 def get_ip_address(interface_name=["eth0"]):
     # check os
     for interface in interface_name:
@@ -41,6 +43,8 @@ def get_ip_address_linux(interface_name='eth0'):
 def save_latency(file_path: str, latency: float):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
+
+    latency *= NANO_PER_MILLISECOND
 
     # 파일에 데이터 쓰기
     with open(file_path, 'a', newline='') as csvfile:

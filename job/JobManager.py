@@ -11,7 +11,7 @@ from layeredgraph import LayerNodePair
 import threading
 import time
 
-MS_PER_SECOND = 1_000
+NANO_SECOND = 1_000_000_000
 
 class JobManager:
     """
@@ -114,17 +114,14 @@ class JobManager:
 
     def run(self, output: DNNOutput) -> Tuple[DNNOutput, float]:
         """
-        서브태스크를 실행하고, 단위 시간당 계산량을 반환합니다. (GFLOPs/ms)
-        서브태스크가 전송일 경우 0을 반환합니다.
-        서브태스크를 실행하고, 단위 시간당 계산량을 반환합니다. (GFLOPs/ms)
+        서브태스크를 실행하고, 단위 시간당 계산량을 반환합니다. (GFLOPs/s)
         서브태스크가 전송일 경우 0을 반환합니다.
 
         Args:
             output (DNNOutput): 실행할 서브태스크의 출력.
 
         Returns:
-            Tuple[DNNOutput, float]: 실행 결과와 단위 시간당 계산량. (GFLOPs/ms)
-            Tuple[DNNOutput, float]: 실행 결과와 단위 시간당 계산량. (GFLOPs/ms)
+            Tuple[DNNOutput, float]: 실행 결과와 단위 시간당 계산량. (GFLOPs/s)
         """
         subtask_info = output.subtask_info
         if subtask_info.job_type == "dnn":
@@ -134,7 +131,7 @@ class JobManager:
             # 아직 run하지 않은 data이므로 사용해야 할 input data입니다.
             data = output.output
 
-            start_time = time.time() * MS_PER_SECOND # ms
+            start_time = time.time() * NANO_SECOND
 
             if isinstance(data, list):
                 data = [d.to(self._device) for d in data]
@@ -143,11 +140,13 @@ class JobManager:
                 
             dnn_output = subtask.run(data)
 
-            end_time = time.time() * MS_PER_SECOND # ms
+            end_time = time.time() * NANO_SECOND
 
-            capacity = subtask.get_backlog() / (end_time - start_time) if subtask.subtask_info.is_computing() and end_time - start_time > 0 else 0
+            # GFLOPs/s
+            performance = subtask.get_backlog() / (end_time - start_time) if subtask.subtask_info.is_computing() and end_time - start_time > 0 else 0
+            performance *= NANO_SECOND
 
-            return dnn_output, capacity
+            return dnn_output, performance
         
     # add subtask_info based SubtaskInfo
     def add_subtask(self, subtask_info: SubtaskInfo) -> None:
