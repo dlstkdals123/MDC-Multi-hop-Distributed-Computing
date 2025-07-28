@@ -1,5 +1,6 @@
 from typing import Dict
 from layeredgraph import LayerNodePair
+from job.Performance import Performance
 
 class NodeLinkInfo:
     """
@@ -11,14 +12,13 @@ class NodeLinkInfo:
         _computing_performance (float): 노드의 평균 계산량. (GFLOPs/s)
         _transfer_performance (float): 노드의 평균 전송량. (KB/s)
     """
-    def __init__(self, ip: str, links: Dict[LayerNodePair, float], computing_performance: float, transfer_performance: float):
+    def __init__(self, ip: str, links: Dict[LayerNodePair, float], performance: Dict[str, Performance]):
         self._check_validate(ip)
 
         self._ip: str = ip
         self._links: Dict[LayerNodePair, float] = links
 
-        self._computing_performance: float = computing_performance
-        self._transfer_performance: float = transfer_performance
+        self._performance: Dict[str, Performance] = performance
 
     def _check_validate(self, ip: str):
         """
@@ -36,15 +36,5 @@ class NodeLinkInfo:
         return self._links
     
     @property
-    def computing_performance(self) -> float:
-        """
-        노드의 평균 계산량을 반환합니다. (GFLOPs/s)
-        """
-        return self._computing_performance
-    
-    @property
-    def transfer_performance(self) -> float:
-        """
-        노드의 평균 전송량을 반환합니다. (KB/s)
-        """
-        return self._transfer_performance
+    def performance(self) -> Dict[str, Performance]:
+        return self._performance

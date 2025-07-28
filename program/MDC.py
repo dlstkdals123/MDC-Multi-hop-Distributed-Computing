@@ -104,14 +104,12 @@ class MDC(Program):
 
         links = self._job_manager.get_backlogs()
 
-        computing_performance = self._performance_manager.computing_performance
-        transfer_performance = self._performance_manager.transfer_performance
+        performance = self._performance_manager.get_performance()
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 
             links = links, 
-            computing_performance = computing_performance, 
-            transfer_performance = transfer_performance
+            performance = performance
         )
         
         node_link_info_bytes = pickle.dumps(node_link_info)

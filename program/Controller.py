@@ -159,13 +159,13 @@ class Controller(Program):
             links.setdefault(link, 0)
             
         self._layered_graph.set_backlogs(links)
-        self._layered_graph.set_performance(node_ip, node_link_info.computing_performance, node_link_info.transfer_performance)
+        self._layered_graph.set_performance(node_ip, node_link_info.performance)
 
         backlog_log_file_path = f"{self._backlog_log_path}/total_backlog.csv"
         save_virtual_backlog(backlog_log_file_path, self._layered_graph.get_layered_graph_backlog())
 
         performance_log_file_path = f"{self._backlog_log_path}/performance.csv"
-        save_performance(performance_log_file_path, self._layered_graph.get_transfer_performance(), self._layered_graph.get_computing_performance())
+        save_performance(performance_log_file_path, self._layered_graph.get_performance())
 
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)

@@ -95,25 +95,27 @@ def save_virtual_backlog(file_path, virtual_backlog):
 
         writer.writerow(datas)
 
-def save_performance(file_path, computing_performance, transfer_performance):
+def save_performance(file_path, performance):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
     # 노드와 값을 정렬
-    sorted_computing = sorted(computing_performance.items(), key=lambda item: item[0].to_string())
-    sorted_transfer = sorted(transfer_performance.items(), key=lambda item: item[0].to_string())
+    sorted_performance = sorted(performance.items(), key=lambda item: item[0].to_string())
 
-    sorted_nodes = [node.to_string() for node, _ in sorted_computing]
-    sorted_computing_values = [value for _, value in sorted_computing]
-    sorted_transfer_values = [value for _, value in sorted_transfer]
+    sorted_nodes = [node.to_string() for node, _ in sorted_performance]
+    sorted_input_values = [value.input for _, value in sorted_performance]
+    sorted_output_values = [value.output for _, value in sorted_performance]
+    sorted_computing_values = [value.computing for _, value in sorted_performance]
 
+    sum_input = sum(sorted_input_values)
+    avg_input = sum_input / len(sorted_input_values) if sorted_input_values else 0
+    sum_output = sum(sorted_output_values)
+    avg_output = sum_output / len(sorted_output_values) if sorted_output_values else 0
     sum_computing = sum(sorted_computing_values)
     avg_computing = sum_computing / len(sorted_computing_values) if sorted_computing_values else 0
-    sum_transfer = sum(sorted_transfer_values)
-    avg_transfer = sum_transfer / len(sorted_transfer_values) if sorted_transfer_values else 0
 
-    headers = ["sum_computing (GFLOPs/ms)", "avg_computing (GFLOPs/ms)", "sum_transfer (KB/ms)", "avg_transfer (KB/ms)"] + sorted_nodes
-    datas = [sum_computing, avg_computing, sum_transfer, avg_transfer] + sorted_computing_values + sorted_transfer_values
+    headers = ["sum_input (KB/s)", "avg_input (KB/s)", "sum_output (KB/s)", "avg_output (KB/s)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)"] + sorted_nodes
+    datas = [sum_input, avg_input, sum_output, avg_output, sum_computing, avg_computing] + sorted_input_values + sorted_output_values + sorted_computing_values
 
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
