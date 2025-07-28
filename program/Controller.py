@@ -103,9 +103,9 @@ class Controller(Program):
                 self._job_list_mutex.acquire()
                 try:
                     keys_to_delete = [job_id for job_id, start_time in self._job_list.items() 
-                                    if cur_time - start_time >= collect_garbage_job_time * NANO_SECOND] # ms
+                                    if cur_time - start_time >= collect_garbage_job_time * NANO_SECOND] # ns
                     for k in keys_to_delete:
-                        latency = collect_garbage_job_time * NANO_SECOND # ms
+                        latency = collect_garbage_job_time * NANO_SECOND # ns
                         latency_log_file_path = f"{self._latency_log_path}/{job_name}.csv"
                         save_latency(latency_log_file_path, latency)
                         del self._job_list[k]
@@ -200,7 +200,7 @@ class Controller(Program):
         start_time = self._job_list[job_id]
         del self._job_list[job_id]
         self._job_list_mutex.release()
-        finish_time = time.time() * NANO_SECOND # ms
+        finish_time = time.time() * NANO_SECOND # ns
 
         latency = finish_time - start_time
         latency_log_file_path = f"{self._latency_log_path}/{subtask_info.job_name}.csv"
