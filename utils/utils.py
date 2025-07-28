@@ -96,8 +96,8 @@ def save_performance(file_path, computing_performance, transfer_performance):
     file_exists = os.path.exists(file_path)
 
     # 노드와 값을 정렬
-    sorted_computing = sorted(computing_performance.items(), key=lambda x: x[0])
-    sorted_transfer = sorted(transfer_performance.items(), key=lambda x: x[0])
+    sorted_computing = sorted(computing_performance.items(), key=lambda item: item[0].to_string())
+    sorted_transfer = sorted(transfer_performance.items(), key=lambda item: item[0].to_string())
 
     sorted_nodes = [node.to_string() for node, _ in sorted_computing]
     sorted_computing_values = [value for _, value in sorted_computing]

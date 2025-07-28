@@ -31,7 +31,8 @@ class LayeredGraph:
         for link, backlog in links.items():
             self._layered_graph_backlog[link] = backlog
     
-    def set_performance(self, node: LayerNode, computing_performance: float, transfer_performance: float) -> None:
+    def set_performance(self, node_ip: str, computing_performance: float, transfer_performance: float) -> None:
+        node = self._get_layer_node(node_ip)
         self._transfer_performance[node] = transfer_performance
         self._computing_performance[node] = computing_performance
 
