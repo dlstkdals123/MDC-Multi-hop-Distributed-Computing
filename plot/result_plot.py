@@ -54,9 +54,9 @@ def plot_backlog(result_dir, n_samples=None, save_plot=True):
 
     # 전체 GFLOPs/KB 플롯
     plt.figure(figsize=(14, 6))
-    plt.plot(time, df['sum_GFLOPs'], label='Total GFLOPs/ms', color=TOTAL_COLOR)
-    plt.plot(time, df['avg_GFLOPs'], label='Average GFLOPs/ms', color=AVG_COLOR)
-    plt.ylabel('GFLOPs/ms')
+    plt.plot(time, df['sum_GFLOPs'], label='Total GFLOPs', color=TOTAL_COLOR)
+    plt.plot(time, df['avg_GFLOPs'], label='Average GFLOPs', color=AVG_COLOR)
+    plt.ylabel('GFLOPs')
     plt.xlabel('Time step')
     plt.title('전체 연산량 분석: 총합 및 평균 GFLOPs')
     plt.legend()
@@ -69,9 +69,9 @@ def plot_backlog(result_dir, n_samples=None, save_plot=True):
         plt.show()
 
     plt.figure(figsize=(14, 6))
-    plt.plot(time, df['sum_KB'], label='Total KB/ms', color=TOTAL_COLOR)
-    plt.plot(time, df['avg_KB'], label='Average KB/ms', color=AVG_COLOR)
-    plt.ylabel('KB/ms')
+    plt.plot(time, df['sum_KB'], label='Total KB', color=TOTAL_COLOR)
+    plt.plot(time, df['avg_KB'], label='Average KB', color=AVG_COLOR)
+    plt.ylabel('KB')
     plt.xlabel('Time step')
     plt.title('전체 데이터 전송량 분석: 총합 및 평균 KB')
     plt.legend()
@@ -86,9 +86,10 @@ def plot_backlog(result_dir, n_samples=None, save_plot=True):
     # GFLOPs/ms (계산) 플롯
     plt.figure(figsize=(14, 6))
     for col in gflops_cols:
-        node_num = col.split('->')[0].split('.')[-1]  # IP 주소의 마지막 숫자
-        plt.plot(time, df[col], label=f"{col} (GFLOPs/ms)", color=NODE_COLORS[node_num])
-    plt.ylabel('Backlog (GFLOPs/ms)')
+        node = col.split('->')[0] # 노드 이름 (ex: 192.168.1.5)
+        node_num = node.split('.')[-1]  # IP 주소의 마지막 숫자
+        plt.plot(time, df[col], label=f"{node} (GFLOPs)", color=NODE_COLORS[node_num])
+    plt.ylabel('Backlog (GFLOPs)')
     plt.xlabel('Time step')
     plt.title('노드별 연산 처리량 분석: 시간에 따른 백로그 변화')
     plt.legend()
@@ -104,8 +105,8 @@ def plot_backlog(result_dir, n_samples=None, save_plot=True):
     plt.figure(figsize=(14, 6))
     for col in kb_cols:
         node_num = col.split('->')[0].split('.')[-1]  # 시작 노드의 IP 마지막 숫자
-        plt.plot(time, df[col], label=f"{col} (KB/ms)", color=NODE_COLORS[node_num])
-    plt.ylabel('Backlog (KB/ms)')
+        plt.plot(time, df[col], label=f"{col} (KB)", color=NODE_COLORS[node_num])
+    plt.ylabel('Backlog (KB)')
     plt.xlabel('Time step')
     plt.title('노드 간 데이터 전송량 동향: 시간별 백로그 추이')
     plt.legend()
@@ -137,30 +138,22 @@ def plot_latency(result_dir, n_samples=None, save_plot=True):
 
     # latency 값 읽기
     latency_df = pd.read_csv(latency_path)
-    if n_samples is not None:
-        mid = len(latency_df) // 2
-        half_samples = n_samples // 2
-        latency_df = latency_df.iloc[mid-half_samples:mid+half_samples]
     latency_values = latency_df.iloc[:, 0].values  # 첫 번째 컬럼
 
     # path 값 읽기
     with open(path_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     paths = [line.strip() for line in lines[1:]]  # 첫 줄은 헤더
-    if n_samples is not None:
-        mid = len(paths) // 2
-        half_samples = n_samples // 2
-        paths = paths[mid-half_samples:mid+half_samples]
 
-    # latency와 path를 동시에 필터링 (300초 이상 제거)
-    filtered_latency = []
-    filtered_paths = []
-    for lat, p in zip(latency_values, paths):
-        if lat < 300000:
-            filtered_latency.append(lat)
-            filtered_paths.append(p)
-    latency_values = filtered_latency
-    paths = filtered_paths
+    # n_samples가 지정된 경우 중앙에서 n개 선택
+    if n_samples is not None:
+        mid = len(latency_values) // 2
+        half_samples = n_samples // 2
+        start_idx = max(0, mid - half_samples)
+        end_idx = min(len(latency_values), mid + half_samples)
+        
+        latency_values = latency_values[start_idx:end_idx]
+        paths = paths[start_idx:end_idx]
 
     def shorten_path(path):
         import re
@@ -179,11 +172,65 @@ def plot_latency(result_dir, n_samples=None, save_plot=True):
 
     # 경로별로 latency 그룹화 (축약 label 사용)
     data_by_path = {}
+    path_stats = {}  # 각 경로별 통계 정보 저장
+    
     for lat, p in zip(latency_values, paths):
         short = shorten_path(p)
         if short not in data_by_path:
             data_by_path[short] = []
-        data_by_path[short].append(lat)
+            path_stats[short] = {'total': 0, 'valid': 0}
+        
+        path_stats[short]['total'] += 1
+        if not (pd.isna(lat) or lat == '' or str(lat).strip() == ''):
+            data_by_path[short].append(lat)
+            path_stats[short]['valid'] += 1
+
+    # 시간에 따른 latency 변화 그래프
+    plt.figure(figsize=(16, 8))
+    
+    # n_samples가 지정된 경우 실제 시간 인덱스 유지
+    if n_samples is not None:
+        mid = len(latency_df.iloc[:, 0].values) // 2
+        half_samples = n_samples // 2
+        start_idx = max(0, mid - half_samples)
+        end_idx = min(len(latency_df.iloc[:, 0].values), mid + half_samples)
+        time_steps = range(start_idx, end_idx)
+    else:
+        time_steps = range(len(latency_values))
+    
+    # 경로별로 다른 색상 사용
+    path_colors = {}
+    color_idx = 0
+    for path in set(paths):
+        short_path = shorten_path(path)
+        if short_path not in path_colors:
+            path_colors[short_path] = list(NODE_COLORS.values())[color_idx % len(NODE_COLORS)]
+            color_idx += 1
+    
+    # 각 경로별로 선 그래프 그리기
+    for i, (lat, path) in enumerate(zip(latency_values, paths)):
+        if not (pd.isna(lat) or lat == '' or str(lat).strip() == ''):
+            short_path = shorten_path(path)
+            plt.scatter(time_steps[i], lat, color=path_colors[short_path], alpha=0.6, s=20)
+    
+    # 경로별 범례 추가
+    legend_elements = []
+    for short_path, color in path_colors.items():
+        legend_elements.append(plt.Line2D([0], [0], marker='o', color='w', 
+                                        markerfacecolor=color, markersize=8, label=short_path))
+    
+    plt.legend(handles=legend_elements, loc='upper right', fontsize=8)
+    plt.ylabel('Latency (ms)')
+    plt.xlabel('Time step')
+    plt.title('시간에 따른 지연시간 변화: 경로별 실시간 성능 모니터링')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    if save_plot:
+        plt.savefig(os.path.join(plot_dir, f'latency_time_series_{result_dir_name}{samples_str}.png'))
+        plt.clf()
+    else:
+        plt.show()
 
     # 경로별 latency boxplot
     plt.figure(figsize=(16, 8))
@@ -197,9 +244,22 @@ def plot_latency(result_dir, n_samples=None, save_plot=True):
     medianprops = dict(color='red')
     meanprops = dict(marker='D', markerfacecolor=AVG_COLOR, markersize=8)
     
-    plt.boxplot(data, tick_labels=labels, vert=True, showmeans=True,
-                boxprops=boxprops, whiskerprops=whiskerprops, flierprops=flierprops,
-                medianprops=medianprops, meanprops=meanprops)
+    bp = plt.boxplot(data, tick_labels=labels, vert=True, showmeans=True,
+                     boxprops=boxprops, whiskerprops=whiskerprops, flierprops=flierprops,
+                     medianprops=medianprops, meanprops=meanprops, showfliers=False)
+    
+    # 각 경로별 통계 정보를 boxplot 위에 표시
+    for i, (label, stats) in enumerate(path_stats.items()):
+        total = stats['total']
+        valid = stats['valid']
+        missing_rate = (total - valid) / total * 100 if total > 0 else 0
+        
+        # boxplot 위에 텍스트 추가
+        plt.text(i+1, plt.gca().get_ylim()[1] * 1.02, 
+                f'n={valid}/{total}\n({missing_rate:.1f}% 결측)', 
+                ha='center', va='bottom', fontsize=8,
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='lightblue', alpha=0.7))
+    
     plt.ylabel('Latency (ms)')
     plt.xlabel('Path')
     plt.title('작업 경로별 지연시간 패턴 분석: 분포도 기반 성능 비교')
@@ -209,7 +269,7 @@ def plot_latency(result_dir, n_samples=None, save_plot=True):
     if save_plot:
         plt.savefig(os.path.join(plot_dir, f'latency_by_path_{result_dir_name}{samples_str}.png'))
         plt.clf()
-        print(f'경로별 latency boxplot이 plots_{result_dir_name} 폴더에 저장되었습니다.')
+        print(f'Latency 분석 그래프들이 plots_{result_dir_name} 폴더에 저장되었습니다.')
     else:
         plt.show()
 
