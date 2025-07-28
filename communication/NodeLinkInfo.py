@@ -8,8 +8,8 @@ class NodeLinkInfo:
     Attributes:
         _ip (str): 노드의 IP 주소.
         _links (Dict[LayerNodePair, float]): 노드의 링크 정보와 총 계산량 또는 전송량.
-        _computing_performance (float): 노드의 평균 계산량. (GFLOPs/ms)
-        _transfer_performance (float): 노드의 평균 전송량. (KB/ms)
+        _computing_performance (float): 노드의 평균 계산량. (GFLOPs/s)
+        _transfer_performance (float): 노드의 평균 전송량. (KB/s)
     """
     def __init__(self, ip: str, links: Dict[LayerNodePair, float], computing_performance: float, transfer_performance: float):
         self._check_validate(ip)
@@ -38,13 +38,13 @@ class NodeLinkInfo:
     @property
     def computing_performance(self) -> float:
         """
-        노드의 평균 계산량을 반환합니다. (GFLOPs/ms)
+        노드의 평균 계산량을 반환합니다. (GFLOPs/s)
         """
         return self._computing_performance
     
     @property
     def transfer_performance(self) -> float:
         """
-        노드의 평균 전송량을 반환합니다. (KB/ms)
+        노드의 평균 전송량을 반환합니다. (KB/s)
         """
         return self._transfer_performance

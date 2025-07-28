@@ -155,7 +155,7 @@ class MDC(Program):
                 return
             
             self._job_manager.update_dnn_output(dnn_output)
-            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output)
+            dnn_output, computing_performance = self._job_manager.run(output=dnn_output)
 
             subtask_info = dnn_output.subtask_info
 
@@ -168,7 +168,7 @@ class MDC(Program):
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
                 return
             else:
-                self._performance_manager.update_computing_performance(computing_capacity)
+                self._performance_manager.update_computing_performance(computing_performance)
 
             subtask_info.set_next_source()
 
