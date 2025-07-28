@@ -18,6 +18,8 @@ class LayeredGraph:
         
         self._layered_graph = dict()
         self._layered_graph_backlog: Dict[LayerNodePair, float] = dict()
+        self._transfer_performance: Dict[LayerNode, float] = dict()
+        self._computing_performance: Dict[LayerNode, float] = dict()
 
         self._scheduling_algorithm = None
 
@@ -28,12 +30,18 @@ class LayeredGraph:
     def set_backlogs(self, links: Dict[LayerNodePair, float]) -> None:
         for link, backlog in links.items():
             self._layered_graph_backlog[link] = backlog
+    
+    def set_performance(self, node: LayerNode, computing_performance: float, transfer_performance: float) -> None:
+        self._transfer_performance[node] = transfer_performance
+        self._computing_performance[node] = computing_performance
 
     def init_graph(self):
         # 이웃 노드 초기화
         for source_ip in self._network_config.get_network_list():
             source = self._get_layer_node(source_ip)
             self._layered_graph.setdefault(source, [])
+            self._transfer_performance.setdefault(source, 0)
+            self._computing_performance.setdefault(source, 0)
 
             for destination_ip in self._network_config.get_network_neighbors(source_ip):
                 destination = self._get_layer_node(destination_ip)
@@ -95,3 +103,15 @@ class LayeredGraph:
         레이어드 그래프의 각 링크의 백로그를 반환합니다. (GFLOPs or KB)
         """
         return self._layered_graph_backlog
+
+    def get_transfer_performance(self) -> Dict[LayerNode, float]:
+        """
+        레이어드 그래프의 각 노드의 전송 성능을 반환합니다. (KB/ms)
+        """
+        return self._transfer_performance
+
+    def get_computing_performance(self) -> Dict[LayerNode, float]:
+        """
+        레이어드 그래프의 각 노드의 계산 성능을 반환합니다. (GFLOPs/ms)
+        """
+        return self._computing_performance

@@ -91,6 +91,32 @@ def save_virtual_backlog(file_path, virtual_backlog):
 
         writer.writerow(datas)
 
+def save_performance(file_path, computing_performance, transfer_performance):
+    # 파일이 존재하는지 확인
+    file_exists = os.path.exists(file_path)
+
+    # 노드와 값을 정렬
+    sorted_computing = sorted(computing_performance.items(), key=lambda x: x[0])
+    sorted_transfer = sorted(transfer_performance.items(), key=lambda x: x[0])
+
+    sorted_nodes = [node.to_string() for node, _ in sorted_computing]
+    sorted_computing_values = [value for _, value in sorted_computing]
+    sorted_transfer_values = [value for _, value in sorted_transfer]
+
+    sum_computing = sum(sorted_computing_values)
+    avg_computing = sum_computing / len(sorted_computing_values) if sorted_computing_values else 0
+    sum_transfer = sum(sorted_transfer_values)
+    avg_transfer = sum_transfer / len(sorted_transfer_values) if sorted_transfer_values else 0
+
+    headers = ["sum_computing (GFLOPs/ms)", "avg_computing (GFLOPs/ms)", "sum_transfer (KB/ms)", "avg_transfer (KB/ms)"] + sorted_nodes
+    datas = [sum_computing, avg_computing, sum_transfer, avg_transfer] + sorted_computing_values + sorted_transfer_values
+
+    with open(file_path, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        if not file_exists:
+            writer.writerow(headers)
+        writer.writerow(datas)
+
 def save_path(file_path, path):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
