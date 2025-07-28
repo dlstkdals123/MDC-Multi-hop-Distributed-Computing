@@ -8,17 +8,17 @@ class NodeLinkInfo:
     Attributes:
         _ip (str): 노드의 IP 주소.
         _links (Dict[LayerNodePair, float]): 노드의 링크 정보와 총 계산량 또는 전송량.
-        _computing_capacity (float): 노드의 평균 계산량. (GFLOPs/ms)
-        _transfer_capacity (float): 노드의 평균 전송량. (KB/ms)
+        _computing_performance (float): 노드의 평균 계산량. (GFLOPs/ms)
+        _transfer_performance (float): 노드의 평균 전송량. (KB/ms)
     """
-    def __init__(self, ip: str, links: Dict[LayerNodePair, float], computing_capacity: float, transfer_capacity: float):
+    def __init__(self, ip: str, links: Dict[LayerNodePair, float], computing_performance: float, transfer_performance: float):
         self._check_validate(ip)
 
         self._ip: str = ip
         self._links: Dict[LayerNodePair, float] = links
 
-        self._computing_capacity: float = computing_capacity
-        self._transfer_capacity: float = transfer_capacity
+        self._computing_performance: float = computing_performance
+        self._transfer_performance: float = transfer_performance
 
     def _check_validate(self, ip: str):
         """
@@ -36,15 +36,15 @@ class NodeLinkInfo:
         return self._links
     
     @property
-    def computing_capacity(self) -> float:
+    def computing_performance(self) -> float:
         """
         노드의 평균 계산량을 반환합니다. (GFLOPs/ms)
         """
-        return self._computing_capacity
+        return self._computing_performance
     
     @property
-    def transfer_capacity(self) -> float:
+    def transfer_performance(self) -> float:
         """
         노드의 평균 전송량을 반환합니다. (KB/ms)
         """
-        return self._transfer_capacity
+        return self._transfer_performance
