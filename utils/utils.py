@@ -102,8 +102,7 @@ def save_performance(file_path, performance, routers: List[str], controller_ip: 
     # 노드와 값을 정렬
     ip_and_performance = []
     for node, value in performance.items():
-        if node.get_ip() not in routers:
-            ip_and_performance.append((node.get_ip(), value))
+        ip_and_performance.append((node.get_ip(), value))
 
     ip_and_performance.append((controller_ip, controller_performance))
     ip_and_performance.sort(key=lambda x: x[0])
