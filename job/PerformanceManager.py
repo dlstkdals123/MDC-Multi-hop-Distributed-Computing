@@ -63,7 +63,7 @@ class PerformanceManager:
         self._performance.computing = self._alpha * self._performance.computing + (1 - self._alpha) * computing_performance
 
     def update_node_delay(self, destination_node: LayerNode, node_delay: float) -> None:
-        self._performance.node_delay[destination_node] = self._alpha * self._performance.node_delay[destination_node] + (1 - self._alpha) * node_delay
+        self._performance.node_delay[destination_node] = self._alpha * self._performance.node_delay.get(destination_node, 0) + (1 - self._alpha) * node_delay
 
     def get_performance(self) -> Performance:
         return self._performance
