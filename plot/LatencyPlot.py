@@ -66,7 +66,7 @@ def group_latency_by_path(latency_values: List[float], paths: List[str]) -> Dict
     
     return data_by_path
 
-def plot_latency_by_path(result_dir: str, start_idx: int = 0,
+def plot_latency_by_path(result_dir: str, file_postfix: str, start_idx: int = 0,
                         end_idx: Optional[int] = None, save_plot: bool = True):
     """경로별 지연시간을 박스플롯으로 시각화합니다."""
     plot_dir, result_dir_name = create_plot_dir(result_dir)
@@ -87,7 +87,7 @@ def plot_latency_by_path(result_dir: str, start_idx: int = 0,
     sorted_paths = sorted(data_by_path.keys())
     
     # 박스플롯 생성
-    plt.figure(figsize=(16, 8))
+    plt.figure(figsize=(12, 6), dpi=300)
     labels = sorted_paths
     data = [data_by_path[k] for k in labels]
     
@@ -111,9 +111,9 @@ def plot_latency_by_path(result_dir: str, start_idx: int = 0,
     plt.grid(True, alpha=0.3, axis='y')
     plt.tight_layout()
     
-    save_or_show_plot(plot_dir, f'latency_by_path_{result_dir_name}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'latency_by_path_{result_dir_name}{file_postfix}.svg', save_plot)
 
-def plot_latency_over_time(result_dir: str, start_idx: int = 0,
+def plot_latency_over_time(result_dir: str, file_postfix: str, start_idx: int = 0,
                           end_idx: Optional[int] = None, save_plot: bool = True):
     """시간에 따른 지연시간 변화를 라인 플롯으로 시각화합니다."""
     plot_dir, result_dir_name = create_plot_dir(result_dir)
@@ -136,7 +136,7 @@ def plot_latency_over_time(result_dir: str, start_idx: int = 0,
         path_groups[short_path]['latency'].append(lat)
     
     # 라인 플롯 생성
-    plt.figure(figsize=(14, 6))
+    plt.figure(figsize=(12, 6), dpi=300)
     
     # 각 경로별로 라인 그리기
     for i, (path_name, data) in enumerate(path_groups.items()):
@@ -156,7 +156,7 @@ def plot_latency_over_time(result_dir: str, start_idx: int = 0,
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
-    save_or_show_plot(plot_dir, f'latency_over_time_{result_dir_name}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'latency_over_time_{result_dir_name}{file_postfix}.svg', save_plot)
 
 if __name__ == "__main__":
     results_dir = os.path.join(os.path.dirname(__file__), '../results')
@@ -172,7 +172,11 @@ if __name__ == "__main__":
     end_idx = None
     save_plot = True
     
+    start_str = f'_{start_idx}' if start_idx != 0 else ''
+    end_str = f'_{end_idx}' if end_idx is not None else ''
+    file_postfix = f'{start_str}{end_str}'
+
     for result_dir in result_dirs:
         print(f"\n{os.path.basename(result_dir)} 분석 중...")
-        plot_latency_by_path(result_dir, start_idx, end_idx, save_plot)
-        plot_latency_over_time(result_dir, start_idx, end_idx, save_plot)
+        plot_latency_by_path(result_dir, file_postfix, start_idx, end_idx, save_plot)
+        plot_latency_over_time(result_dir, file_postfix, start_idx, end_idx, save_plot)

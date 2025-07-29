@@ -16,7 +16,7 @@ def load_data(result_dir: str, start_idx: int = 0, end_idx: Optional[int] = None
     time = range(start_idx, len(df) + start_idx)
     return df, time
 
-def plot_node_gflops(result_dir: str, start_idx: int = 0,
+def plot_node_gflops(result_dir: str, file_postfix: str, start_idx: int = 0,
                     end_idx: Optional[int] = None, save_plot: bool = True):
     plot_dir, result_dir_name = create_plot_dir(result_dir)
     
@@ -27,7 +27,7 @@ def plot_node_gflops(result_dir: str, start_idx: int = 0,
     node_cols = [col for col in df.columns if '->' in col]
     compute_cols = [col for col in node_cols if col.split('->')[0] == col.split('->')[1]]
 
-    plt.figure(figsize=(14, 6))
+    plt.figure(figsize=(12, 6), dpi=300)
     plt.plot(time, df['sum_GFLOPs'], label='Total GFLOPs', color=Colors.TOTAL, 
              linestyle='--', linewidth=1, alpha=0.5)
     plt.plot(time, df['avg_GFLOPs'], label='Average GFLOPs', color=Colors.AVERAGE,
@@ -43,9 +43,9 @@ def plot_node_gflops(result_dir: str, start_idx: int = 0,
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    save_or_show_plot(plot_dir, f'backlog_gflops_{result_dir_name}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'backlog_gflops_{result_dir_name}{file_postfix}.svg', save_plot)
 
-def plot_node_kb(result_dir: str, start_idx: int = 0,
+def plot_node_kb(result_dir: str, file_postfix: str, start_idx: int = 0,
                  end_idx: Optional[int] = None, save_plot: bool = True):
     plot_dir, result_dir_name = create_plot_dir(result_dir)
     
@@ -56,7 +56,7 @@ def plot_node_kb(result_dir: str, start_idx: int = 0,
     node_cols = [col for col in df.columns if '->' in col]
     transfer_cols = [col for col in node_cols if col.split('->')[0] != col.split('->')[1]]
 
-    plt.figure(figsize=(14, 6))
+    plt.figure(figsize=(12, 6), dpi=300)
     plt.plot(time, df['sum_KB'], label='Total KB', color=Colors.TOTAL, 
              linestyle='--', linewidth=1, alpha=0.5)
     plt.plot(time, df['avg_KB'], label='Average KB', color=Colors.AVERAGE,
@@ -72,7 +72,7 @@ def plot_node_kb(result_dir: str, start_idx: int = 0,
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    save_or_show_plot(plot_dir, f'backlog_kb_{result_dir_name}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'backlog_kb_{result_dir_name}{file_postfix}.svg', save_plot)
 
 if __name__ == "__main__":
     results_dir = os.path.join(os.path.dirname(__file__), '../results')
@@ -82,7 +82,11 @@ if __name__ == "__main__":
     end_idx = None
     save_plot = True
 
+    start_str = f'_{start_idx}' if start_idx != 0 else ''
+    end_str = f'_{end_idx}' if end_idx is not None else ''
+    file_postfix = f'{start_str}{end_str}'
+
     for result_dir in result_dirs:
         print(f"\n{os.path.basename(result_dir)} 분석 중...")
-        plot_node_gflops(result_dir, start_idx, end_idx, save_plot)
-        plot_node_kb(result_dir, start_idx, end_idx, save_plot)
+        plot_node_gflops(result_dir, file_postfix, start_idx, end_idx, save_plot)
+        plot_node_kb(result_dir, file_postfix, start_idx, end_idx, save_plot)
