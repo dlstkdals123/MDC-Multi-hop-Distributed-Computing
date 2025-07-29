@@ -106,6 +106,8 @@ def save_performance(file_path, performance):
     sorted_input_values = [value.input for _, value in sorted_performance]
     sorted_output_values = [value.output for _, value in sorted_performance]
     sorted_computing_values = [value.computing for _, value in sorted_performance]
+    sorted_dropped_input_values = [value.dropped_input for _, value in sorted_performance]
+    sorted_dropped_output_values = [value.dropped_output for _, value in sorted_performance]
 
     sum_input = sum(sorted_input_values)
     avg_input = sum_input / len(sorted_input_values) if sorted_input_values else 0
@@ -113,9 +115,16 @@ def save_performance(file_path, performance):
     avg_output = sum_output / len(sorted_output_values) if sorted_output_values else 0
     sum_computing = sum(sorted_computing_values)
     avg_computing = sum_computing / len(sorted_computing_values) if sorted_computing_values else 0
+    sum_dropped_input = sum(sorted_dropped_input_values)
+    avg_dropped_input = sum_dropped_input / len(sorted_dropped_input_values) if sorted_dropped_input_values else 0
+    sum_dropped_output = sum(sorted_dropped_output_values)
+    avg_dropped_output = sum_dropped_output / len(sorted_dropped_output_values) if sorted_dropped_output_values else 0
 
-    headers = ["sum_input (KB/s)", "avg_input (KB/s)", "sum_output (KB/s)", "avg_output (KB/s)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)"] + sorted_nodes
-    datas = [sum_input, avg_input, sum_output, avg_output, sum_computing, avg_computing] + sorted_input_values + sorted_output_values + sorted_computing_values
+    headers = ["sum_input (KB/s)", "avg_input (KB/s)", "sum_output (KB/s)", "avg_output (KB/s)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)", "sum_dropped_input (packet/s)", "avg_dropped_input (packet/s)", "sum_dropped_output (packet/s)", "avg_dropped_output (packet/s)"] + \
+        [f"{node}(input)" for node in sorted_nodes] + [f"{node}(output)" for node in sorted_nodes] + [f"{node}(computing)" for node in sorted_nodes] + \
+        [f"{node}(dropped_input)" for node in sorted_nodes] + [f"{node}(dropped_output)" for node in sorted_nodes]
+    
+    datas = [sum_input, avg_input, sum_output, avg_output, sum_computing, avg_computing, sum_dropped_input, avg_dropped_input, sum_dropped_output, avg_dropped_output] + sorted_input_values + sorted_output_values + sorted_computing_values + sorted_dropped_input_values + sorted_dropped_output_values
 
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
