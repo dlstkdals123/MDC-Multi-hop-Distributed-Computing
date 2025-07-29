@@ -170,7 +170,7 @@ class MDC(Program):
                 # 현재 시간과 지연시간 계산 및 업데이트
                 cur_time = time.time() * NANO_SECOND # ns
                 node_latency = (cur_time - subtask_info.subtask_start_time) / NANO_PER_MILLI_SECOND # ms
-                self._performance_manager.update_node_latency(destination_ip, node_latency)
+                self._performance_manager.update_node_latency(destination, node_latency)
             else:
                 # 계산 성능 업데이트 
                 self._performance_manager.update_computing_performance(computing_performance)
