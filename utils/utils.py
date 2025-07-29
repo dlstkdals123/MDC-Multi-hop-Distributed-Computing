@@ -7,6 +7,8 @@ import torch
 from torchvision.models import resnet18, mobilenet_v2
 from yolov5.Yolov5 import P1, P2, P3, P4
 
+NANO_PER_MILLISECOND = 1_000_000
+
 def get_ip_address(interface_name=["eth0"]):
     # check os
     for interface in interface_name:
@@ -41,6 +43,8 @@ def get_ip_address_linux(interface_name='eth0'):
 def save_latency(file_path: str, latency: float):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
+
+    latency /= NANO_PER_MILLISECOND
 
     # 파일에 데이터 쓰기
     with open(file_path, 'a', newline='') as csvfile:
@@ -91,16 +95,53 @@ def save_virtual_backlog(file_path, virtual_backlog):
 
         writer.writerow(datas)
 
+def save_performance(file_path, performance):
+    # 파일이 존재하는지 확인
+    file_exists = os.path.exists(file_path)
+
+    # 노드와 값을 정렬
+    sorted_performance = sorted(performance.items(), key=lambda item: item[0].to_string())
+
+    sorted_nodes = [node.to_string() for node, _ in sorted_performance]
+    sorted_input_values = [value.input for _, value in sorted_performance]
+    sorted_output_values = [value.output for _, value in sorted_performance]
+    sorted_computing_values = [value.computing for _, value in sorted_performance]
+    sorted_dropped_input_values = [value.dropped_input for _, value in sorted_performance]
+    sorted_dropped_output_values = [value.dropped_output for _, value in sorted_performance]
+
+    sum_input = sum(sorted_input_values)
+    avg_input = sum_input / len(sorted_input_values) if sorted_input_values else 0
+    sum_output = sum(sorted_output_values)
+    avg_output = sum_output / len(sorted_output_values) if sorted_output_values else 0
+    sum_computing = sum(sorted_computing_values)
+    avg_computing = sum_computing / len(sorted_computing_values) if sorted_computing_values else 0
+    sum_dropped_input = sum(sorted_dropped_input_values)
+    avg_dropped_input = sum_dropped_input / len(sorted_dropped_input_values) if sorted_dropped_input_values else 0
+    sum_dropped_output = sum(sorted_dropped_output_values)
+    avg_dropped_output = sum_dropped_output / len(sorted_dropped_output_values) if sorted_dropped_output_values else 0
+
+    headers = ["sum_input (KB/s)", "avg_input (KB/s)", "sum_output (KB/s)", "avg_output (KB/s)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)", "sum_dropped_input (packet/s)", "avg_dropped_input (packet/s)", "sum_dropped_output (packet/s)", "avg_dropped_output (packet/s)"] + \
+        [f"{node}(input)" for node in sorted_nodes] + [f"{node}(output)" for node in sorted_nodes] + [f"{node}(computing)" for node in sorted_nodes] + \
+        [f"{node}(dropped_input)" for node in sorted_nodes] + [f"{node}(dropped_output)" for node in sorted_nodes]
+    
+    datas = [sum_input, avg_input, sum_output, avg_output, sum_computing, avg_computing, sum_dropped_input, avg_dropped_input, sum_dropped_output, avg_dropped_output] + sorted_input_values + sorted_output_values + sorted_computing_values + sorted_dropped_input_values + sorted_dropped_output_values
+
+    with open(file_path, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        if not file_exists:
+            writer.writerow(headers)
+        writer.writerow(datas)
+
 def save_path(file_path, path):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
     path_list = []
-    for source_node, destination_node, model_name in path:
-        if source_node.is_same_node(destination_node):
-            path_list.append(f"(computing) {source_node.to_string()}: {model_name}")
+    for layer_node_pair, model_name in path:
+        if layer_node_pair.is_same_node():
+            path_list.append(f"(computing) {layer_node_pair.to_string()}: {model_name}")
         else:
-            path_list.append(f"(transmission) {source_node.to_string()}->{destination_node.to_string()}")
+            path_list.append(f"(transmission) {layer_node_pair.to_string()}")
 
     # 파일에 데이터 쓰기
     with open(file_path, 'a', newline='') as csvfile:

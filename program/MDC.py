@@ -2,11 +2,10 @@ import sys, os
  
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-import queue
-import threading
 from program import Program
-from job import *
-from communication import *
+from job import JobManager, SubtaskInfo, DNNOutput
+from communication import RequestConfig, NodeLinkInfo
+from job.PerformanceManager import PerformanceManager
 from utils.utils import get_ip_address
 from config import NetworkConfig, ModelConfig
 
@@ -15,6 +14,9 @@ import MQTTclient
 import pickle
 import time
 from typing import Dict, Any
+
+NANO_SECOND = 1_000_000_000
+NANO_PER_MILLI_SECOND = 1_000_000
 
 class MDC(Program):
     def __init__(self, sub_configs, pub_configs):
@@ -49,7 +51,7 @@ class MDC(Program):
         self._neighbors = None
         self._backlogs_zero_flag = False
 
-        self._capacity_manager = CapacityManager()
+        self._performance_manager = PerformanceManager()
 
         super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
@@ -100,19 +102,17 @@ class MDC(Program):
 
     def handle_request_backlog(self, topic, data, publisher):
         # transfer capacity check current capacity every sync time.
-        self._capacity_manager.update_transfer_capacity()
+        self._performance_manager.update_transfer_performance()
 
         links = self._job_manager.get_backlogs()
 
-        computing_capacity = self._capacity_manager.computing_capacity_avg
-        transfer_capacity = self._capacity_manager.transfer_capacity_avg
+        performance = self._performance_manager.get_performance()
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 
             links = links, 
-            computing_capacity = computing_capacity, 
-            transfer_capacity = transfer_capacity
-            )
+            performance = performance
+        )
         
         node_link_info_bytes = pickle.dumps(node_link_info)
 
@@ -155,22 +155,22 @@ class MDC(Program):
                 return
             
             self._job_manager.update_dnn_output(dnn_output)
-            dnn_output, computing_capacity = self._job_manager.run(output=dnn_output)
+            dnn_output, computing_performance = self._job_manager.run(output=dnn_output)
 
             subtask_info = dnn_output.subtask_info
 
             if subtask_info.is_transmission():
-                destination_ip = subtask_info.destination.get_ip()
+                # 다음 노드로 전송
+                destination = subtask_info.destination
+                destination_ip = destination.get_ip()
                 subtask_info.set_next_source()
                 dnn_output_bytes = pickle.dumps(dnn_output)
-
-                # send job to next node
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
                 return
             else:
-                self._capacity_manager.update_computing_capacity(computing_capacity)
-
-            subtask_info.set_next_source()
+                # 계산 성능 업데이트 
+                self._performance_manager.update_computing_performance(computing_performance)
+                subtask_info.set_next_source()
 
        
 if __name__ == '__main__':

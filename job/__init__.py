@@ -8,4 +8,4 @@ from job.JobManager import JobManager
 
 from job.SubtaskInfo import SubtaskInfo
 
-from job.CapacityManager import CapacityManager
+from job.PerformanceManager import PerformanceManager

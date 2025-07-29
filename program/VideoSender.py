@@ -71,7 +71,7 @@ class VideoSender(MDC):
             # send job to next node
             publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
 
-            self._capacity_manager.update_computing_capacity(computing_capacity)
+            self._performance_manager.update_computing_performance(computing_capacity)
 
     def stream_player(self):
         cap = cv2.VideoCapture("video/JN.mp4")
@@ -93,7 +93,8 @@ class VideoSender(MDC):
             sleep_time = self.get_sleep_time()
             time.sleep(sleep_time)
 
-            self.send_frame()
+            if self._frame is not None:
+                self.send_frame()
             
     def wait_until_can_send(self):
         print("Waiting for config.")
@@ -117,7 +118,7 @@ class VideoSender(MDC):
 
     def get_sleep_time(self) -> float:
         # implement any frame drop logic
-        return 0.5
+        return 0.1
 
 if __name__ == '__main__':
     sub_configs = {

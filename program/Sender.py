@@ -70,7 +70,7 @@ class Sender(MDC):
             # self._node_publisher[destination_ip].publish(f"job/{subtask_info.job_type}", dnn_output_bytes)
             publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
 
-            self._capacity_manager.update_computing_capacity(computing_capacity)
+            self._performance_manager.update_computing_capacity(computing_capacity)
 
     def handle_arrival_rate(self, topic, data, publisher):
         arrival_rate = pickle.loads(data)

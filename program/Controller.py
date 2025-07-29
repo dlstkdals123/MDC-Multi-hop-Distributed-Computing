@@ -5,9 +5,9 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from program import Program
 from communication import *
 from config import ControllerConfig, NetworkConfig, ModelConfig
-from layeredgraph import LayeredGraph, LayerNode
+from layeredgraph import LayeredGraph
 from job import JobInfo, SubtaskInfo
-from utils import save_latency, save_virtual_backlog, save_path, get_ip_address
+from utils import save_latency, save_virtual_backlog, save_path, get_ip_address, save_performance
 
 import time
 import pickle, json
@@ -17,7 +17,7 @@ import threading
 from datetime import datetime
 from typing import Dict
 
-MS_PER_SECOND = 1_000
+NANO_SECOND = 1_000_000_000
 
 class Controller(Program):
     def __init__(self, sub_configs, pub_configs):
@@ -98,14 +98,14 @@ class Controller(Program):
             while True:
                 time.sleep(collect_garbage_job_time) # sec
                 
-                cur_time = time.time() * MS_PER_SECOND # ms
+                cur_time = time.time() * NANO_SECOND # ns
                 
                 self._job_list_mutex.acquire()
                 try:
                     keys_to_delete = [job_id for job_id, start_time in self._job_list.items() 
-                                    if cur_time - start_time >= collect_garbage_job_time * MS_PER_SECOND] # ms
+                                    if cur_time - start_time >= collect_garbage_job_time * NANO_SECOND] # ns
                     for k in keys_to_delete:
-                        latency = collect_garbage_job_time * MS_PER_SECOND # ms
+                        latency = collect_garbage_job_time * NANO_SECOND # ns
                         latency_log_file_path = f"{self._latency_log_path}/{job_name}.csv"
                         save_latency(latency_log_file_path, latency)
                         del self._job_list[k]
@@ -113,17 +113,6 @@ class Controller(Program):
                     print(f"Deleted {len(keys_to_delete)} jobs. {len(self._job_list)} remains.")
                 finally:
                     self._job_list_mutex.release()
-
-    def init_record_virtual_backlog(self):
-        record_virtual_backlog_thread = threading.Thread(target=self.record_virtual_backlog, args=())
-        record_virtual_backlog_thread.start()
-
-    def record_virtual_backlog(self):
-        backlog_log_file_path = f"{self._backlog_log_path}/total_backlog.csv"
-        while True:
-            time.sleep(0.1)
-            self._layered_graph.update_graph()
-            save_virtual_backlog(backlog_log_file_path, self._layered_graph.get_layered_graph_backlog())
 
     def init_sync_backlog(self):
         sync_backlog_thread = threading.Thread(target=self.sync_backlog, args=())
@@ -169,38 +158,36 @@ class Controller(Program):
         for link in total_links:
             links.setdefault(link, 0)
             
-        self._layered_graph.set_graph(links)
-        self._layered_graph.set_capacity(
-            node_ip,
-            node_link_info.computing_capacity,
-            node_link_info.transfer_capacity
-        )
+        self._layered_graph.set_backlogs(links)
+        self._layered_graph.set_performance(node_ip, node_link_info.performance)
 
-        if self._job_info_dummy:
-            path = self._layered_graph.schedule(
-                self._job_info_dummy
-            )
+        backlog_log_file_path = f"{self._backlog_log_path}/total_backlog.csv"
+        save_virtual_backlog(backlog_log_file_path, self._layered_graph.get_layered_graph_backlog())
+
+        performance_log_file_path = f"{self._backlog_log_path}/performance.csv"
+        save_performance(performance_log_file_path, self._layered_graph.get_performance())
 
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)
 
         if self._is_first_scheduling:
-            self.init_record_virtual_backlog()
             self._is_first_scheduling = False
             self._job_info_dummy = job_info
 
         # register start time
-        self._job_list[job_info.job_id] = time.time() * MS_PER_SECOND # ms
+        self._job_list[job_info.job_id] = time.time() * NANO_SECOND # ns
 
         path = self._layered_graph.schedule(job_info)
-        self._layered_graph.update_path_backlog(job_info=job_info, path=path)
+
+        if path[-1][1] == "":
+            return
+        
         path_log_file_path = f"{self._path_log_path}/path.csv"
         save_path(path_log_file_path, path)
         
-        for i in range(len(path)):
-            source = path[i][0]
-            destination = path[i][1]
-            model_name = path[i][2]
+        for i, (layer_node_pair, model_name) in enumerate(path):
+            source = layer_node_pair.source
+            destination = layer_node_pair.destination
             subtask_info = SubtaskInfo(job_info, source, destination, model_name, i, len(path))
             subtask_info_bytes = pickle.dumps(subtask_info)
             # send SubtaskInfo byte to source ip
@@ -213,7 +200,7 @@ class Controller(Program):
         start_time = self._job_list[job_id]
         del self._job_list[job_id]
         self._job_list_mutex.release()
-        finish_time = time.time() * MS_PER_SECOND # ms
+        finish_time = time.time() * NANO_SECOND # ns
 
         latency = finish_time - start_time
         latency_log_file_path = f"{self._latency_log_path}/{subtask_info.job_name}.csv"
