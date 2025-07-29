@@ -29,7 +29,7 @@ def get_range_str(start_idx: int, end_idx: Optional[int]) -> str:
 
 def save_or_show_plot(plot_dir: str, filename: str, save_plot: bool):
     if save_plot:
-        plt.savefig(os.path.join(plot_dir, filename), dpi=96, format='svg')
+        plt.savefig(os.path.join(plot_dir, filename), dpi=300, format='svg')
         plt.clf()
     else:
         plt.show()
