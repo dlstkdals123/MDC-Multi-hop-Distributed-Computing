@@ -168,7 +168,7 @@ class Controller(Program):
         save_performance(performance_log_file_path, self._layered_graph.get_performance())
         
         node_delay_log_file_path = f"{self._backlog_log_path}/node_delay.csv"
-        save_node_delay(node_delay_log_file_path, self._layered_graph.get_performance().node_delay)
+        save_node_delay(node_delay_log_file_path, self._layered_graph.get_performance())
 
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)
