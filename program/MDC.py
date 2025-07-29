@@ -15,6 +15,9 @@ import pickle
 import time
 from typing import Dict, Any
 
+NANO_SECOND = 1_000_000_000
+NANO_PER_MILLI_SECOND = 1_000_000
+
 class MDC(Program):
     def __init__(self, sub_configs, pub_configs):
         self.sub_configs = sub_configs
@@ -144,12 +147,12 @@ class MDC(Program):
 
                 # send subtask info to controller
                 self._controller_publisher.publish("job/response", subtask_info_bytes)
-                return
+                break
 
             # subtask가 도착하기 전에 dnn_output이 온 경우
             if not self._job_manager.is_subtask_exists(dnn_output):
                 self._job_manager.add_dnn_output(dnn_output)
-                return
+                break
             
             self._job_manager.update_dnn_output(dnn_output)
             dnn_output, computing_performance = self._job_manager.run(output=dnn_output)
@@ -163,11 +166,15 @@ class MDC(Program):
 
                 # send job to next node
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
-                return
+                break
             else:
                 self._performance_manager.update_computing_performance(computing_performance)
 
             subtask_info.set_next_source()
+
+        cur_time = time.time() * NANO_SECOND # ns
+        node_delay = (cur_time - subtask_info.subtask_start_time) / NANO_PER_MILLI_SECOND # ms
+        self._performance_manager.update_node_delay(subtask_info.destination, node_delay)
 
        
 if __name__ == '__main__':

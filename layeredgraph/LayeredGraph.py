@@ -40,13 +40,14 @@ class LayeredGraph:
         for source_ip in self._network_config.get_network_list():
             source = self._get_layer_node(source_ip)
             self._layered_graph.setdefault(source, [])
-            self._performance.setdefault(source, Performance(0, 0, 0, 0, 0))
+            self._performance.setdefault(source, Performance(0, 0, 0, 0, 0, dict()))
 
             for destination_ip in self._network_config.get_network_neighbors(source_ip):
                 destination = self._get_layer_node(destination_ip)
                 self._layered_graph[source].append(destination)
                 link = self._get_layer_node_pair(source_ip, destination_ip)
                 self._layered_graph_backlog.setdefault(link, 0)
+                self._performance[source].node_delay.setdefault(destination, 0)
 
         # 자기 자신 추가
         for source_ip in self._network_config.get_network_list():
@@ -57,6 +58,7 @@ class LayeredGraph:
             self._layered_graph.setdefault(source, [])
             self._layered_graph[source].append(source)
             self._layered_graph_backlog.setdefault(self._get_layer_node_pair(source_ip, source_ip), 0)
+            self._performance[source].node_delay.setdefault(source, 0)
 
     def init_algorithm(self):
         module_path = self._network_config.scheduling_algorithm.replace(".py", "").replace("/", ".")

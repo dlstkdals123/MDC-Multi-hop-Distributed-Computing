@@ -1,5 +1,8 @@
 from job import JobInfo
 from layeredgraph import LayerNode, LayerNodePair
+import time
+
+NANO_SECOND = 1_000_000_000
 
 class SubtaskInfo(JobInfo):
     """
@@ -18,6 +21,7 @@ class SubtaskInfo(JobInfo):
         self._model_name = model_name
         self._primary_path_index = primary_path_index
         self._terminal_index = terminal_index
+        self._subtask_start_time = time.time() * NANO_SECOND # ns
         super().__init__(job_info.job_name, job_info.job_type, job_info.input_bytes, job_info.source_ip, job_info.terminal_ip, job_info.start_time)
     
     @property
@@ -31,6 +35,10 @@ class SubtaskInfo(JobInfo):
     @property
     def model_name(self) -> str:
         return self._model_name
+
+    @property
+    def subtask_start_time(self) -> float:
+        return self._subtask_start_time
         
     def get_subtask_id(self) -> str:
         return self._delimeter.join([self.job_id, self._source_layer_node.to_string(), str(self._primary_path_index)])

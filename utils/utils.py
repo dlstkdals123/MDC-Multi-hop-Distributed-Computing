@@ -132,6 +132,26 @@ def save_performance(file_path, performance):
             writer.writerow(headers)
         writer.writerow(datas)
 
+def save_node_delay(file_path, node_delay):
+    # 파일이 존재하는지 확인
+    file_exists = os.path.exists(file_path)
+
+    sorted_node_delay = sorted(node_delay.items(), key=lambda item: item[0].to_string())
+    nodes = [node.to_string() for node, _ in sorted_node_delay]
+    delays = [delay for _, delay in sorted_node_delay]
+
+    sum_delay = sum(delays)
+    avg_delay = sum_delay / len(delays) if delays else 0
+
+    headers = ["sum_delay (ms)", "avg_delay (ms)"] + nodes
+    datas = [sum_delay, avg_delay] + delays
+
+    with open(file_path, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile)    
+        if not file_exists:
+            writer.writerow(headers)
+        writer.writerow(datas)
+
 def save_path(file_path, path):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)

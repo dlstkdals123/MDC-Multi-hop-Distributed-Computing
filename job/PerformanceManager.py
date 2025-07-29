@@ -1,5 +1,6 @@
 import psutil
 import time
+from layeredgraph.LayerNode import LayerNode
 from communication.Performance import Performance
 
 NANO_SECOND = 1_000_000_000
@@ -26,7 +27,7 @@ class PerformanceManager:
         self._last_transfer_time: float = time.time() * NANO_SECOND
 
         self._alpha: float = 0.9
-        self._performance: Performance = Performance(0, 0, 0, 0, 0)
+        self._performance: Performance = Performance(0, 0, 0, 0, 0, dict())
 
     def update_transfer_performance(self) -> None:
         net_io_counters = psutil.net_io_counters()
@@ -60,6 +61,9 @@ class PerformanceManager:
 
     def update_computing_performance(self, computing_performance: float) -> None:
         self._performance.computing = self._alpha * self._performance.computing + (1 - self._alpha) * computing_performance
+
+    def update_node_delay(self, destination_node: LayerNode, node_delay: float) -> None:
+        self._performance.node_delay[destination_node] = self._alpha * self._performance.node_delay[destination_node] + (1 - self._alpha) * node_delay
 
     def get_performance(self) -> Performance:
         return self._performance
