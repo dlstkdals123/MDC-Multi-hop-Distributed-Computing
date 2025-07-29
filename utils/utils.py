@@ -132,12 +132,12 @@ def save_performance(file_path, performance):
             writer.writerow(headers)
         writer.writerow(datas)
 
-def save_node_latency(file_path, node_latency):
+def save_node_latency(file_path, node_performance):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
     # 노드 정렬
-    sorted_nodes = sorted(node_latency.keys(), key=lambda node: node.to_string())
+    sorted_nodes = sorted(node_performance.keys(), key=lambda node: node.to_string())
 
     # 헤더와 데이터 생성
     headers = ["sum_latency (ms)", "avg_latency (ms)"]
@@ -147,7 +147,7 @@ def save_node_latency(file_path, node_latency):
 
     # 각 노드 쌍에 대한 지연시간 계산
     for source_node in sorted_nodes:
-        performance = node_latency[source_node]
+        performance = node_performance[source_node]
         # 목적지 노드도 정렬
         sorted_dest_nodes = sorted(performance.node_latency.items(), key=lambda x: x[0].to_string())
         for dest_node, latency in sorted_dest_nodes:

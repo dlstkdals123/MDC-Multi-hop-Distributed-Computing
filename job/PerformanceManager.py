@@ -1,5 +1,6 @@
 import psutil
 import time
+from typing import List
 from layeredgraph.LayerNode import LayerNode
 from communication.Performance import Performance
 
