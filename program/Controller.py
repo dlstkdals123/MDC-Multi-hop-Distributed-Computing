@@ -7,7 +7,7 @@ from communication import *
 from config import ControllerConfig, NetworkConfig, ModelConfig
 from layeredgraph import LayeredGraph
 from job import JobInfo, SubtaskInfo
-from utils import save_latency, save_virtual_backlog, save_path, get_ip_address, save_performance, save_node_latency
+from utils import save_latency, save_virtual_backlog, save_path, get_ip_address, save_performance
 
 import time
 import pickle, json
@@ -166,9 +166,6 @@ class Controller(Program):
 
         performance_log_file_path = f"{self._backlog_log_path}/performance.csv"
         save_performance(performance_log_file_path, self._layered_graph.get_performance())
-        
-        node_latency_log_file_path = f"{self._backlog_log_path}/node_latency.csv"
-        save_node_latency(node_latency_log_file_path, self._layered_graph.get_performance())
 
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)
