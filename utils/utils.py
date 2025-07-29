@@ -95,7 +95,7 @@ def save_virtual_backlog(file_path, virtual_backlog):
 
         writer.writerow(datas)
 
-def save_performance(file_path, performance):
+def save_performance(file_path, performance, controller_performance):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
@@ -120,11 +120,14 @@ def save_performance(file_path, performance):
     sum_dropped_output = sum(sorted_dropped_output_values)
     avg_dropped_output = sum_dropped_output / len(sorted_dropped_output_values) if sorted_dropped_output_values else 0
 
-    headers = ["sum_input (KB/s)", "avg_input (KB/s)", "sum_output (KB/s)", "avg_output (KB/s)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)", "sum_dropped_input (packet/s)", "avg_dropped_input (packet/s)", "sum_dropped_output (packet/s)", "avg_dropped_output (packet/s)"] + \
+    headers = ["controller_input", "controller_output", "controller_computing", "controller_dropped_input", "controller_dropped_output"] + \
+        ["sum_input (KB/s)", "avg_input (KB/s)", "sum_output (KB/s)", "avg_output (KB/s)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)", "sum_dropped_input (packet/s)", "avg_dropped_input (packet/s)", "sum_dropped_output (packet/s)", "avg_dropped_output (packet/s)"] + \
         [f"{node}(input)" for node in sorted_nodes] + [f"{node}(output)" for node in sorted_nodes] + [f"{node}(computing)" for node in sorted_nodes] + \
         [f"{node}(dropped_input)" for node in sorted_nodes] + [f"{node}(dropped_output)" for node in sorted_nodes]
     
-    datas = [sum_input, avg_input, sum_output, avg_output, sum_computing, avg_computing, sum_dropped_input, avg_dropped_input, sum_dropped_output, avg_dropped_output] + sorted_input_values + sorted_output_values + sorted_computing_values + sorted_dropped_input_values + sorted_dropped_output_values
+    datas = [controller_performance.input, controller_performance.output, controller_performance.computing, controller_performance.dropped_input, controller_performance.dropped_output] + \
+        [sum_input, avg_input, sum_output, avg_output, sum_computing, avg_computing, sum_dropped_input, avg_dropped_input, sum_dropped_output, avg_dropped_output] + \
+        sorted_input_values + sorted_output_values + sorted_computing_values + sorted_dropped_input_values + sorted_dropped_output_values
 
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
