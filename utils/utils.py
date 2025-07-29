@@ -153,7 +153,7 @@ def save_node_delay(file_path, node_delay):
     
     for source in sorted_nodes:
         for dest in sorted_nodes:
-            delay = node_delay[source].get(dest, 0)
+            delay = node_delay[source].node_delay.get(dest, 0)
             datas.append(delay)
             if delay > 0:
                 total_delay += delay
