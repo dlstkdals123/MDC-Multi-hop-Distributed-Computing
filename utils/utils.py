@@ -132,12 +132,12 @@ def save_performance(file_path, performance):
             writer.writerow(headers)
         writer.writerow(datas)
 
-def save_node_delay(file_path, node_delay):
+def save_node_latency(file_path, node_latency):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
     # 노드 정렬
-    sorted_nodes = sorted(node_delay.keys(), key=lambda node: node.to_string())
+    sorted_nodes = sorted(node_latency.keys(), key=lambda node: node.to_string())
     node_names = [node.to_string() for node in sorted_nodes]
 
     # 헤더 생성 - 각 노드에서 다른 노드로의 지연시간
@@ -148,22 +148,22 @@ def save_node_delay(file_path, node_delay):
 
     # 데이터 생성
     datas = []
-    total_delay = 0
-    delay_count = 0
+    total_latency = 0
+    latency_count = 0
     
     for source in sorted_nodes:
         for dest in sorted_nodes:
-            delay = node_delay[source].node_delay.get(dest, 0)
-            datas.append(delay)
-            if delay > 0:
-                total_delay += delay
-                delay_count += 1
+            latency = node_latency[source].node_latency.get(dest, 0)
+            datas.append(latency)
+            if latency > 0:
+                total_latency += latency
+                latency_count += 1
 
-    avg_delay = total_delay / delay_count if delay_count > 0 else 0
+    avg_latency = total_latency / latency_count if latency_count > 0 else 0
     
     # 전체 합계와 평균을 앞에 추가
-    headers = ["sum_delay (ms)", "avg_delay (ms)"] + headers
-    datas = [total_delay, avg_delay] + datas
+    headers = ["sum_latency (ms)", "avg_latency (ms)"] + headers
+    datas = [total_latency, avg_latency] + datas
 
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)    

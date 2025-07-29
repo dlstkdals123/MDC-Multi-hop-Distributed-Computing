@@ -173,8 +173,8 @@ class MDC(Program):
             subtask_info.set_next_source()
 
         cur_time = time.time() * NANO_SECOND # ns
-        node_delay = (cur_time - subtask_info.subtask_start_time) / NANO_PER_MILLI_SECOND # ms
-        self._performance_manager.update_node_delay(subtask_info.destination, node_delay)
+        node_latency = (cur_time - subtask_info.subtask_start_time) / NANO_PER_MILLI_SECOND # ms
+        self._performance_manager.update_node_latency(subtask_info.destination, node_latency)
 
        
 if __name__ == '__main__':

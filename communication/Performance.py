@@ -11,16 +11,16 @@ class Performance:
         _computing (float): 계산량 (GFLOPs/s)
         _dropped_input (float): 입력 패킷 드롭량 (packet/s)
         _dropped_output (float): 출력 패킷 드롭량 (packet/s)
-        _node_delay (Dict[LayerNode, float]): 노드 간 지연 시간 (ms)
+        _node_latency (Dict[LayerNode, float]): 노드 간 지연 시간 (ms)
     """
 
-    def __init__(self, input: float, output: float, computing: float, dropped_input: float, dropped_output: float, node_delay: Dict[LayerNode, float]):
+    def __init__(self, input: float, output: float, computing: float, dropped_input: float, dropped_output: float, node_latency: Dict[LayerNode, float]):
         self._input = input
         self._output = output
         self._computing = computing
         self._dropped_input = dropped_input
         self._dropped_output = dropped_output
-        self._node_delay = node_delay
+        self._node_latency = node_latency
 
     @property
     def input(self) -> float:
@@ -43,8 +43,8 @@ class Performance:
         return self._dropped_output
 
     @property
-    def node_delay(self) -> Dict[LayerNode, float]:
-        return self._node_delay
+    def node_latency(self) -> Dict[LayerNode, float]:
+        return self._node_latency
 
     @input.setter
     def input(self, input: float) -> None:
@@ -66,6 +66,6 @@ class Performance:
     def dropped_output(self, dropped_output: float) -> None:
         self._dropped_output = dropped_output
     
-    @node_delay.setter
-    def node_delay(self, node_delay: Dict[LayerNode, float]) -> None:
-        self._node_delay = node_delay
+    @node_latency.setter
+    def node_latency(self, node_latency: Dict[LayerNode, float]) -> None:
+        self._node_latency = node_latency
