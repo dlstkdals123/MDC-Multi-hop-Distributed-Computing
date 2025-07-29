@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Dict
 import torch
 
 from job import *

@@ -8,6 +8,7 @@ from config import ControllerConfig, NetworkConfig, ModelConfig
 from layeredgraph import LayeredGraph
 from job import JobInfo, SubtaskInfo
 from utils import save_latency, save_virtual_backlog, save_path, get_ip_address, save_performance
+from job.PerformanceManager import PerformanceManager
 
 import time
 import pickle, json
@@ -54,6 +55,8 @@ class Controller(Program):
         self._last_job_id = None
 
         self._job_info_dummy = None
+
+        self._performance_manager = PerformanceManager()
 
         self.init_network_config()
         self.init_controller_config()
@@ -121,6 +124,8 @@ class Controller(Program):
     def sync_backlog(self):
         while True:
             time.sleep(self._controller_config.sync_time)
+            self._performance_manager.update_transfer_performance()
+
             for node_ip in self._network_config.get_network_list():
                 # send RequestBacklog byte to source ip (response)
                 request_backlog = RequestBacklog()
@@ -165,7 +170,7 @@ class Controller(Program):
         save_virtual_backlog(backlog_log_file_path, self._layered_graph.get_layered_graph_backlog())
 
         performance_log_file_path = f"{self._backlog_log_path}/performance.csv"
-        save_performance(performance_log_file_path, self._layered_graph.get_performance())
+        save_performance(performance_log_file_path, self._layered_graph.get_performance(), self._network_config.router, self._address, self._performance_manager.get_performance())
 
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)
