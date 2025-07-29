@@ -161,7 +161,8 @@ class MDC(Program):
 
             if subtask_info.is_transmission():
                 # 다음 노드로 전송
-                destination_ip = subtask_info.destination.get_ip()
+                destination = subtask_info.destination
+                destination_ip = destination.get_ip()
                 subtask_info.set_next_source()
                 dnn_output_bytes = pickle.dumps(dnn_output)
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
@@ -169,7 +170,7 @@ class MDC(Program):
                 # 현재 시간과 지연시간 계산 및 업데이트
                 cur_time = time.time() * NANO_SECOND # ns
                 node_latency = (cur_time - subtask_info.subtask_start_time) / NANO_PER_MILLI_SECOND # ms
-                self._performance_manager.update_node_latency(subtask_info.destination, node_latency)
+                self._performance_manager.update_node_latency(destination_ip, node_latency)
             else:
                 # 계산 성능 업데이트 
                 self._performance_manager.update_computing_performance(computing_performance)
@@ -177,8 +178,7 @@ class MDC(Program):
                 cur_time = time.time() * NANO_SECOND # ns
                 node_latency = (cur_time - subtask_info.subtask_start_time) / NANO_PER_MILLI_SECOND # ms
                 self._performance_manager.update_node_latency(subtask_info.destination, node_latency)
-
-            subtask_info.set_next_source()
+                subtask_info.set_next_source()
 
        
 if __name__ == '__main__':
