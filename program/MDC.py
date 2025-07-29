@@ -147,12 +147,12 @@ class MDC(Program):
 
                 # send subtask info to controller
                 self._controller_publisher.publish("job/response", subtask_info_bytes)
-                break
+                return
 
             # subtask가 도착하기 전에 dnn_output이 온 경우
             if not self._job_manager.is_subtask_exists(dnn_output):
                 self._job_manager.add_dnn_output(dnn_output)
-                break
+                return
             
             self._job_manager.update_dnn_output(dnn_output)
             dnn_output, computing_performance = self._job_manager.run(output=dnn_output)
@@ -160,21 +160,24 @@ class MDC(Program):
             subtask_info = dnn_output.subtask_info
 
             if subtask_info.is_transmission():
+                # 다음 노드로 전송
                 destination_ip = subtask_info.destination.get_ip()
                 subtask_info.set_next_source()
                 dnn_output_bytes = pickle.dumps(dnn_output)
-
-                # send job to next node
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
-                break
             else:
+                # 계산 성능 업데이트 
                 self._performance_manager.update_computing_performance(computing_performance)
 
-            subtask_info.set_next_source()
+            # 현재 시간과 지연시간 계산 및 업데이트
+            cur_time = time.time() * NANO_SECOND # ns
+            node_latency = (cur_time - subtask_info.subtask_start_time) / NANO_PER_MILLI_SECOND # ms
+            self._performance_manager.update_node_latency(subtask_info.destination, node_latency)
 
-        cur_time = time.time() * NANO_SECOND # ns
-        node_latency = (cur_time - subtask_info.subtask_start_time) / NANO_PER_MILLI_SECOND # ms
-        self._performance_manager.update_node_latency(subtask_info.destination, node_latency)
+            if subtask_info.is_transmission():
+                return
+
+            subtask_info.set_next_source()
 
        
 if __name__ == '__main__':
