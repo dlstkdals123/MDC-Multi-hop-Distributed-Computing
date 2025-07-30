@@ -196,7 +196,7 @@ class Controller(Program):
             subtask_info = SubtaskInfo(job_info, source, destination, model_name, i, len(path))
             subtask_info_bytes = pickle.dumps(subtask_info)
             # send SubtaskInfo byte to source ip
-            publish.single("job/subtask_info", subtask_info_bytes, hostname=source.get_ip())
+            publish.single("job/subtask_info", subtask_info_bytes, hostname=source.ip)
             
     def handle_response(self, topic, payload, publisher):
         subtask_info: SubtaskInfo = pickle.loads(payload)
