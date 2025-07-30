@@ -102,11 +102,11 @@ class MDC(Program):
 
     def handle_request_backlog(self, topic, data, publisher):
         # transfer capacity check current capacity every sync time.
-        self._performance_manager.update_transfer_performance()
+        self._performance_manager.update_performance()
 
         links = self._job_manager.get_backlogs()
 
-        performance = self._performance_manager.get_performance()
+        performance = self._performance_manager.performance
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 
@@ -169,7 +169,7 @@ class MDC(Program):
                 return
             else:
                 # 계산 성능 업데이트 
-                self._performance_manager.update_computing_performance(computing_performance)
+                self._performance_manager.add_computing(computing_performance)
                 subtask_info.set_next_source()
 
        

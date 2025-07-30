@@ -124,7 +124,7 @@ class Controller(Program):
     def sync_backlog(self):
         while True:
             time.sleep(self._controller_config.sync_time)
-            self._performance_manager.update_transfer_performance()
+            self._performance_manager.update_performance()
 
             for node_ip in self._network_config.get_network_list():
                 # send RequestBacklog byte to source ip (response)
@@ -170,7 +170,7 @@ class Controller(Program):
         save_virtual_backlog(backlog_log_file_path, self._layered_graph.get_layered_graph_backlog())
 
         performance_log_file_path = f"{self._backlog_log_path}/performance.csv"
-        save_performance(performance_log_file_path, self._layered_graph.get_performance(), self._network_config.router, self._address, self._performance_manager.get_performance())
+        save_performance(performance_log_file_path, self._layered_graph.get_performance(), self._network_config.router, self._address, self._performance_manager.performance)
 
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)

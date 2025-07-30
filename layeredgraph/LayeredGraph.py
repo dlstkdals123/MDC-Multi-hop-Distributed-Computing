@@ -1,24 +1,46 @@
 from typing import Dict, List, Tuple
+import importlib
+import time
+import torch
 
-from layeredgraph import LayerNode, LayerNodePair
 from config import NetworkConfig, ModelConfig
+from layeredgraph import LayerNode, LayerNodePair
 from job import JobInfo
 from communication.Performance import Performance
 from job.DNNModels import DNNModels
-from scheduling import *
+from scheduling import RandomSelection
 
-import importlib
-import torch
+MS_PER_SECOND = 1000
 
 class LayeredGraph:
+    """
+    레이어드 그래프를 관리하는 클래스입니다.
+    네트워크 토폴로지, 노드, 링크, 스케줄링 알고리즘 등을 초기화하고 관리합니다.
+    각 링크의 백로그 및 용량(capacity) 정보를 저장하며, 스케줄링 알고리즘을 통해 경로를 계산합니다.
+
+    Attributes:
+        _network_config (NetworkConfig): 네트워크 설정 정보.
+        _dnn_models (DNNModels): 모델 모음.
+        _layered_graph (Dict[LayerNode, List[LayerNode]]): 노드와 노드의 이웃 노드들을 저장하는 레이어드 그래프.
+        _layered_graph_backlog (Dict[LayerNodePair, float]): 노드들의 쌍으로 이루어진 링크와 해당 링크의 백로그를 저장하는 레이어드 그래프.
+        _scheduling_algorithm: 스케줄링 알고리즘.
+        _previous_update_time (float): 마지막 업데이트 시간.
+        _capacity (Dict[str, Dict[str, float]]): 레이어드 그래프의 .
+    """
+
     def __init__(self, network_config: NetworkConfig, model_config: ModelConfig):
-        self._device = "cuda" if torch.cuda.is_available() else "cpu"
-        
+        """
+        Args:
+            network_config (NetworkConfig): 네트워크 설정 정보.
+            model_config (ModelConfig): 모델 설정 정보.
+        """
         self._network_config = network_config
-        self._dnn_models = DNNModels(model_config, self._device)
-        
-        self._layered_graph = dict()
+
+        self._dnn_models = DNNModels(model_config, "cuda" if torch.cuda.is_available() else "cpu")
+
+        self._layered_graph: Dict[LayerNode, List[LayerNode]] = dict()
         self._layered_graph_backlog: Dict[LayerNodePair, float] = dict()
+
         self._performance: Dict[LayerNode, Performance] = dict()
 
         self._scheduling_algorithm = None
@@ -28,6 +50,12 @@ class LayeredGraph:
         
 
     def set_backlogs(self, links: Dict[LayerNodePair, float]) -> None:
+        """
+        링크별 백로그 정보를 받아 그래프를 갱신합니다.
+
+        Args:
+            links (Dict[LayerNodePair, float]): 각 링크와 해당 백로그 값의 딕셔너리.
+        """
         for link, backlog in links.items():
             self._layered_graph_backlog[link] = backlog
     
@@ -36,11 +64,13 @@ class LayeredGraph:
         self._performance[node] = performance
 
     def init_graph(self):
-        # 이웃 노드 초기화
+        """
+        네트워크 설정을 기반으로 레이어드 그래프와 노드, 링크, 용량 정보를 초기화합니다.
+        """
         for source_ip in self._network_config.get_network_list():
             source = self._get_layer_node(source_ip)
             self._layered_graph.setdefault(source, [])
-            self._performance.setdefault(source, Performance(0, 0, 0, 0, 0))
+            self._performance.setdefault(source, Performance(0, 0, 0, 0))
 
             for destination_ip in self._network_config.get_network_neighbors(source_ip):
                 destination = self._get_layer_node(destination_ip)
@@ -59,6 +89,9 @@ class LayeredGraph:
             self._layered_graph_backlog.setdefault(self._get_layer_node_pair(source_ip, source_ip), 0)
 
     def init_algorithm(self):
+        """
+        네트워크 설정에 명시된 스케줄링 알고리즘을 동적으로 import하여 초기화합니다.
+        """
         module_path = self._network_config.scheduling_algorithm.replace(".py", "").replace("/", ".")
         self._algorithm_class = module_path.split(".")[-1]
         self._scheduling_algorithm = getattr(importlib.import_module(module_path), self._algorithm_class)()
@@ -70,6 +103,15 @@ class LayeredGraph:
         return LayerNodePair(self._get_layer_node(source_ip), self._get_layer_node(destination_ip))
         
     def schedule(self, job_info: JobInfo) -> List[Tuple[LayerNodePair, str]]:
+        """
+        스케줄링 알고리즘을 이용해 작업의 경로를 계산합니다.
+
+        Args:
+            job_info (JobInfo): 작업 정보.
+
+        Returns:
+            List[Tuple[LayerNode, LayerNode, str]]: (소스, 목적지, 모델명) 튜플의 리스트.
+        """
         source_node = self._get_layer_node(job_info.source_ip)
         destination_node = self._get_layer_node(job_info.terminal_ip)
         

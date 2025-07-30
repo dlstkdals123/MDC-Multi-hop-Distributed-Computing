@@ -20,7 +20,6 @@ class DNNModels:
     def __init__(self, model_config: ModelConfig, device: str):
         """
         Args:
-            model_names (List[str]): 모델 이름들.
             model_config (ModelConfig): 모델 설정 정보.
             device (str): 모델을 실행하는 노드의 디바이스(cpu, cuda).
         """

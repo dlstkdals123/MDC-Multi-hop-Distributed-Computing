@@ -16,6 +16,15 @@ class SubtaskInfo(JobInfo):
         _terminal_index (int): 서브태스크의 종착지 인덱스.
     """
     def __init__(self, job_info: JobInfo, source_layer_node: LayerNode, destination_layer_node: LayerNode, model_name: str = None, primary_path_index: int = 0, terminal_index: int = 0):
+        """
+        Args:
+            job_info (JobInfo): 작업 정보.
+            source_layer_node (LayerNode): 서브태스크의 소스 노드.
+            destination_layer_node (LayerNode): 서브태스크의 목적지 노드.
+            model_name (str): 서브태스크의 마지막으로 사용한 모델 이름.
+            primary_path_index (int): 서브태스크의 주요 경로 인덱스.
+            terminal_index (int): 서브태스크의 종착지 인덱스.
+        """
         self._source_layer_node = source_layer_node
         self._destination_layer_node = destination_layer_node
         self._model_name = model_name

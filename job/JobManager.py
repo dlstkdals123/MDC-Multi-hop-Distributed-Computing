@@ -32,6 +32,11 @@ class JobManager:
         _ahead_of_time_outputs (AheadOutputQueue): 대기큐. 미리 도착한 DNNOutput을 저장 및 관리.
     """
     def __init__(self, network_config: NetworkConfig, model_config: ModelConfig):
+        """
+        Args:
+            network_config (NetworkConfig): 네트워크 설정.
+            model_config (ModelConfig): 모델 설정.
+        """
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self._network_config = network_config
