@@ -15,7 +15,6 @@ class PerformanceManager:
         _last_dropped_input (float): 마지막 입력 패킷 드롭량 (packet).
         _last_dropped_output (float): 마지막 출력 패킷 드롭량 (packet).
 
-        _alpha (float): EMA 가중치
         _performance (Performance): 노드의 성능 정보
     """
     def __init__(self):
@@ -25,13 +24,11 @@ class PerformanceManager:
         self._last_dropped_input: float = self._net_io_counters.dropin # packet
         self._last_dropped_output: float = self._net_io_counters.dropout # packet
         
-        self._alpha: float = 0.9
+        self._computing: float = 0 # GFLOPs
+        
         self._performance: Performance = Performance(0, 0, 0, 0)
 
-    def update_transfer_performance(self) -> None:
-        """
-        네트워크 전송량을 갱신합니다.
-        """
+    def update_performance(self) -> None:
         cur_input = self._net_io_counters.bytes_recv / KB_PER_BYTE
         cur_output = self._net_io_counters.bytes_sent / KB_PER_BYTE
         cur_dropped_input = self._net_io_counters.dropin
@@ -46,17 +43,16 @@ class PerformanceManager:
         self._performance.actual_queue_backlog = max(cur_actual_queue_backlog - output_delta, 0) + input_delta
         self._performance.dropped_input = dropped_input_delta
         self._performance.dropped_output = dropped_output_delta
+        self._performance.computing = self._computing
 
         self._last_input = cur_input
         self._last_output = cur_output
         self._last_dropped_input = cur_dropped_input
         self._last_dropped_output = cur_dropped_output
+        self._computing = 0
 
-    def update_computing_performance(self, computing_performance: float) -> None:
-        """
-        계산량을 갱신합니다.
-        """
-        self._performance.computing = self._alpha * self._performance.computing + (1 - self._alpha) * computing_performance
+    def add_computing(self, computing: float) -> None:
+        self._computing += computing
 
     @property
     def performance(self) -> Performance:
