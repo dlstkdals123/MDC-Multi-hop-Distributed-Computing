@@ -123,7 +123,7 @@ def save_performance(file_path, performance, routers: List[str], controller_ip: 
     avg_dropped_output = sum_dropped_output / len(sorted_dropped_output_values) if sorted_dropped_output_values else 0
 
     headers = ["sum_actual_queue_backlog (KB)", "avg_actual_queue_backlog (KB)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)", "sum_dropped_input (packet)", "avg_dropped_input (packet)", "sum_dropped_output (packet)", "avg_dropped_output (packet)"] + \
-        [f"{ip}(input)" for ip in sorted_nodes] + [f"{ip}(output)" for ip in sorted_nodes] + [f"{ip}(computing)" for ip in sorted_nodes if ip not in routers and ip != controller_ip] + \
+        [f"{ip}(actual_queue_backlog)" for ip in sorted_nodes] + [f"{ip}(computing)" for ip in sorted_nodes if ip not in routers and ip != controller_ip] + \
         [f"{ip}(dropped_input)" for ip in sorted_nodes] + [f"{ip}(dropped_output)" for ip in sorted_nodes]
     
     datas = [sum_actual_queue_backlog, avg_actual_queue_backlog, sum_computing, avg_computing, sum_dropped_input, avg_dropped_input, sum_dropped_output, avg_dropped_output] + \
