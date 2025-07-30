@@ -55,12 +55,12 @@ class Sender(MDC):
 
         subtask_layer_node = subtask_info.source
 
-        if subtask_layer_node.get_ip() == self._address and subtask_layer_node.get_layer() == 0:
+        if subtask_layer_node.ip == self._address and subtask_layer_node.get_layer() == 0:
             job_id = subtask_info.job_id
             input_frame = DNNOutput(torch.tensor(self._frame_list[job_id]).float(), subtask_info)
             del self._frame_list[job_id]
             dnn_output, computing_capacity = self._job_manager.run(input_frame)
-            destination_ip = subtask_info.destination.get_ip()
+            destination_ip = subtask_info.destination.ip
 
             dnn_output.subtask_info.set_next_subtask_id()
 

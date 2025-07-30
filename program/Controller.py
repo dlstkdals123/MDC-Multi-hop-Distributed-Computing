@@ -167,10 +167,10 @@ class Controller(Program):
         self._layered_graph.set_performance(node_ip, node_link_info.performance)
 
         backlog_log_file_path = f"{self._backlog_log_path}/total_backlog.csv"
-        save_virtual_backlog(backlog_log_file_path, self._layered_graph.get_layered_graph_backlog())
+        save_virtual_backlog(backlog_log_file_path, self._layered_graph.layered_graph_backlog)
 
         performance_log_file_path = f"{self._backlog_log_path}/performance.csv"
-        save_performance(performance_log_file_path, self._layered_graph.get_performance(), self._network_config.router, self._address, self._performance_manager.performance)
+        save_performance(performance_log_file_path, self._layered_graph.performance, self._network_config.router, self._address, self._performance_manager.performance)
 
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)
@@ -196,7 +196,7 @@ class Controller(Program):
             subtask_info = SubtaskInfo(job_info, source, destination, model_name, i, len(path))
             subtask_info_bytes = pickle.dumps(subtask_info)
             # send SubtaskInfo byte to source ip
-            publish.single("job/subtask_info", subtask_info_bytes, hostname=source.get_ip())
+            publish.single("job/subtask_info", subtask_info_bytes, hostname=source.ip)
             
     def handle_response(self, topic, payload, publisher):
         subtask_info: SubtaskInfo = pickle.loads(payload)

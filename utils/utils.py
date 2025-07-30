@@ -102,7 +102,7 @@ def save_performance(file_path, performance, routers: List[str], controller_ip: 
     # 노드와 값을 정렬
     ip_and_performance = []
     for node, value in performance.items():
-        ip_and_performance.append((node.get_ip(), value))
+        ip_and_performance.append((node.ip, value))
 
     ip_and_performance.append((controller_ip, controller_performance))
     ip_and_performance.sort(key=lambda x: x[0])
@@ -122,7 +122,7 @@ def save_performance(file_path, performance, routers: List[str], controller_ip: 
     sum_dropped_output = sum(sorted_dropped_output_values)
     avg_dropped_output = sum_dropped_output / len(sorted_dropped_output_values) if sorted_dropped_output_values else 0
 
-    headers = ["sum_actual_queue_backlog (KB)", "avg_actual_queue_backlog (KB)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)", "sum_dropped_input (packet)", "avg_dropped_input (packet)", "sum_dropped_output (packet)", "avg_dropped_output (packet)"] + \
+    headers = ["sum_actual_queue_backlog (KB/s)", "avg_actual_queue_backlog (KB/s)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)", "sum_dropped_input (packet/s)", "avg_dropped_input (packet/s)", "sum_dropped_output (packet/s)", "avg_dropped_output (packet/s)"] + \
         [f"{ip}(actual_queue_backlog)" for ip in sorted_nodes] + [f"{ip}(computing)" for ip in sorted_nodes if ip not in routers and ip != controller_ip] + \
         [f"{ip}(dropped_input)" for ip in sorted_nodes] + [f"{ip}(dropped_output)" for ip in sorted_nodes]
     

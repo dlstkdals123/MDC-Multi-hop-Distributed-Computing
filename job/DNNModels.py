@@ -33,7 +33,7 @@ class DNNModels:
         """
         모델을 초기화하고, 계산량과 전송량을 계산합니다.
         """
-        model_names = model_config.get_model_names()
+        model_names = model_config.model_names
         for model_name in model_names:
             model = load_model(model_name).to(device)
             self._models[model_name] = model

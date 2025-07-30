@@ -35,7 +35,7 @@ class RandomSelection:
                 neighbor_list.remove(current_node)
             
             # 사용하지 않은 모델 리스트
-            not_visited_model_names = [model_name for model_name in current_node.get_model_names() if model_name not in visited_models]
+            not_visited_model_names = [model_name for model_name in current_node.model_names if model_name not in visited_models]
 
             # 사용하지 않은 모델이 없다면 다음 노드로 이동
             # 다음 노드가 없는 마지막 노드라면 종료.

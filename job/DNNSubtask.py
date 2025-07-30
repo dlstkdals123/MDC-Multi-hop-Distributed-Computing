@@ -33,32 +33,20 @@ class DNNSubtask:
     def run(self, data: torch.Tensor) -> DNNOutput:
         """
         data를 입력으로 받아, 서브태스크를 실행합니다.
-        서브태스크가 계산일 경우 모델을 계산하고, 전송일 경우 데이터를 복사하여 DNNOutput 객체를 생성합니다.
+        서브태스크가 계산일 경우 모델을 계산합니다.
+        전송일 경우 데이터를 그대로 반환합니다.
 
         Args:
             data (torch.Tensor): 서브태스크의 입력 데이터.
 
         Returns:
-            DNNOutput: 서브태스크의 출력. (서브태스크가 계산일 경우 모델 계산 결과, 전송일 경우 복사된 데이터)
+            DNNOutput: 서브태스크의 출력. (서브태스크가 계산일 경우 모델 계산 결과, 전송일 경우 그대로 반환)
         """
-        if self._subtask_info.is_transmission():
-            # 단순히 데이터를 DNNOutput 객체로 변환합니다.
-            if isinstance(data, list):
-                data = [d.to("cpu") for d in data]
-            else:
-                data = data.to("cpu")
-
-            dnn_output = DNNOutput(data, self._subtask_info)
-        else:
-            # 모델 계산
-            with torch.no_grad():
-                output: torch.Tensor = self._dnn_model(data)
-
-            if isinstance(output, list):
-                output = [o.to("cpu") for o in output]
-            else:
-                output = output.to("cpu")
-
-            dnn_output = DNNOutput(output, self._subtask_info)
+        output = data if self._subtask_info.is_transmission() else self._dnn_model(data)
         
-        return dnn_output
+        if isinstance(output, list):
+            output = [o.to("cpu") for o in output]
+        else:
+            output = output.to("cpu")
+            
+        return DNNOutput(output, self._subtask_info)

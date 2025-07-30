@@ -58,11 +58,11 @@ class VideoSender(MDC):
 
         subtask_layer_node = subtask_info.source
 
-        if subtask_layer_node.get_ip() == self._address:
+        if subtask_layer_node.ip == self._address:
             job_id = subtask_info.job_id
             input_frame = DNNOutput(torch.tensor(self._frame_list[job_id]).float().view(1, TARGET_DEPTH, TARGET_HEIGHT, TARGET_WIDTH), subtask_info)
             dnn_output, computing_capacity = self._job_manager.run(input_frame)
-            destination_ip = subtask_info.destination.get_ip()
+            destination_ip = subtask_info.destination.ip
 
             dnn_output.subtask_info.set_next_source()
 

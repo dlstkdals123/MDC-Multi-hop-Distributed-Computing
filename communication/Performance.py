@@ -3,10 +3,10 @@ class Performance:
     노드의 성능 정보를 저장하는 클래스입니다.
 
     Attributes:
-        _actual_queue_backlog (float): 실제 큐 백로그 (KB)
+        _actual_queue_backlog (float): 실제 큐 백로그 (KB/s)
         _computing (float): 계산량 (GFLOPs/s)
-        _dropped_input (float): 입력 패킷 드롭량 (packet)
-        _dropped_output (float): 출력 패킷 드롭량 (packet)
+        _dropped_input (float): 입력 패킷 드롭량 (packet/s)
+        _dropped_output (float): 출력 패킷 드롭량 (packet/s)
     """
 
     def __init__(self, actual_queue_backlog: float, computing: float, dropped_input: float, dropped_output: float):
