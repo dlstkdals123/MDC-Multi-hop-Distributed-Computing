@@ -39,10 +39,8 @@ class LayeredGraph:
         self._dnn_models = DNNModels(model_config, "cuda" if torch.cuda.is_available() else "cpu")
 
         self._layered_graph: Dict[LayerNode, List[LayerNode]] = dict()
-        self._dnn_models = DNNModels(model_config, self._device)
-        
-        self._layered_graph = dict()
         self._layered_graph_backlog: Dict[LayerNodePair, float] = dict()
+
         self._performance: Dict[LayerNode, Performance] = dict()
 
         self._scheduling_algorithm = None
