@@ -17,9 +17,9 @@ def load_performance_data(result_dir: str, start_idx: int = 0, end_idx: Optional
     time = range(start_idx, len(df) + start_idx)
     return df, time
 
-def plot_network_throughput(result_dir: str, file_postfix: str, start_idx: int = 0, 
-                          end_idx: Optional[int] = None, save_plot: bool = True):
-    """네트워크 처리량 분석"""
+def plot_network_backlog(result_dir: str, file_postfix: str, start_idx: int = 0, 
+                        end_idx: Optional[int] = None, save_plot: bool = True):
+    """네트워크 백로그 분석"""
     plot_dir, result_dir_name = create_plot_dir(result_dir)
     
     df, time = load_performance_data(result_dir, start_idx, end_idx)
@@ -27,19 +27,24 @@ def plot_network_throughput(result_dir: str, file_postfix: str, start_idx: int =
         return
 
     plt.figure(figsize=(12, 6), dpi=300)
-    # 출력 - 입력 계산
-    df['net_throughput'] = df['sum_output (KB/s)'] - df['sum_input (KB/s)']
-    df['net_throughput_avg'] = df['avg_output (KB/s)'] - df['avg_input (KB/s)']
     
-    plt.plot(time, df['net_throughput'], label='Total Net Throughput', color=Colors.TOTAL)
-    plt.plot(time, df['net_throughput_avg'], label='Average Net Throughput', color=Colors.AVERAGE)
-    plt.ylabel('Net Throughput (KB/s)')
+    # 노드별 백로그
+    backlog_cols = [col for col in df.columns if '(actual_queue_backlog)' in col]
+    for col in backlog_cols:
+        node_num = col.split('.')[-1].split('(')[0]  # IP 마지막 숫자
+        plt.plot(time, df[col], label=f"Node {node_num}", color=Colors.NODES[node_num])
+    
+    # 전체/평균 백로그
+    plt.plot(time, df['sum_actual_queue_backlog (KB)'], label='Total Backlog', color=Colors.TOTAL, linestyle='--')
+    plt.plot(time, df['avg_actual_queue_backlog (KB)'], label='Average Backlog', color=Colors.AVERAGE, linestyle='--')
+    
+    plt.ylabel('Queue Backlog (KB)')
     plt.xlabel('Time step')
-    plt.title('네트워크 처리량 분석: 순 데이터 전송률 (출력-입력)')
+    plt.title('네트워크 백로그 분석: 노드별/전체/평균 큐 백로그')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    save_or_show_plot(plot_dir, f'network_throughput_{result_dir_name}{file_postfix}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'network_backlog_{result_dir_name}{file_postfix}.svg', save_plot)
 
 def plot_computing_performance(result_dir: str, file_postfix: str, start_idx: int = 0, 
                              end_idx: Optional[int] = None, save_plot: bool = True):
@@ -80,9 +85,9 @@ def plot_packet_drops(result_dir: str, file_postfix: str, start_idx: int = 0,
     for col in dropped_input_cols:
         node_num = col.split('.')[-1].split('(')[0]  # IP 마지막 숫자
         plt.plot(time, df[col], label=f"{col}", color=Colors.NODES[node_num])
-    plt.plot(time, df['sum_dropped_input (packet/s)'], label='Total Dropped Input', color=Colors.TOTAL, linestyle='--')
-    plt.plot(time, df['avg_dropped_input (packet/s)'], label='Average Dropped Input', color=Colors.AVERAGE, linestyle='--')
-    plt.ylabel('Dropped Input Packets (packet/s)')
+    plt.plot(time, df['sum_dropped_input (packet)'], label='Total Dropped Input', color=Colors.TOTAL, linestyle='--')
+    plt.plot(time, df['avg_dropped_input (packet)'], label='Average Dropped Input', color=Colors.AVERAGE, linestyle='--')
+    plt.ylabel('Dropped Input Packets (packet)')
     plt.xlabel('Time step')
     plt.title('입력 패킷 드롭 분석: 노드별/전체/평균')
     plt.ylim(bottom=0)  # y축 시작점을 0으로 고정
@@ -97,9 +102,9 @@ def plot_packet_drops(result_dir: str, file_postfix: str, start_idx: int = 0,
     for col in dropped_output_cols:
         node_num = col.split('.')[-1].split('(')[0]  # IP 마지막 숫자
         plt.plot(time, df[col], label=f"{col}", color=Colors.NODES[node_num])
-    plt.plot(time, df['sum_dropped_output (packet/s)'], label='Total Dropped Output', color=Colors.TOTAL, linestyle='--')
-    plt.plot(time, df['avg_dropped_output (packet/s)'], label='Average Dropped Output', color=Colors.AVERAGE, linestyle='--')
-    plt.ylabel('Dropped Output Packets (packet/s)')
+    plt.plot(time, df['sum_dropped_output (packet)'], label='Total Dropped Output', color=Colors.TOTAL, linestyle='--')
+    plt.plot(time, df['avg_dropped_output (packet)'], label='Average Dropped Output', color=Colors.AVERAGE, linestyle='--')
+    plt.ylabel('Dropped Output Packets (packet)')
     plt.xlabel('Time step')
     plt.title('출력 패킷 드롭 분석: 노드별/전체/평균')
     plt.ylim(bottom=0)  # y축 시작점을 0으로 고정
@@ -107,35 +112,6 @@ def plot_packet_drops(result_dir: str, file_postfix: str, start_idx: int = 0,
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     save_or_show_plot(plot_dir, f'packet_drops_output_{result_dir_name}{file_postfix}.svg', save_plot)
-
-def plot_node_performance(result_dir: str, file_postfix: str, start_idx: int = 0, 
-                         end_idx: Optional[int] = None, save_plot: bool = True):
-    """노드별 성능 분석"""
-    plot_dir, result_dir_name = create_plot_dir(result_dir)
-    
-    df, time = load_performance_data(result_dir, start_idx, end_idx)
-    if df is None:
-        return
-
-    # 노드별 입출력 처리량 차이
-    plt.figure(figsize=(12, 6), dpi=300)
-    input_cols = [col for col in df.columns if '(input)' in col]
-    output_cols = [col for col in df.columns if '(output)' in col]
-    
-    for in_col, out_col in zip(input_cols, output_cols):
-        node_num = in_col.split('.')[-1].split('(')[0]  # IP 마지막 숫자
-        diff = df[out_col] - df[in_col]  # 출력 - 입력
-        plt.plot(time, diff, label=f"Node {node_num}", color=Colors.NODES[node_num])
-        # 0 기준선 추가
-        plt.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
-    
-    plt.ylabel('Throughput Difference (KB/s)')
-    plt.xlabel('Time step')
-    plt.title('노드별 입출력 처리량 차이 분석 (출력 - 입력)')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    save_or_show_plot(plot_dir, f'node_throughput_diff_{result_dir_name}{file_postfix}.svg', save_plot)
 
 if __name__ == "__main__":
     results_dir = os.path.join(os.path.dirname(__file__), '../results')
@@ -153,11 +129,8 @@ if __name__ == "__main__":
         print(f"\n{os.path.basename(result_dir)} 성능 분석 중...")
         
         # 기본 성능 분석
-        plot_network_throughput(result_dir, file_postfix, start_idx, end_idx, save_plot)
+        plot_network_backlog(result_dir, file_postfix, start_idx, end_idx, save_plot)
         plot_computing_performance(result_dir, file_postfix, start_idx, end_idx, save_plot)
         plot_packet_drops(result_dir, file_postfix, start_idx, end_idx, save_plot)
-        
-        # 노드별 상세 분석
-        plot_node_performance(result_dir, file_postfix, start_idx, end_idx, save_plot)
         
         print(f"성능 분석 완료: {os.path.basename(result_dir)}") 
