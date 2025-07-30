@@ -106,7 +106,7 @@ class MDC(Program):
 
         links = self._job_manager.get_backlogs()
 
-        performance = self._performance_manager.get_performance()
+        performance = self._performance_manager.performance
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 

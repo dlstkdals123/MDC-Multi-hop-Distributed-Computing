@@ -12,6 +12,8 @@ class PerformanceManager:
     Attributes:
         _last_input (float): 마지막 입력량 (KB).
         _last_output (float): 마지막 출력량 (KB).
+        _last_dropped_input (float): 마지막 입력 패킷 드롭량 (packet/s).
+        _last_dropped_output (float): 마지막 출력 패킷 드롭량 (packet/s).
         _last_transfer_time (float): 마지막 전송 시간 (ns).
 
         _alpha (float): EMA 가중치
@@ -29,11 +31,13 @@ class PerformanceManager:
         self._performance: Performance = Performance(0, 0, 0, 0, 0)
 
     def update_transfer_performance(self) -> None:
-        net_io_counters = psutil.net_io_counters()
-        cur_input = net_io_counters.bytes_recv / KB_PER_BYTE # KB/s
-        cur_output = net_io_counters.bytes_sent / KB_PER_BYTE # KB/s
-        cur_dropped_input = net_io_counters.dropin # packet/s
-        cur_dropped_output = net_io_counters.dropout # packet/s
+        """
+        네트워크 전송량을 갱신합니다.
+        """
+        cur_input = self._net_io_counters.bytes_recv / KB_PER_BYTE # KB/s
+        cur_output = self._net_io_counters.bytes_sent / KB_PER_BYTE # KB/s
+        cur_dropped_input = self._net_io_counters.dropin # packet/s
+        cur_dropped_output = self._net_io_counters.dropout # packet/s
         cur_time = time.time() * NANO_SECOND
 
         # KB/s
@@ -59,8 +63,12 @@ class PerformanceManager:
         self._last_transfer_time = cur_time
 
     def update_computing_performance(self, computing_performance: float) -> None:
+        """
+        계산량을 갱신합니다.
+        """
         self._performance.computing = self._alpha * self._performance.computing + (1 - self._alpha) * computing_performance
 
-    def get_performance(self) -> Performance:
+    @property
+    def performance(self) -> Performance:
         return self._performance
     
