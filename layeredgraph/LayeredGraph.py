@@ -70,7 +70,7 @@ class LayeredGraph:
         for source_ip in self._network_config.get_network_list():
             source = self._get_layer_node(source_ip)
             self._layered_graph.setdefault(source, [])
-            self._performance.setdefault(source, Performance(0, 0, 0, 0, 0))
+            self._performance.setdefault(source, Performance(0, 0, 0, 0))
 
             for destination_ip in self._network_config.get_network_neighbors(source_ip):
                 destination = self._get_layer_node(destination_ip)
