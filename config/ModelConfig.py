@@ -32,7 +32,8 @@ class ModelConfig:
         for model_name, model_config in model_configs.items():
             model_config["input_size"] = tuple(model_config["input_size"])
 
-    def get_model_names(self) -> List[str]:
+    @property
+    def model_names(self) -> List[str]:
         return list(self._model_configs.keys())
         
     def get_input_size(self, model_name: str) -> Tuple[int, ...]:
