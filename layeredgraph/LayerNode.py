@@ -21,9 +21,6 @@ class LayerNode:
     def model_names(self) -> List[str]:
         return self._model_names
 
-    def is_same_node(self, other: 'LayerNode') -> bool:
-        return self._ip == other.ip
-
     def to_string(self) -> str:
         return self._ip
 

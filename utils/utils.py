@@ -72,7 +72,7 @@ def save_virtual_backlog(file_path, virtual_backlog):
     transmission_count = 0
 
     for idx, (link, backlog) in enumerate(sorted_virtual_backlog):
-        if link.is_same_node():
+        if link.is_computing():
             sorted_virtual_backlog[idx] = (f"(computing) {link.source.to_string()}", backlog)
             sum_GFLOPs += backlog # GFLOPs
             computing_count += 1
@@ -141,7 +141,7 @@ def save_path(file_path, path):
 
     path_list = []
     for layer_node_pair, model_name in path:
-        if layer_node_pair.is_same_node():
+        if layer_node_pair.is_computing():
             path_list.append(f"(computing) {layer_node_pair.to_string()}: {model_name}")
         else:
             path_list.append(f"(transmission) {layer_node_pair.to_string()}")

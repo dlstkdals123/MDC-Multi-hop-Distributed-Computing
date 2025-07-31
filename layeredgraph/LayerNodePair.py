@@ -21,6 +21,9 @@ class LayerNodePair:
     def destination(self) -> LayerNode:
         return self._destination
 
+    def is_computing(self) -> bool:
+        return self._source == self._destination
+
     def to_string(self) -> str:
         return f"{self._source.to_string()}->{self._destination.to_string()}"
     
