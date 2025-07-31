@@ -19,6 +19,9 @@ class Performance:
         self._dropped_input = dropped_input
         self._dropped_output = dropped_output
 
+    def is_empty(self) -> bool:
+        return self._actual_queue_backlog == 0 and self._input == 0 and self._output == 0 and self._computing == 0 and self._dropped_input == 0 and self._dropped_output == 0
+
     @property
     def actual_queue_backlog(self) -> float:
         return self._actual_queue_backlog

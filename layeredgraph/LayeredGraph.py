@@ -42,7 +42,7 @@ class LayeredGraph:
         self._layered_graph_backlog: Dict[LayerNodePair, float] = dict()
         self._last_update_time: float = time.time() * NANO_SECOND
 
-        self._performance: Dict[LayerNode, Performance] = dict()
+        self._performances: Dict[LayerNode, Performance] = dict()
 
         self._scheduling_algorithm = None
 
@@ -69,7 +69,7 @@ class LayeredGraph:
             performance (Performance): 노드의 성능 정보.
         """
         node = self._get_layer_node(node_ip)
-        self._performance[node] = performance
+        self._performances[node] = performance
 
     def update_layered_graph_backlog(self) -> None:
         cur_time = time.time() * NANO_SECOND # ns
@@ -85,7 +85,7 @@ class LayeredGraph:
         for source_ip in self._network_config.get_network_list():
             source = self._get_layer_node(source_ip)
             self._layered_graph.setdefault(source, [])
-            self._performance.setdefault(source, Performance(0, 0, 0, 0))
+            self._performances.setdefault(source, Performance(0, 0, 0, 0))
 
             for destination_ip in self._network_config.get_network_neighbors(source_ip):
                 destination = self._get_layer_node(destination_ip)
@@ -171,8 +171,8 @@ class LayeredGraph:
         return self._layered_graph_backlog
 
     @property
-    def performance(self) -> Dict[LayerNode, Performance]:
+    def performances(self) -> Dict[LayerNode, Performance]:
         """
         레이어드 그래프의 각 노드의 성능을 반환합니다.
         """
-        return self._performance
+        return self._performances

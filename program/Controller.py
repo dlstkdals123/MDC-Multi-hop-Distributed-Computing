@@ -170,7 +170,7 @@ class Controller(Program):
         save_virtual_backlog(backlog_log_file_path, self._layered_graph.layered_graph_backlog)
 
         performance_log_file_path = f"{self._backlog_log_path}/performance.csv"
-        save_performance(performance_log_file_path, self._layered_graph.performance, self._network_config.router, self._address, self._performance_manager.performance)
+        save_performance(performance_log_file_path, self._layered_graph.performances, self._network_config.router, self._address, self._performance_manager.performance)
 
     def handle_request_scheduling(self, topic, payload, publisher):
         job_info: JobInfo = pickle.loads(payload)

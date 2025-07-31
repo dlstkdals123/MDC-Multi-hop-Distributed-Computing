@@ -95,16 +95,20 @@ def save_virtual_backlog(file_path, virtual_backlog):
 
         writer.writerow(datas)
 
-def save_performance(file_path, performance, routers: List[str], controller_ip: str, controller_performance):
+def save_performance(file_path, performances, routers: List[str], controller_ip: str, controller_performance):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
-    # 노드와 값을 정렬
     ip_and_performance = []
-    for node, value in performance.items():
-        ip_and_performance.append((node.ip, value))
+    for node, performance in performances.items():
+        ip_and_performance.append((node.ip, performance))
 
     ip_and_performance.append((controller_ip, controller_performance))
+
+    # 노드와 값을 정렬
+    if all(perf.is_empty() for perf in performances.values()):
+        return
+    
     ip_and_performance.sort(key=lambda x: x[0])
 
     sorted_nodes = [ip for ip, _ in ip_and_performance]
