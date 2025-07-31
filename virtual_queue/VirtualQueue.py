@@ -107,7 +107,7 @@ class VirtualQueue:
             else:
                 links[link] = subtask.get_backlog()
 
-            if link == self._last_subtask_info.get_link():
+            if self._last_subtask_info != None and link == self._last_subtask_info.get_link():
                 links[link] -= self._last_computing_capacity
                 links[link] -= self._last_transfer_capacity
 
