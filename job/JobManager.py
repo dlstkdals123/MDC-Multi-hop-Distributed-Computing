@@ -31,7 +31,7 @@ class JobManager:
         _virtual_queue (VirtualQueue): 가상큐. 서브태스크를 저장 및 관리.
         _ahead_of_time_outputs (AheadOutputQueue): 대기큐. 미리 도착한 DNNOutput을 저장 및 관리.
     """
-    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig):
+    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig, ):
         """
         Args:
             network_config (NetworkConfig): 네트워크 설정.
@@ -45,6 +45,7 @@ class JobManager:
 
         self._virtual_queue: VirtualQueue = VirtualQueue()
         self._ahead_of_time_outputs: AheadOutputQueue = AheadOutputQueue()
+        self._performance_manager = PerformanceManager()
         
         self.init_garbage_subtask_collector()
 
@@ -103,6 +104,9 @@ class JobManager:
         garbage_dnn_output_collector_thread = threading.Thread(target=self._garbage_dnn_output_collector, args=())
         garbage_dnn_output_collector_thread.start()
 
+        backlog_update_thread = threading.Thread(target=self._backlog_update, args=())
+        backlog_update_thread.start()
+
     def _garbage_subtask_collector(self):
         collect_garbage_job_time = self._network_config.collect_garbage_job_time
         while True:
@@ -116,6 +120,12 @@ class JobManager:
             time.sleep(collect_garbage_job_time)
 
             self._ahead_of_time_outputs.garbage_dnn_output_collector(collect_garbage_job_time)
+
+    def _backlog_update(self):
+        while True:
+            time.sleep(0.1)
+
+            self._virtual_queue.update_backlog(self._performance_manager.performance)
 
     def run(self, output: DNNOutput) -> Tuple[DNNOutput, float]:
         """
@@ -131,7 +141,9 @@ class JobManager:
         subtask_info = output.subtask_info
         if subtask_info.job_type == "dnn":
             
-            subtask: DNNSubtask = self._virtual_queue.pop_subtask_info(subtask_info)
+            subtask: DNNSubtask = self._virtual_queue.find_subtask_info(subtask_info)
+            backlog = subtask.get_backlog()
+            self._virtual_queue.last_subtask_info = subtask_info
 
             # 아직 run하지 않은 data이므로 사용해야 할 input data입니다.
             data = output.output
@@ -148,9 +160,11 @@ class JobManager:
             end_time = time.time() * NANO_SECOND
 
             # GFLOPs/s
-            performance = subtask.get_backlog() / (end_time - start_time) if subtask.subtask_info.is_computing() and end_time - start_time > 0 else 0
+            performance = backlog / (end_time - start_time) if subtask.subtask_info.is_computing() and end_time - start_time > 0 else 0
             performance *= NANO_SECOND
 
+            self._virtual_queue.pop_subtask_info(subtask_info)
+    
             return dnn_output, performance
         
     # add subtask_info based SubtaskInfo
@@ -196,3 +210,11 @@ class JobManager:
         if not success_add_dnn_output:
             raise Exception(f"DNNOutput already exists. : {previous_dnn_output.subtask_info.get_subtask_id()}")
 
+    def update_computing_performance(self, computing_performance: float) -> None:
+        self._performance_manager.update_computing(computing_performance)
+
+    def update_performance(self) -> None:
+        self._performance_manager.update_performance()
+
+    def get_performance(self) -> Performance:
+        return self._performance_manager.performance

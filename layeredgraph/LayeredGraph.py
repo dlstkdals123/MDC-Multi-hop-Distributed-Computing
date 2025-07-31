@@ -11,6 +11,7 @@ from job.DNNModels import DNNModels
 from scheduling import RandomSelection
 
 MS_PER_SECOND = 1000
+NANO_SECOND = 1_000_000_000
 
 class LayeredGraph:
     """
@@ -39,6 +40,7 @@ class LayeredGraph:
 
         self._layered_graph: Dict[LayerNode, List[LayerNode]] = dict()
         self._layered_graph_backlog: Dict[LayerNodePair, float] = dict()
+        self._last_update_time: float = time.time() * NANO_SECOND
 
         self._performance: Dict[LayerNode, Performance] = dict()
 
@@ -68,6 +70,13 @@ class LayeredGraph:
         """
         node = self._get_layer_node(node_ip)
         self._performance[node] = performance
+
+    def update_layered_graph_backlog(self) -> None:
+        cur_time = time.time() * NANO_SECOND # ns
+        time_delta = cur_time - self._last_update_time
+        time_delta *= NANO_SECOND # s
+        
+        self._last_update_time = cur_time
 
     def init_graph(self):
         """

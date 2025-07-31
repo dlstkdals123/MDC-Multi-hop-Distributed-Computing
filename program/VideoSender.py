@@ -71,7 +71,7 @@ class VideoSender(MDC):
             # send job to next node
             publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
 
-            self._performance_manager.add_computing(computing_capacity)
+            self._job_manager.update_computing_performance(computing_capacity)
 
     def stream_player(self):
         cap = cv2.VideoCapture("video/JN.mp4")

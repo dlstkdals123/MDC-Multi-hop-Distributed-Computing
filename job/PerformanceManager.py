@@ -60,6 +60,8 @@ class PerformanceManager:
 
         # 성능 정보 갱신
         self._performance.actual_queue_backlog = queue_backlog_delta
+        self._performance.input = input_delta
+        self._performance.output = output_delta
         self._performance.dropped_input = dropped_input_delta
         self._performance.dropped_output = dropped_output_delta
         self._performance.computing = self._computing
@@ -71,7 +73,7 @@ class PerformanceManager:
         self._last_dropped_output = cur_dropped_output
         self._last_time = cur_time
 
-    def add_computing(self, computing: float) -> None:
+    def update_computing(self, computing: float) -> None:
         self._computing = self._alpha * self._computing + (1 - self._alpha) * computing # GFLOPs/s
 
     @property

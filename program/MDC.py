@@ -5,7 +5,6 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from program import Program
 from job import JobManager, SubtaskInfo, DNNOutput
 from communication import RequestConfig, NodeLinkInfo
-from job.PerformanceManager import PerformanceManager
 from utils.utils import get_ip_address
 from config import NetworkConfig, ModelConfig
 
@@ -50,8 +49,6 @@ class MDC(Program):
         self._job_manager = None
         self._neighbors = None
         self._backlogs_zero_flag = False
-
-        self._performance_manager = PerformanceManager()
 
         super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
@@ -102,11 +99,11 @@ class MDC(Program):
 
     def handle_request_backlog(self, topic, data, publisher):
         # transfer capacity check current capacity every sync time.
-        self._performance_manager.update_performance()
+        self._job_manager.update_performance()
 
         links = self._job_manager.get_backlogs()
 
-        performance = self._performance_manager.performance
+        performance = self._job_manager.get_performance()
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 
@@ -169,7 +166,7 @@ class MDC(Program):
                 return
             else:
                 # 계산 성능 업데이트 
-                self._performance_manager.add_computing(computing_performance)
+                self._job_manager.update_computing_performance(computing_performance)
                 subtask_info.set_next_source()
 
        
