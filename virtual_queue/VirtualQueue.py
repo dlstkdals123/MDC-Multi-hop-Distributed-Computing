@@ -62,11 +62,6 @@ class VirtualQueue:
         subtask, _ = self.subtask_infos[subtask_info]
         self.mutex.release()
         return subtask.subtask_info
-
-    def del_subtask_info(self, subtask_info):
-        self.mutex.acquire()
-        del self.subtask_infos[subtask_info]
-        self.mutex.release()
     
     def find_subtask_info(self, subtask_info):
         if self.exist_subtask_info(subtask_info):
@@ -78,12 +73,17 @@ class VirtualQueue:
             raise Exception("No flow subtask_infos : ", subtask_info)
         
     def pop_subtask_info(self, subtask_info):
+        self.mutex.acquire()
+        
         subtask = self.find_subtask_info(subtask_info)
         self.last_subtask_info = None
         self._last_computing_capacity -= subtask.get_backlog()
         self._last_transfer_capacity -= subtask.get_backlog()
 
-        self.del_subtask_info(subtask_info)
+        del self.subtask_infos[subtask_info]
+
+        self.mutex.release()
+
 
         return subtask
     
