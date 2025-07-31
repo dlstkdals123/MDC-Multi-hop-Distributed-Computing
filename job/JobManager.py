@@ -213,8 +213,8 @@ class JobManager:
     def update_computing_performance(self, computing_performance: float) -> None:
         self._performance_manager.update_computing(computing_performance)
 
-    def update_performance(self) -> None:
-        self._performance_manager.update_performance()
+    def update_performance(self, bytes_sent: int, bytes_received: int) -> None:
+        self._performance_manager.update_performance(bytes_sent, bytes_received)
 
     def get_performance(self) -> Performance:
         return self._performance_manager.performance

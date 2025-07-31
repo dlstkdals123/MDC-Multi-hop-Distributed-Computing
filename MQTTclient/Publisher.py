@@ -6,6 +6,7 @@ class Publisher:
         self.client = mqtt.Client()
         self.client.keepalive = 10
         self.config = config
+        self._bytes_sent = 0
 
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
@@ -28,8 +29,16 @@ class Publisher:
     def publish(self, topic, message):
         if isinstance(message, bytes):
             self.client.publish(topic, message)
+            self.bytes_sent += len(message)
         else:
-            self.client.publish(topic, message.encode('utf8'))
-
+            encoded_message = message.encode('utf8')
+            self.client.publish(topic, encoded_message)
+            self.bytes_sent += len(encoded_message)
     
+    @property
+    def bytes_sent(self) -> int:
+        return self._bytes_sent
 
+    @bytes_sent.setter
+    def bytes_sent(self, bytes_sent: int) -> None:
+        self._bytes_sent = bytes_sent

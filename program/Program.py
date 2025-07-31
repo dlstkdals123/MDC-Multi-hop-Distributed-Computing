@@ -3,6 +3,7 @@ import MQTTclient
 from queue import Queue
 from threading import Thread
 from pyprnt import prnt
+from typing import Tuple
 
 class Program:
 
@@ -59,5 +60,16 @@ class Program:
     def start(self):
         pass
 
-        
-    
+    def get_network_performance(self) -> Tuple[int, int]:
+        bytes_sent = 0
+        bytes_received = 0
+
+        for publisher in self.publisher:
+            publisher: MQTTclient.Publisher
+            bytes_sent += publisher.bytes_sent
+
+        if self.subscriber != None:
+            self.subscriber: MQTTclient.Subscriber
+            bytes_received = self.subscriber.bytes_received
+
+        return bytes_sent, bytes_received

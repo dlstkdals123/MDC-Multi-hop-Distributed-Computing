@@ -30,7 +30,7 @@ class PerformanceManager:
         
         self._performance: Performance = Performance(0, 0, 0, 0)
 
-    def update_performance(self) -> None:
+    def update_performance(self, bytes_sent: int, bytes_received: int) -> None:
         # 네트워크 측정
         net_io_counters = psutil.net_io_counters()
         cur_input = net_io_counters.bytes_recv / KB_PER_BYTE

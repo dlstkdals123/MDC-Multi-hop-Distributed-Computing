@@ -99,7 +99,10 @@ class MDC(Program):
 
     def handle_request_backlog(self, topic, data, publisher):
         # transfer capacity check current capacity every sync time.
-        self._job_manager.update_performance()
+        bytes_sent, bytes_received = self.get_network_performance()
+        bytes_sent += self._controller_publisher.bytes_sent
+
+        self._job_manager.update_performance(bytes_sent, bytes_received)
 
         links = self._job_manager.get_backlogs()
 

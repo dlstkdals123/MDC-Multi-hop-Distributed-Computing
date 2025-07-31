@@ -7,6 +7,7 @@ class Subscriber:
         self.client = mqtt.Client(userdata=queue)
         self.client.keepalive = 10
         self.config = config
+        self._bytes_received = 0
 
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
@@ -37,7 +38,12 @@ class Subscriber:
 
     def on_message(self, client, userdata, msg):
         userdata.put(msg)
-        
+        self.bytes_received += len(msg.payload)
 
-    
+    @property
+    def bytes_received(self) -> int:
+        return self._bytes_received
 
+    @bytes_received.setter
+    def bytes_received(self, bytes_received: int) -> None:
+        self._bytes_received = bytes_received

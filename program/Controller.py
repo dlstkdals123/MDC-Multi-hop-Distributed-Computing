@@ -124,7 +124,8 @@ class Controller(Program):
     def sync_backlog(self):
         while True:
             time.sleep(self._controller_config.sync_time)
-            self._performance_manager.update_performance()
+            bytes_sent, bytes_received = self.get_network_performance()
+            self._performance_manager.update_performance(bytes_sent, bytes_received)
 
             for node_ip in self._network_config.get_network_list():
                 # send RequestBacklog byte to source ip (response)
