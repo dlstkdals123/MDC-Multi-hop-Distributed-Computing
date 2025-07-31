@@ -58,14 +58,22 @@ class DNNModels:
 
                 self._computing[model_name] = FLOPs * 1e-9 # GFLOPs
 
-                x: torch.Tensor = torch.zeros(input_size).to(device)
-
-                x = model(x)
-
-                if isinstance(x, list):
-                    self._transfer[model_name] = sum(x_prime.numel() * x_prime.element_size() for x_prime in x) / KB_PER_BYTE # KB
+                # 객체 탐지 모델의 경우 평균 객체 개수(5개)를 가정하여 전송량 계산
+                if 'yolo' in model_name.lower():
+                    # YOLO 출력: [batch_size, num_detections, 6] (x1, y1, x2, y2, confidence, class_id)
+                    # 평균 10개 객체 탐지 가정
+                    avg_objects = 10
+                    output_size = (1, avg_objects, 6)  # batch_size=1, 10개 객체, 6개 값
+                    self._transfer[model_name] = (output_size[0] * output_size[1] * output_size[2] * 4) / KB_PER_BYTE  # 4 bytes per float32
                 else:
-                    self._transfer[model_name] = x.numel() * x.element_size() / KB_PER_BYTE # KB
+                    # 일반적인 모델의 경우 기존 방식 사용
+                    x: torch.Tensor = torch.zeros(input_size).to(device)
+                    x = model(x)
+                    
+                    if isinstance(x, list):
+                        self._transfer[model_name] = sum(x_prime.numel() * x_prime.element_size() for x_prime in x) / KB_PER_BYTE # KB
+                    else:
+                        self._transfer[model_name] = x.numel() * x.element_size() / KB_PER_BYTE # KB
 
     def get_model(self, model_name: str) -> torch.nn.Module:
         return self._models[model_name]
