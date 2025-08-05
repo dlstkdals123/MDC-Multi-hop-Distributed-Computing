@@ -31,7 +31,7 @@ class JobManager:
         _virtual_queue (VirtualQueue): 가상큐. 서브태스크를 저장 및 관리.
         _ahead_of_time_outputs (AheadOutputQueue): 대기큐. 미리 도착한 DNNOutput을 저장 및 관리.
     """
-    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig, ):
+    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig):
         """
         Args:
             network_config (NetworkConfig): 네트워크 설정.
@@ -131,7 +131,7 @@ class JobManager:
         subtask_info = output.subtask_info
         if subtask_info.job_type == "dnn":
             
-            subtask: DNNSubtask = self._virtual_queue.find_subtask_info(subtask_info)
+            subtask: DNNSubtask = self._virtual_queue.find_subtask(subtask_info)
             backlog = subtask.get_backlog()
             self._virtual_queue.last_subtask_info = subtask_info
 
