@@ -4,23 +4,19 @@ class Performance:
 
     Attributes:
         _actual_queue_backlog (float): 실제 큐 백로그 (KB/s)
-        _input (float): 입력 패킷량 (KB/s)
-        _output (float): 출력 패킷량 (KB/s)
+        _input (float): 입력량 (KB/s)
+        _output (float): 출력량 (KB/s)
         _computing (float): 계산량 (GFLOPs/s)
-        _dropped_input (float): 입력 패킷 드롭량 (packet/s)
-        _dropped_output (float): 출력 패킷 드롭량 (packet/s)
     """
 
-    def __init__(self, actual_queue_backlog: float, computing: float, dropped_input: float, dropped_output: float):
+    def __init__(self, actual_queue_backlog: float, input: float, output: float, computing: float):
         self._actual_queue_backlog = actual_queue_backlog
-        self._input = 0
-        self._output = 0
+        self._input = input
+        self._output = output
         self._computing = computing
-        self._dropped_input = dropped_input
-        self._dropped_output = dropped_output
 
     def is_empty(self) -> bool:
-        return self._actual_queue_backlog == 0 and self._input == 0 and self._output == 0 and self._computing == 0 and self._dropped_input == 0 and self._dropped_output == 0
+        return self._actual_queue_backlog == 0 and self._input == 0 and self._output == 0 and self._computing == 0
 
     @property
     def actual_queue_backlog(self) -> float:
@@ -38,14 +34,6 @@ class Performance:
     def computing(self) -> float:
         return self._computing
     
-    @property
-    def dropped_input(self) -> float:
-        return self._dropped_input
-    
-    @property
-    def dropped_output(self) -> float:
-        return self._dropped_output
-
     @actual_queue_backlog.setter
     def actual_queue_backlog(self, actual_queue_backlog: float) -> None:
         self._actual_queue_backlog = actual_queue_backlog
@@ -62,10 +50,3 @@ class Performance:
     def computing(self, computing: float) -> None:
         self._computing = computing
     
-    @dropped_input.setter
-    def dropped_input(self, dropped_input: float) -> None:
-        self._dropped_input = dropped_input
-    
-    @dropped_output.setter
-    def dropped_output(self, dropped_output: float) -> None:
-        self._dropped_output = dropped_output

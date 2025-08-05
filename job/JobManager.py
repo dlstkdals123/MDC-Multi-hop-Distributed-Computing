@@ -46,7 +46,6 @@ class JobManager:
 
         self._virtual_queue: VirtualQueue = VirtualQueue()
         self._ahead_of_time_outputs: AheadOutputQueue = AheadOutputQueue()
-        self._performance_manager = PerformanceManager()
         
         self.init_garbage_subtask_collector()
 
@@ -105,9 +104,6 @@ class JobManager:
         garbage_dnn_output_collector_thread = threading.Thread(target=self._garbage_dnn_output_collector, args=())
         garbage_dnn_output_collector_thread.start()
 
-        backlog_update_thread = threading.Thread(target=self._backlog_update, args=())
-        backlog_update_thread.start()
-
     def _garbage_subtask_collector(self):
         collect_garbage_job_time = self._network_config.collect_garbage_job_time
         while True:
@@ -121,12 +117,6 @@ class JobManager:
             time.sleep(collect_garbage_job_time)
 
             self._ahead_of_time_outputs.garbage_dnn_output_collector(collect_garbage_job_time)
-
-    def _backlog_update(self):
-        while True:
-            time.sleep(0.1)
-
-            self._virtual_queue.update_backlog(self._performance_manager.performance)
 
     def run(self, output: DNNOutput) -> Tuple[DNNOutput, float]:
         """
@@ -211,12 +201,6 @@ class JobManager:
         if not success_add_dnn_output:
             raise Exception(f"DNNOutput already exists. : {previous_dnn_output.subtask_info.get_subtask_id()}")
 
-    def update_computing_performance(self, computing_performance: float) -> None:
-        self._performance_manager.update_computing(computing_performance)
-
-    def update_performance(self, bytes_sent: int, bytes_received: int) -> None:
-        self._performance_manager.update_performance(bytes_sent, bytes_received)
-
     def update_dnnmodels_transfer(self, model_name: str, transfer: float) -> None:
         if model_name == "":
             return
@@ -224,5 +208,5 @@ class JobManager:
         transfer = self._alpha * self._dnn_models.get_transfer(model_name) + (1 - self._alpha) * transfer
         self._dnn_models.set_transfer(model_name, transfer)
 
-    def get_performance(self) -> Performance:
-        return self._performance_manager.performance
+    def update_backlog(self, performance: Performance) -> None:
+        self._virtual_queue.update_backlog(performance)

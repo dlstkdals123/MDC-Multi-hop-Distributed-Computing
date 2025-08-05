@@ -3,7 +3,7 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from program import Program
-from job import JobManager, SubtaskInfo, DNNOutput
+from job import JobManager, SubtaskInfo, DNNOutput, PerformanceManager
 from communication import RequestConfig, NodeLinkInfo
 from utils.utils import get_ip_address
 from config import NetworkConfig, ModelConfig
@@ -49,6 +49,8 @@ class MDC(Program):
         self._job_manager = None
         self._neighbors = None
         self._backlogs_zero_flag = False
+
+        self._performance_manager = PerformanceManager()
 
         super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
@@ -99,14 +101,12 @@ class MDC(Program):
 
     def handle_request_backlog(self, topic, data, publisher):
         # transfer capacity check current capacity every sync time.
-        bytes_sent, bytes_received = self.get_network_performance()
-        bytes_sent += self._controller_publisher.bytes_sent
+        self._performance_manager.update_performance()
 
-        self._job_manager.update_performance(bytes_sent, bytes_received)
-
+        self._job_manager.update_backlog(self._performance_manager.performance)
         links = self._job_manager.get_backlogs()
 
-        performance = self._job_manager.get_performance()
+        performance = self._performance_manager.performance
 
         node_link_info = NodeLinkInfo(
             ip = self._address, 
@@ -129,6 +129,7 @@ class MDC(Program):
         return self._job_manager is not None
 
     def handle_dnn(self, topic, data, publisher):
+        self._performance_manager.add_input(len(data))
         previous_dnn_output: DNNOutput = pickle.loads(data)
         self.run_dnn(previous_dnn_output)
 
@@ -166,11 +167,12 @@ class MDC(Program):
                 subtask_info.set_next_source()
                 dnn_output_bytes = pickle.dumps(dnn_output)
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
+                self._performance_manager.add_output(len(dnn_output_bytes))
                 self._job_manager.update_dnnmodels_transfer(subtask_info.model_name, len(dnn_output_bytes))
                 return
             else:
                 # 계산 성능 업데이트 
-                self._job_manager.update_computing_performance(computing_performance)
+                self._performance_manager.update_computing(computing_performance)
                 subtask_info.set_next_source()
 
        
