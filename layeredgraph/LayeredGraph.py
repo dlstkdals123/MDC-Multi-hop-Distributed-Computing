@@ -1,6 +1,5 @@
 from typing import Dict, List, Tuple
 import importlib
-import time
 import torch
 
 from config import NetworkConfig, ModelConfig
@@ -9,9 +8,6 @@ from job import JobInfo
 from communication.Performance import Performance
 from job.DNNModels import DNNModels
 from scheduling import RandomSelection
-
-MS_PER_SECOND = 1000
-NANO_SECOND = 1_000_000_000
 
 class LayeredGraph:
     """
@@ -24,7 +20,7 @@ class LayeredGraph:
         _dnn_models (DNNModels): 모델 모음.
         _layered_graph (Dict[LayerNode, List[LayerNode]]): 노드와 노드의 이웃 노드들을 저장하는 그래프. 편의상 자기 자신도 이웃 노드에 포함.
         _layered_graph_backlog (Dict[LayerNodePair, float]): 노드들의 쌍으로 이루어진 링크와 해당 링크의 백로그를 저장하는 그래프.
-        _performance (Dict[LayerNode, Performance]): 노드의 성능 정보.
+        _performances (Dict[LayerNode, Performance]): 노드의 성능 정보.
         _scheduling_algorithm: 스케줄링 알고리즘.
     """
 
@@ -40,7 +36,6 @@ class LayeredGraph:
 
         self._layered_graph: Dict[LayerNode, List[LayerNode]] = dict()
         self._layered_graph_backlog: Dict[LayerNodePair, float] = dict()
-        self._last_update_time: float = time.time() * NANO_SECOND
 
         self._performances: Dict[LayerNode, Performance] = dict()
 
@@ -70,13 +65,6 @@ class LayeredGraph:
         """
         node = self._get_layer_node(node_ip)
         self._performances[node] = performance
-
-    def update_layered_graph_backlog(self) -> None:
-        cur_time = time.time() * NANO_SECOND # ns
-        time_delta = cur_time - self._last_update_time
-        time_delta *= NANO_SECOND # s
-        
-        self._last_update_time = cur_time
 
     def init_graph(self):
         """

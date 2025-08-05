@@ -50,9 +50,3 @@ class DNNSubtask:
             output = output.to("cpu")
             
         return DNNOutput(output, self._subtask_info)
-
-    def decrement_computing_capacity(self, computing_capacity: float) -> None:
-        self._computing_capacity = self._computing_capacity - computing_capacity
-
-    def decrement_transfer_capacity(self, transfer_capacity: float) -> None:
-        self._transfer_capacity = self._transfer_capacity - transfer_capacity

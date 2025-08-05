@@ -10,7 +10,7 @@ class PerformanceManager:
     Attributes:
         _last_input (float): 마지막 입력량 (KB).
         _last_output (float): 마지막 출력량 (KB).
-        _last_computing (float): 마지막 계산량 (GFLOPs/s).
+        _last_computing (float): 마지막 계산량 (GFLOPs).
         _last_time (float): 마지막 업데이트 시간 (ns).
 
         _performance (Performance): 노드의 성능 정보
@@ -18,11 +18,9 @@ class PerformanceManager:
     def __init__(self):
         self._last_input: float = 0 # KB
         self._last_output: float = 0 # KB
+        self._last_computing: float = 0 # GFLOPs
         self._last_time: float = time.time() * NANO_SECOND # ns
 
-        self._alpha: float = 0.9
-        self._last_computing: float = 0 # GFLOPs/s
-        
         self._performance: Performance = Performance(0, self._last_input, self._last_output, self._last_computing)
 
     def add_input(self, kb: float) -> None:
@@ -32,7 +30,7 @@ class PerformanceManager:
         self._last_output += kb
 
     def update_computing(self, computing: float) -> None:
-        self._last_computing = self._alpha * self._last_computing + (1 - self._alpha) * computing
+        self._last_computing += computing
 
     def update_performance(self) -> None:
         # 네트워크 측정
@@ -48,16 +46,21 @@ class PerformanceManager:
         output_delta = self._last_output / time_delta
         output_delta *= NANO_SECOND
 
+        computing_delta = self._last_computing / time_delta
+        computing_delta *= NANO_SECOND
+
         queue_backlog_delta = (max(cur_actual_queue_backlog - output_delta, 0) + input_delta) # KB/s
 
         # 성능 정보 갱신
         self._performance.actual_queue_backlog = queue_backlog_delta
         self._performance.input = input_delta
         self._performance.output = output_delta
+        self._performance.computing = computing_delta
         
         # 이전 상태 업데이트
         self._last_input = 0
         self._last_output = 0
+        self._last_computing = 0
         self._last_time = cur_time
 
     @property
