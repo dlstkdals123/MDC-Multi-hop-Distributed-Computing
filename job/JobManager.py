@@ -201,12 +201,5 @@ class JobManager:
         if not success_add_dnn_output:
             raise Exception(f"DNNOutput already exists. : {previous_dnn_output.subtask_info.get_subtask_id()}")
 
-    def update_dnnmodels_transfer(self, model_name: str, transfer: float) -> None:
-        if model_name == "":
-            return
-        
-        transfer = self._alpha * self._dnn_models.get_transfer(model_name) + (1 - self._alpha) * transfer
-        self._dnn_models.set_transfer(model_name, transfer)
-
     def update_backlog(self, performance: Performance) -> None:
         self._virtual_queue.update_backlog(performance)
