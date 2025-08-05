@@ -25,11 +25,11 @@ class PerformanceManager:
         
         self._performance: Performance = Performance(0, self._last_input, self._last_output, self._last_computing)
 
-    def add_input(self, bytes: float) -> None:
-        self._last_input += bytes
+    def add_input(self, kb: float) -> None:
+        self._last_input += kb
     
-    def add_output(self, bytes: float) -> None:
-        self._last_output += bytes
+    def add_output(self, kb: float) -> None:
+        self._last_output += kb
 
     def update_computing(self, computing: float) -> None:
         self._last_computing = self._alpha * self._last_computing + (1 - self._alpha) * computing
@@ -40,7 +40,7 @@ class PerformanceManager:
         cur_time = time.time() * NANO_SECOND
 
         # 네트워크 변화량 계산 (per second)
-        time_delta = cur_time - self._last_time
+        time_delta = cur_time - self._last_time # ns
 
         input_delta = self._last_input / time_delta
         input_delta *= NANO_SECOND
@@ -48,8 +48,7 @@ class PerformanceManager:
         output_delta = self._last_output / time_delta
         output_delta *= NANO_SECOND
 
-        queue_backlog_delta = (max(cur_actual_queue_backlog - output_delta, 0) + input_delta) / time_delta
-        queue_backlog_delta *= NANO_SECOND
+        queue_backlog_delta = (max(cur_actual_queue_backlog - output_delta, 0) + input_delta) # KB/s
 
         # 성능 정보 갱신
         self._performance.actual_queue_backlog = queue_backlog_delta

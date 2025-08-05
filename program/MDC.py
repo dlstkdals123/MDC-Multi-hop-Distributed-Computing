@@ -17,6 +17,8 @@ from typing import Dict, Any
 NANO_SECOND = 1_000_000_000
 NANO_PER_MILLI_SECOND = 1_000_000
 
+KB_PER_BYTE = 1024
+
 class MDC(Program):
     def __init__(self, sub_configs, pub_configs):
         self.sub_configs = sub_configs
@@ -129,7 +131,7 @@ class MDC(Program):
         return self._job_manager is not None
 
     def handle_dnn(self, topic, data, publisher):
-        self._performance_manager.add_input(len(data))
+        self._performance_manager.add_input(len(data) / KB_PER_BYTE)
         previous_dnn_output: DNNOutput = pickle.loads(data)
         self.run_dnn(previous_dnn_output)
 
@@ -167,7 +169,7 @@ class MDC(Program):
                 subtask_info.set_next_source()
                 dnn_output_bytes = pickle.dumps(dnn_output)
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
-                self._performance_manager.add_output(len(dnn_output_bytes))
+                self._performance_manager.add_output(len(dnn_output_bytes) / KB_PER_BYTE)
                 self._job_manager.update_dnnmodels_transfer(subtask_info.model_name, len(dnn_output_bytes))
                 return
             else:
