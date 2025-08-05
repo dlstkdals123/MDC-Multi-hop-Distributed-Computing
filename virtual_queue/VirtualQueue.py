@@ -117,6 +117,8 @@ class VirtualQueue:
                 links[link] -= self._last_transfer_capacity
 
         links = {link: max(value, 0) for link, value in links.items()}
+        self._last_computing_capacity = 0
+        self._last_transfer_capacity = 0
 
         self.mutex.release()
 
