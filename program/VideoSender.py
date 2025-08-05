@@ -20,7 +20,7 @@ except ImportError:
 
 from utils.utils import get_ip_address
 from program import MDC
-from job import JobInfo, SubtaskInfo, DNNOutput
+from job import JobInfo, SubtaskInfo, DNNOutput, PerformanceManager
 
 TARGET_WIDTH = 320
 TARGET_HEIGHT = 320
@@ -37,6 +37,8 @@ class VideoSender(MDC):
         self._job_name = job_name
         self._job_info = None
         self._frame_list = dict()
+
+        self._performance_manager = PerformanceManager()
 
         super().__init__(sub_configs, pub_configs)
 
@@ -61,7 +63,7 @@ class VideoSender(MDC):
         if subtask_layer_node.ip == self._address:
             job_id = subtask_info.job_id
             input_frame = DNNOutput(torch.tensor(self._frame_list[job_id]).float().view(1, TARGET_DEPTH, TARGET_HEIGHT, TARGET_WIDTH), subtask_info)
-            dnn_output, computing_capacity = self._job_manager.run(input_frame)
+            dnn_output, _ = self._job_manager.run(input_frame)
             destination_ip = subtask_info.destination.ip
 
             dnn_output.subtask_info.set_next_source()
@@ -71,7 +73,7 @@ class VideoSender(MDC):
             # send job to next node
             publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
 
-            self._job_manager.update_computing_performance(computing_capacity)
+            self._performance_manager.add_output(len(dnn_output_bytes))
 
     def stream_player(self):
         cap = cv2.VideoCapture("video/JN.mp4")
