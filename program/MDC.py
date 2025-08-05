@@ -166,7 +166,7 @@ class MDC(Program):
                 subtask_info.set_next_source()
                 dnn_output_bytes = pickle.dumps(dnn_output)
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
-                self._job_manager.update_dnnmodels_transfer(subtask_info.model_name, dnn_output.size)
+                self._job_manager.update_dnnmodels_transfer(subtask_info.model_name, len(dnn_output_bytes))
                 return
             else:
                 # 계산 성능 업데이트 

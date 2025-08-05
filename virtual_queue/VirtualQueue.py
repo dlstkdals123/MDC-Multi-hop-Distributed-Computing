@@ -77,7 +77,7 @@ class VirtualQueue:
         self.mutex.acquire()
         
         subtask, _ = self.subtask_infos[subtask_info]
-        self.last_subtask_info = None
+        self._last_subtask_info = None
         self._last_computing_capacity -= subtask.get_backlog()
         self._last_transfer_capacity -= subtask.get_backlog()
 
@@ -107,7 +107,7 @@ class VirtualQueue:
             else:
                 links[link] = subtask.get_backlog()
 
-            if self._last_subtask_info != None and link == self._last_subtask_info.get_link():
+            if self._last_subtask_info is not None and link == self._last_subtask_info.get_link():
                 links[link] -= self._last_computing_capacity
                 links[link] -= self._last_transfer_capacity
 
