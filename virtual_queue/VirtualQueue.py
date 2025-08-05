@@ -26,10 +26,9 @@ class VirtualQueue:
 
         for k in keys_to_delete:
             del self.subtask_infos[k]
+        self.mutex.release()
 
         print(f"Deleted {len(keys_to_delete)} jobs. {len(self.subtask_infos)} remains.")
-
-        self.mutex.release()
 
     def update_backlog(self, performance: Performance):
         cur_time = time.time() * NANO_SECOND # ns
@@ -49,12 +48,14 @@ class VirtualQueue:
 
     def add_subtask_info(self, subtask_info: SubtaskInfo, subtask: DNNSubtask):
         # ex) "192.168.1.5", Job
-        if self.exist_subtask_info(subtask_info):
+        self.mutex.acquire()
+        if subtask_info in self.subtask_infos:
+            self.mutex.release()
             return False
-        
         else:
             cur_time = time.time() * NANO_SECOND # ns
             self.subtask_infos[subtask_info] = (subtask, cur_time)
+            self.mutex.release()
             return True
 
     def get_subtask_info(self, subtask_info: SubtaskInfo):
@@ -64,18 +65,18 @@ class VirtualQueue:
         return subtask.subtask_info
     
     def find_subtask_info(self, subtask_info):
-        if self.exist_subtask_info(subtask_info):
-            self.mutex.acquire()
-            subtask, _ = self.subtask_infos[subtask_info]
-            self.mutex.release()
-            return subtask
-        else:
+        self.mutex.acquire()
+        subtask, _ = self.subtask_infos[subtask_info]
+        self.mutex.release()
+        if subtask is None:
             raise Exception("No flow subtask_infos : ", subtask_info)
+        
+        return subtask
         
     def pop_subtask_info(self, subtask_info):
         self.mutex.acquire()
         
-        subtask = self.find_subtask_info(subtask_info)
+        subtask, _ = self.subtask_infos[subtask_info]
         self.last_subtask_info = None
         self._last_computing_capacity -= subtask.get_backlog()
         self._last_transfer_capacity -= subtask.get_backlog()
@@ -83,7 +84,6 @@ class VirtualQueue:
         del self.subtask_infos[subtask_info]
 
         self.mutex.release()
-
 
         return subtask
     
