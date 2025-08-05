@@ -31,7 +31,7 @@ class JobManager:
         _virtual_queue (VirtualQueue): 가상큐. 서브태스크를 저장 및 관리.
         _ahead_of_time_outputs (AheadOutputQueue): 대기큐. 미리 도착한 DNNOutput을 저장 및 관리.
     """
-    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig):
+    def __init__(self, network_config: NetworkConfig, model_config: ModelConfig, ):
         """
         Args:
             network_config (NetworkConfig): 네트워크 설정.
@@ -42,6 +42,7 @@ class JobManager:
         self._network_config = network_config
         self._model_config = model_config
         self._dnn_models: DNNModels = DNNModels(model_config, self._device)
+        self._alpha: float = 0.9
 
         self._virtual_queue: VirtualQueue = VirtualQueue()
         self._ahead_of_time_outputs: AheadOutputQueue = AheadOutputQueue()
@@ -131,7 +132,9 @@ class JobManager:
         subtask_info = output.subtask_info
         if subtask_info.job_type == "dnn":
             
-            subtask: DNNSubtask = self._virtual_queue.pop_subtask_info(subtask_info)
+            subtask: DNNSubtask = self._virtual_queue.find_subtask_info(subtask_info)
+            backlog = subtask.get_backlog()
+            self._virtual_queue.last_subtask_info = subtask_info
 
             # 아직 run하지 않은 data이므로 사용해야 할 input data입니다.
             data = output.output
@@ -148,9 +151,11 @@ class JobManager:
             end_time = time.time() * NANO_SECOND
 
             # GFLOPs/s
-            performance = subtask.get_backlog() / (end_time - start_time) if subtask.subtask_info.is_computing() and end_time - start_time > 0 else 0
+            performance = backlog / (end_time - start_time) if subtask.subtask_info.is_computing() and end_time - start_time > 0 else 0
             performance *= NANO_SECOND
 
+            self._virtual_queue.pop_subtask_info(subtask_info)
+    
             return dnn_output, performance
         
     # add subtask_info based SubtaskInfo
@@ -196,3 +201,5 @@ class JobManager:
         if not success_add_dnn_output:
             raise Exception(f"DNNOutput already exists. : {previous_dnn_output.subtask_info.get_subtask_id()}")
 
+    def update_backlog(self, performance: Performance) -> None:
+        self._virtual_queue.update_backlog(performance)

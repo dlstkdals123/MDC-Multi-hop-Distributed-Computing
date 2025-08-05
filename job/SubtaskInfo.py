@@ -61,7 +61,7 @@ class SubtaskInfo(JobInfo):
             self._primary_path_index += 1
     
     def is_computing(self) -> bool:
-        return self._source_layer_node.is_same_node(self._destination_layer_node)
+        return self._source_layer_node == self._destination_layer_node
 
     def is_transmission(self) -> bool:
         return not self.is_computing()

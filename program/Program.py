@@ -3,6 +3,7 @@ import MQTTclient
 from queue import Queue
 from threading import Thread
 from pyprnt import prnt
+from typing import Tuple
 
 class Program:
 
@@ -58,6 +59,3 @@ class Program:
 
     def start(self):
         pass
-
-        
-    

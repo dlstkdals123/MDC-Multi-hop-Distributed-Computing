@@ -3,9 +3,8 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from program import Program
-from job import JobManager, SubtaskInfo, DNNOutput
+from job import JobManager, SubtaskInfo, DNNOutput, PerformanceManager
 from communication import RequestConfig, NodeLinkInfo
-from job.PerformanceManager import PerformanceManager
 from utils.utils import get_ip_address
 from config import NetworkConfig, ModelConfig
 
@@ -17,6 +16,8 @@ from typing import Dict, Any
 
 NANO_SECOND = 1_000_000_000
 NANO_PER_MILLI_SECOND = 1_000_000
+
+KB_PER_BYTE = 1024
 
 class MDC(Program):
     def __init__(self, sub_configs, pub_configs):
@@ -104,6 +105,7 @@ class MDC(Program):
         # transfer capacity check current capacity every sync time.
         self._performance_manager.update_performance()
 
+        self._job_manager.update_backlog(self._performance_manager.performance)
         links = self._job_manager.get_backlogs()
 
         performance = self._performance_manager.performance
@@ -129,6 +131,7 @@ class MDC(Program):
         return self._job_manager is not None
 
     def handle_dnn(self, topic, data, publisher):
+        self._performance_manager.add_input(len(data) / KB_PER_BYTE)
         previous_dnn_output: DNNOutput = pickle.loads(data)
         self.run_dnn(previous_dnn_output)
 
@@ -166,10 +169,11 @@ class MDC(Program):
                 subtask_info.set_next_source()
                 dnn_output_bytes = pickle.dumps(dnn_output)
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
+                self._performance_manager.add_output(len(dnn_output_bytes) / KB_PER_BYTE)
                 return
             else:
                 # 계산 성능 업데이트 
-                self._performance_manager.add_computing(computing_performance)
+                self._performance_manager.update_computing(computing_performance)
                 subtask_info.set_next_source()
 
        

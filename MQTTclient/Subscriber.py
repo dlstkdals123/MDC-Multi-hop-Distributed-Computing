@@ -37,7 +37,3 @@ class Subscriber:
 
     def on_message(self, client, userdata, msg):
         userdata.put(msg)
-        
-
-    
-

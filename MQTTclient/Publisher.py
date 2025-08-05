@@ -29,7 +29,6 @@ class Publisher:
         if isinstance(message, bytes):
             self.client.publish(topic, message)
         else:
-            self.client.publish(topic, message.encode('utf8'))
-
+            encoded_message = message.encode('utf8')
+            self.client.publish(topic, encoded_message)
     
-

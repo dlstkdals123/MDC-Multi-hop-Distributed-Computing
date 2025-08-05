@@ -35,10 +35,10 @@ def plot_network_backlog(result_dir: str, file_postfix: str, start_idx: int = 0,
         plt.plot(time, df[col], label=f"Node {node_num}", color=Colors.NODES[node_num])
     
     # 전체/평균 백로그
-    plt.plot(time, df['sum_actual_queue_backlog (KB)'], label='Total Backlog', color=Colors.TOTAL, linestyle='--')
-    plt.plot(time, df['avg_actual_queue_backlog (KB)'], label='Average Backlog', color=Colors.AVERAGE, linestyle='--')
+    plt.plot(time, df['sum_actual_queue_backlog (KB/s)'], label='Total Backlog', color=Colors.TOTAL, linestyle='--')
+    plt.plot(time, df['avg_actual_queue_backlog (KB/s)'], label='Average Backlog', color=Colors.AVERAGE, linestyle='--')
     
-    plt.ylabel('Queue Backlog (KB)')
+    plt.ylabel('Queue Backlog (KB/s)')
     plt.xlabel('Time step')
     plt.title('네트워크 백로그 분석: 노드별/전체/평균 큐 백로그')
     plt.legend()
@@ -85,9 +85,9 @@ def plot_packet_drops(result_dir: str, file_postfix: str, start_idx: int = 0,
     for col in dropped_input_cols:
         node_num = col.split('.')[-1].split('(')[0]  # IP 마지막 숫자
         plt.plot(time, df[col], label=f"{col}", color=Colors.NODES[node_num])
-    plt.plot(time, df['sum_dropped_input (packet)'], label='Total Dropped Input', color=Colors.TOTAL, linestyle='--')
-    plt.plot(time, df['avg_dropped_input (packet)'], label='Average Dropped Input', color=Colors.AVERAGE, linestyle='--')
-    plt.ylabel('Dropped Input Packets (packet)')
+    plt.plot(time, df['sum_dropped_input (packet/s)'], label='Total Dropped Input', color=Colors.TOTAL, linestyle='--')
+    plt.plot(time, df['avg_dropped_input (packet/s)'], label='Average Dropped Input', color=Colors.AVERAGE, linestyle='--')
+    plt.ylabel('Dropped Input Packets (packet/s)')
     plt.xlabel('Time step')
     plt.title('입력 패킷 드롭 분석: 노드별/전체/평균')
     plt.ylim(bottom=0)  # y축 시작점을 0으로 고정
@@ -102,9 +102,9 @@ def plot_packet_drops(result_dir: str, file_postfix: str, start_idx: int = 0,
     for col in dropped_output_cols:
         node_num = col.split('.')[-1].split('(')[0]  # IP 마지막 숫자
         plt.plot(time, df[col], label=f"{col}", color=Colors.NODES[node_num])
-    plt.plot(time, df['sum_dropped_output (packet)'], label='Total Dropped Output', color=Colors.TOTAL, linestyle='--')
-    plt.plot(time, df['avg_dropped_output (packet)'], label='Average Dropped Output', color=Colors.AVERAGE, linestyle='--')
-    plt.ylabel('Dropped Output Packets (packet)')
+    plt.plot(time, df['sum_dropped_output (packet/s)'], label='Total Dropped Output', color=Colors.TOTAL, linestyle='--')
+    plt.plot(time, df['avg_dropped_output (packet/s)'], label='Average Dropped Output', color=Colors.AVERAGE, linestyle='--')
+    plt.ylabel('Dropped Output Packets (packet/s)')
     plt.xlabel('Time step')
     plt.title('출력 패킷 드롭 분석: 노드별/전체/평균')
     plt.ylim(bottom=0)  # y축 시작점을 0으로 고정

@@ -72,7 +72,7 @@ def save_virtual_backlog(file_path, virtual_backlog):
     transmission_count = 0
 
     for idx, (link, backlog) in enumerate(sorted_virtual_backlog):
-        if link.is_same_node():
+        if link.is_computing():
             sorted_virtual_backlog[idx] = (f"(computing) {link.source.to_string()}", backlog)
             sum_GFLOPs += backlog # GFLOPs
             computing_count += 1
@@ -87,6 +87,10 @@ def save_virtual_backlog(file_path, virtual_backlog):
     headers = ["sum_GFLOPs", "avg_GFLOPs", "sum_KB", "avg_KB"] + links
     datas = [sum_GFLOPs, sum_GFLOPs_avg, sum_KB, sum_KB_avg] + backlogs
 
+    # datas가 전부 0이면 return
+    if all(data == 0 for data in datas):
+        return
+
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
 
@@ -95,39 +99,34 @@ def save_virtual_backlog(file_path, virtual_backlog):
 
         writer.writerow(datas)
 
-def save_performance(file_path, performance, routers: List[str], controller_ip: str, controller_performance):
+def save_performance(file_path, performances, routers: List[str]):
     # 파일이 존재하는지 확인
     file_exists = os.path.exists(file_path)
 
-    # 노드와 값을 정렬
     ip_and_performance = []
-    for node, value in performance.items():
-        ip_and_performance.append((node.ip, value))
+    for node, performance in performances.items():
+        ip_and_performance.append((node.ip, performance))
 
-    ip_and_performance.append((controller_ip, controller_performance))
+    # 노드와 값을 정렬
+    if all(perf.is_empty() for perf in performances.values()):
+        return
+    
     ip_and_performance.sort(key=lambda x: x[0])
 
     sorted_nodes = [ip for ip, _ in ip_and_performance]
     sorted_actual_queue_backlog_values = [value.actual_queue_backlog for _, value in ip_and_performance]
-    sorted_computing_values = [value.computing for ip, value in ip_and_performance if ip not in routers and ip != controller_ip]
-    sorted_dropped_input_values = [value.dropped_input for _, value in ip_and_performance]
-    sorted_dropped_output_values = [value.dropped_output for _, value in ip_and_performance]
+    sorted_computing_values = [value.computing for ip, value in ip_and_performance if ip not in routers]
 
     sum_actual_queue_backlog = sum(sorted_actual_queue_backlog_values)
     avg_actual_queue_backlog = sum_actual_queue_backlog / len(sorted_actual_queue_backlog_values) if sorted_actual_queue_backlog_values else 0
     sum_computing = sum(sorted_computing_values)
     avg_computing = sum_computing / len(sorted_computing_values) if sorted_computing_values else 0
-    sum_dropped_input = sum(sorted_dropped_input_values)
-    avg_dropped_input = sum_dropped_input / len(sorted_dropped_input_values) if sorted_dropped_input_values else 0
-    sum_dropped_output = sum(sorted_dropped_output_values)
-    avg_dropped_output = sum_dropped_output / len(sorted_dropped_output_values) if sorted_dropped_output_values else 0
 
-    headers = ["sum_actual_queue_backlog (KB/s)", "avg_actual_queue_backlog (KB/s)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)", "sum_dropped_input (packet/s)", "avg_dropped_input (packet/s)", "sum_dropped_output (packet/s)", "avg_dropped_output (packet/s)"] + \
-        [f"{ip}(actual_queue_backlog)" for ip in sorted_nodes] + [f"{ip}(computing)" for ip in sorted_nodes if ip not in routers and ip != controller_ip] + \
-        [f"{ip}(dropped_input)" for ip in sorted_nodes] + [f"{ip}(dropped_output)" for ip in sorted_nodes]
+    headers = ["sum_actual_queue_backlog (KB/s)", "avg_actual_queue_backlog (KB/s)", "sum_computing (GFLOPs/s)", "avg_computing (GFLOPs/s)"] + \
+        [f"{ip}(actual_queue_backlog)" for ip in sorted_nodes] + [f"{ip}(computing)" for ip in sorted_nodes if ip not in routers]
     
-    datas = [sum_actual_queue_backlog, avg_actual_queue_backlog, sum_computing, avg_computing, sum_dropped_input, avg_dropped_input, sum_dropped_output, avg_dropped_output] + \
-        sorted_actual_queue_backlog_values + sorted_computing_values + sorted_dropped_input_values + sorted_dropped_output_values
+    datas = [sum_actual_queue_backlog, avg_actual_queue_backlog, sum_computing, avg_computing] + \
+        sorted_actual_queue_backlog_values + sorted_computing_values
 
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -141,7 +140,7 @@ def save_path(file_path, path):
 
     path_list = []
     for layer_node_pair, model_name in path:
-        if layer_node_pair.is_same_node():
+        if layer_node_pair.is_computing():
             path_list.append(f"(computing) {layer_node_pair.to_string()}: {model_name}")
         else:
             path_list.append(f"(transmission) {layer_node_pair.to_string()}")
