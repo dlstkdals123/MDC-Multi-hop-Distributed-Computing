@@ -106,18 +106,6 @@ class VirtualQueue:
                 links[link] += subtask.get_backlog()
             else:
                 links[link] = subtask.get_backlog()
-
-        if self._last_subtask_info is not None:
-            link: LayerNodePair = self._last_subtask_info.get_link()
-
-            if link in links:
-                links[link] -= self._last_computing_capacity
-                links[link] -= self._last_transfer_capacity
-
-        links = {link: max(value, 0) for link, value in links.items()}
-        self._last_computing_capacity = 0
-        self._last_transfer_capacity = 0
-
         self.mutex.release()
 
         return links
