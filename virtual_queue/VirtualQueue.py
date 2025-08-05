@@ -33,7 +33,7 @@ class VirtualQueue:
     def update_backlog(self, performance: Performance):
         cur_time = time.time() * NANO_SECOND # ns
         time_delta = cur_time - self._last_update_time
-        time_delta *= NANO_SECOND # s
+        time_delta /= NANO_SECOND # s
 
         self._last_computing_capacity = performance.computing * time_delta # GFLOPs (GFLOPs/s * s)
         self._last_transfer_capacity = performance.output * time_delta # KB (KB/s * s)
