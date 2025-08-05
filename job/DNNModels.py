@@ -27,6 +27,8 @@ class DNNModels:
         self._computing: Dict[str, float] = {}
         self._transfer: Dict[str, float] = {}
 
+        self._alpha: float = 0.9
+
         self._init_models(model_config, device)
 
     def _init_models(self, model_config: ModelConfig, device: str):
@@ -89,3 +91,6 @@ class DNNModels:
         모델 이름을 입력으로 받아, 모델의 전송량을 반환합니다. (KB)
         """
         return self._transfer[model_name]
+
+    def set_transfer(self, model_name: str, transfer: float):
+        self._transfer[model_name] = transfer

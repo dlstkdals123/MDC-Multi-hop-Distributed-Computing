@@ -42,6 +42,7 @@ class JobManager:
         self._network_config = network_config
         self._model_config = model_config
         self._dnn_models: DNNModels = DNNModels(model_config, self._device)
+        self._alpha: float = 0.9
 
         self._virtual_queue: VirtualQueue = VirtualQueue()
         self._ahead_of_time_outputs: AheadOutputQueue = AheadOutputQueue()
@@ -215,6 +216,13 @@ class JobManager:
 
     def update_performance(self, bytes_sent: int, bytes_received: int) -> None:
         self._performance_manager.update_performance(bytes_sent, bytes_received)
+
+    def update_dnnmodels_transfer(self, model_name: str, transfer: float) -> None:
+        if model_name == "":
+            return
+        
+        transfer = self._alpha * self._dnn_models.get_transfer(model_name) + (1 - self._alpha) * transfer
+        self._dnn_models.set_transfer(model_name, transfer)
 
     def get_performance(self) -> Performance:
         return self._performance_manager.performance
