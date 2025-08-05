@@ -38,8 +38,6 @@ class VirtualQueue:
         self._last_computing_capacity += performance.computing * time_delta # GFLOPs (GFLOPs/s * s)
         self._last_transfer_capacity += performance.output * time_delta # KB (KB/s * s)
 
-        print(f"Last computing capacity: {self._last_computing_capacity}, Last transfer capacity: {self._last_transfer_capacity}")
-
         self._last_update_time = cur_time
 
     def exist_subtask_info(self, subtask_info: SubtaskInfo):
