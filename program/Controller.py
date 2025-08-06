@@ -55,24 +55,16 @@ class Controller(Program):
 
         self._job_info_dummy = None
 
-        self.init_network_config()
-        self.init_controller_config()
-        self.init_model_config()
+        self.init_config()
         self.init_path()
         self.init_layered_graph()
 
-    def init_network_config(self):
+    def init_config(self):
         with open(path, 'r') as file:
-            self._network_config = NetworkConfig(json.load(file)["Network"])
-
-    def init_controller_config(self):
-        with open(path, 'r') as file:
-            self._controller_config = ControllerConfig(json.load(file)["Controller"])
-
-    def init_model_config(self):
-        with open(path, 'r') as file:
-            model_configs = json.load(file)["Model"]
-            self._model_config = ModelConfig(model_configs)
+            config = json.load(file)
+            self._network_config = NetworkConfig(config["Network"]) 
+            self._controller_config = ControllerConfig(config["Controller"])
+            self._model_config = ModelConfig(config["Model"])
 
     def init_path(self):
         folder_name = self._controller_config.experiment_name + "_" + datetime.now().strftime('%m-%d_%H%M%S')
