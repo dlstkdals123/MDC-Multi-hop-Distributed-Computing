@@ -14,17 +14,12 @@ class VirtualQueue:
 
     Attributes:
         subtask_infos (Dict[SubtaskInfo, Tuple[DNNSubtask, int]]): 서브태스크 정보와 서브태스크를 저장.
-        _last_computing_capacity (float): 마지막 계산 용량. (미사용)
-        _last_transfer_capacity (float): 마지막 전송 용량. (미사용)
-        _last_subtask_info (SubtaskInfo): 마지막으로 처리된 서브태스크 정보. (미사용)
-        _last_update_time (float): 마지막 업데이트 시간 (ns). (미사용)
-        mutex (threading.Lock): 스레드 동기화를 위한 뮤텍스.
+        _last_performance (Performance): 마지막 성능 정보.
+        _last_update_time (float): 마지막 업데이트 시간 (ns). 
     """
     def __init__(self):
         self.subtask_infos: Dict[SubtaskInfo, Tuple[DNNSubtask, int]] = dict()
-        self._last_computing_capacity: float = 0
-        self._last_transfer_capacity: float = 0
-        self._last_subtask_info: SubtaskInfo = None
+        self._last_performance: Performance = Performance(0, 0, 0, 0)
         self._last_update_time: float = time.time() * NANO_SECOND
         self.mutex = threading.Lock()
 
@@ -49,7 +44,6 @@ class VirtualQueue:
     def update_backlog(self, performance: Performance) -> None:
         """
         백로그를 업데이트합니다.
-        (미사용)
 
         Args:
             performance (Performance): 노드의 성능 정보.
@@ -58,8 +52,19 @@ class VirtualQueue:
         time_delta = cur_time - self._last_update_time
         time_delta /= NANO_SECOND # s
 
-        self._last_computing_capacity += performance.computing * time_delta # GFLOPs (GFLOPs/s * s)
-        self._last_transfer_capacity += performance.output * time_delta # KB (KB/s * s)
+        computing_capacity = performance.computing * time_delta # GFLOPs (GFLOPs/s * s)
+        transfer_capacity = performance.output * time_delta # KB (KB/s * s)
+
+        computing_subtasks = [subtask for subtask, _ in self.subtask_infos.values() if subtask.subtask_info.is_computing()]
+        transfer_subtasks = [subtask for subtask, _ in self.subtask_infos.values() if subtask.subtask_info.is_transmission()]
+
+        decrasing_computing_capacity = computing_capacity / len(computing_subtasks) if len(computing_subtasks) > 0 else 0
+        decrasing_transfer_capacity = transfer_capacity / len(transfer_subtasks) if len(transfer_subtasks) > 0 else 0
+
+        for computing_subtask in computing_subtasks:
+            computing_subtask.decrease_backlog(decrasing_computing_capacity)
+        for transfer_subtask in transfer_subtasks:
+            transfer_subtask.decrease_backlog(decrasing_transfer_capacity)
 
         self._last_update_time = cur_time
 
@@ -143,10 +148,6 @@ class VirtualQueue:
         """
         with self.mutex:
             subtask, _ = self.subtask_infos[subtask_info]
-            self._last_subtask_info = None
-            self._last_computing_capacity -= subtask.get_backlog()
-            self._last_transfer_capacity -= subtask.get_backlog()
-
             del self.subtask_infos[subtask_info]
 
         return subtask
@@ -159,45 +160,11 @@ class VirtualQueue:
         Returns:
             Dict[LayerNodePair, float]: 대기중인 서브태스크의 백로그 총합.
         """
-        links = {}
+        links: Dict[LayerNodePair, float] = {}
         with self.mutex:
             for subtask_info, (subtask, _) in self.subtask_infos.items():
-                subtask: DNNSubtask
-
-                link: LayerNodePair = subtask_info.get_link()
-
-                if link in links:
-                    links[link] += subtask.get_backlog()
-                else:
-                    links[link] = subtask.get_backlog()
+                link = subtask_info.get_link()
+                backlog = subtask.get_backlog()
+                links[link] = links.get(link, 0) + backlog
 
         return links
-    
-    @property
-    def last_subtask_info(self) -> SubtaskInfo:
-        """
-        마지막으로 처리된 서브태스크 정보를 반환합니다.
-
-        Returns:
-            SubtaskInfo: 마지막으로 처리된 서브태스크 정보.
-        """
-        return self._last_subtask_info
-    
-    @last_subtask_info.setter
-    def last_subtask_info(self, subtask_info: SubtaskInfo) -> None:
-        """
-        마지막으로 처리된 서브태스크 정보를 설정합니다.
-
-        Args:
-            subtask_info (SubtaskInfo): 설정할 서브태스크 정보.
-        """
-        self._last_subtask_info = subtask_info
-        
-    def __str__(self):
-        """
-        가상큐의 문자열 표현을 반환합니다.
-
-        Returns:
-            str: 가상큐의 문자열 표현.
-        """
-        return str(self.subtask_infos)
