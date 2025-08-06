@@ -14,12 +14,10 @@ class VirtualQueue:
 
     Attributes:
         subtask_infos (Dict[SubtaskInfo, Tuple[DNNSubtask, int]]): 서브태스크 정보와 서브태스크를 저장.
-        _last_performance (Performance): 마지막 성능 정보.
         _last_update_time (float): 마지막 업데이트 시간 (ns). 
     """
     def __init__(self):
         self.subtask_infos: Dict[SubtaskInfo, Tuple[DNNSubtask, int]] = dict()
-        self._last_performance: Performance = Performance(0, 0, 0, 0)
         self._last_update_time: float = time.time() * NANO_SECOND
         self.mutex = threading.Lock()
 
