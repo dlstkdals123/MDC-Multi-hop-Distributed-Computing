@@ -103,7 +103,6 @@ class MDC(Program):
 
     def handle_request_backlog(self, topic, data, publisher):
         # transfer capacity check current capacity every sync time.
-        self._performance_manager.update_performance()
 
         self._job_manager.update_backlog(self._performance_manager.performance)
         links = self._job_manager.get_backlogs()
@@ -120,6 +119,8 @@ class MDC(Program):
 
         # send NodeLinkInfo byte to source ip (response)
         self._controller_publisher.publish("mdc/node_info", node_link_info_bytes)
+
+        self._performance_manager.update_performance()
 
     def check_network_config_exists(self, data = None) -> bool:
         return self._network_config is not None
