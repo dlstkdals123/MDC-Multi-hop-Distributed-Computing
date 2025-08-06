@@ -8,7 +8,6 @@ from config import ControllerConfig, NetworkConfig, ModelConfig
 from layeredgraph import LayeredGraph
 from job import JobInfo, SubtaskInfo
 from utils import save_latency, save_virtual_backlog, save_path, get_ip_address, save_performance
-from job.PerformanceManager import PerformanceManager
 
 import time
 import pickle, json
