@@ -132,7 +132,7 @@ class JobManager:
         if subtask_info.job_type == "dnn":
             
             subtask: DNNSubtask = self._virtual_queue.find_subtask(subtask_info)
-            backlog = subtask.get_backlog()
+            backlog = subtask.get_total_capacity()
             self._virtual_queue.last_subtask_info = subtask_info
 
             # 아직 run하지 않은 data이므로 사용해야 할 input data입니다.

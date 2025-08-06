@@ -19,16 +19,30 @@ class DNNSubtask:
         self._computing_capacity = computing_capacity
         self._transfer_capacity = transfer_capacity
 
+        self._remaining_computing_capacity = computing_capacity
+        self._remaining_transfer_capacity = transfer_capacity
+
     @property
     def subtask_info(self) -> SubtaskInfo:
         return self._subtask_info
     
-    def get_backlog(self) -> float:
+    def get_total_capacity(self) -> float:
         """
         서브태스크가 계산일 경우 계산량을 반환합니다. (GFLOPs)
         서브태스크가 전송일 경우 전송량을 반환합니다. (KB)
+
+        노드의 총 계산량 또는 전송량을 계산하기 위해 사용됩니다.
         """
         return self._computing_capacity if self._subtask_info.is_computing() else self._transfer_capacity
+
+    def get_backlog(self) -> float:
+        """
+        서브태스크의 백로그를 반환합니다. (GFLOPs or KB)
+
+        서브태스크의 남은 계산량 또는 전송량을 반환합니다.
+        이는 Virtual Queue Backlog 계산에 사용됩니다.
+        """
+        return self._remaining_computing_capacity if self._subtask_info.is_computing() else self._remaining_transfer_capacity
     
     def run(self, data: torch.Tensor) -> DNNOutput:
         """
@@ -50,3 +64,15 @@ class DNNSubtask:
             output = output.to("cpu")
             
         return DNNOutput(output, self._subtask_info)
+
+    def decrease_backlog(self, amount: float):
+        """
+        서브태스크의 백로그를 감소시킵니다. (GFLOPs or KB)
+
+        Args:
+            amount (float): 감소시킬 백로그 양.
+        """
+        if self._subtask_info.is_computing():
+            self._remaining_computing_capacity = max(self._remaining_computing_capacity - amount, 0)
+        else:
+            self._remaining_transfer_capacity = max(self._remaining_transfer_capacity - amount, 0)

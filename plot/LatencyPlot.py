@@ -99,7 +99,7 @@ def plot_latency_by_path(result_dir: str, file_postfix: str, start_idx: int = 0,
     meanprops = dict(marker='D', markerfacecolor=Colors.AVERAGE, markersize=8, markeredgecolor='black')
     
     # 박스플롯 그리기
-    plt.boxplot(data, labels=labels, vert=True, showmeans=True,
+    plt.boxplot(data, tick_labels=labels, vert=True, showmeans=True,
                 boxprops=boxprops, whiskerprops=whiskerprops, flierprops=flierprops,
                 medianprops=medianprops, meanprops=meanprops)
     

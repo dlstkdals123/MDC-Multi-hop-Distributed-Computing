@@ -15,11 +15,12 @@ class PerformanceManager:
 
         _performance (Performance): 노드의 성능 정보
     """
-    def __init__(self):
+    def __init__(self, sync_seconds: float = 1.0):
         self._last_input: float = 0 # KB
         self._last_output: float = 0 # KB
         self._last_computing: float = 0 # GFLOPs
         self._last_time: float = time.time() * NANO_SECOND # ns
+        self._sync_time: float = sync_seconds * NANO_SECOND # ns
 
         self._performance: Performance = Performance(0, self._last_input, self._last_output, self._last_computing)
 
@@ -40,14 +41,18 @@ class PerformanceManager:
         # 네트워크 변화량 계산 (per second)
         time_delta = cur_time - self._last_time # ns
 
-        input_delta = self._last_input / time_delta
-        input_delta *= NANO_SECOND
+        # 동기화 시간보다 짧은 시간이 지났을 경우 이전 성능 정보를 고려
+        if time_delta < self._sync_time:
+            remaining_ratio = (self._sync_time - time_delta) / self._sync_time
+            current_ratio = time_delta / self._sync_time
 
-        output_delta = self._last_output / time_delta
-        output_delta *= NANO_SECOND
-
-        computing_delta = self._last_computing / time_delta
-        computing_delta *= NANO_SECOND
+            input_delta = (self._performance.input * remaining_ratio) + (self._last_input / time_delta * NANO_SECOND * current_ratio)
+            output_delta = (self._performance.output * remaining_ratio) + (self._last_output / time_delta * NANO_SECOND * current_ratio)
+            computing_delta = (self._performance.computing * remaining_ratio) + (self._last_computing / time_delta * NANO_SECOND * current_ratio)
+        else:
+            input_delta = self._last_input / time_delta * NANO_SECOND
+            output_delta = self._last_output / time_delta * NANO_SECOND
+            computing_delta = self._last_computing / time_delta * NANO_SECOND
 
         queue_backlog_delta = (max(cur_actual_queue_backlog - output_delta, 0) + input_delta) # KB/s
 
@@ -66,4 +71,3 @@ class PerformanceManager:
     @property
     def performance(self) -> Performance:
         return self._performance
-    
