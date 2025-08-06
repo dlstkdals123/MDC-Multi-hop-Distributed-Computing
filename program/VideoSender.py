@@ -1,4 +1,5 @@
 import sys, os
+import json
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -20,7 +21,8 @@ except ImportError:
 
 from utils.utils import get_ip_address
 from program import MDC
-from job import JobInfo, SubtaskInfo, DNNOutput
+from job import JobInfo, SubtaskInfo, DNNOutput, PerformanceManager
+from config import SenderConfig
 
 TARGET_WIDTH = 320
 TARGET_HEIGHT = 320
@@ -38,7 +40,17 @@ class VideoSender(MDC):
         self._job_info = None
         self._frame_list = dict()
 
+        self._sender_config = None
+
+        self._performance_manager = PerformanceManager()
+
         super().__init__(sub_configs, pub_configs)
+
+        self.init_sender_config()
+
+    def init_sender_config(self):
+        with open(path, 'r') as file:
+            self._sender_config = SenderConfig(json.load(file)["Sender"])
 
     def init_job_info(self, input_bytes: float):
         job_name = self._job_name
@@ -90,8 +102,7 @@ class VideoSender(MDC):
         self.run_camera_streamer()
 
         while True:
-            sleep_time = self.get_sleep_time()
-            time.sleep(sleep_time)
+            time.sleep(self._sender_config.frame_delay)
 
             if self._frame is not None:
                 self.send_frame()
@@ -116,10 +127,6 @@ class VideoSender(MDC):
 
         self._controller_publisher.publish("job/request_scheduling", job_info_bytes)
 
-    def get_sleep_time(self) -> float:
-        # implement any frame drop logic
-        return 0.18
-
 if __name__ == '__main__':
     sub_configs = {
             "ip": "127.0.0.1", 
@@ -131,6 +138,9 @@ if __name__ == '__main__':
                 ("mdc/node_info", 1),
             ],
         }
+
+    global path
+    path = "config/config.json"
     
     pub_configs = []
 
