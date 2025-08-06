@@ -20,7 +20,7 @@ except ImportError:
 
 from utils.utils import get_ip_address
 from program import MDC
-from job import JobInfo, SubtaskInfo, DNNOutput, PerformanceManager
+from job import JobInfo, SubtaskInfo, DNNOutput
 
 TARGET_WIDTH = 320
 TARGET_HEIGHT = 320
@@ -37,8 +37,6 @@ class VideoSender(MDC):
         self._job_name = job_name
         self._job_info = None
         self._frame_list = dict()
-
-        self._performance_manager = PerformanceManager()
 
         super().__init__(sub_configs, pub_configs)
 
