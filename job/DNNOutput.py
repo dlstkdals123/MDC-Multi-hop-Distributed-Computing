@@ -13,6 +13,7 @@ class DNNOutput:
     def __init__(self, data: torch.Tensor, subtask_info: SubtaskInfo) -> None:
         self._output = data
         self._subtask_info = subtask_info
+        self._size = 0 # KB
 
     @property
     def subtask_info(self) -> SubtaskInfo:
@@ -22,9 +23,17 @@ class DNNOutput:
     def output(self) -> torch.Tensor:
         return self._output
 
+    @property
+    def size(self) -> float:
+        return self._size
+
     @subtask_info.setter
     def subtask_info(self, subtask_info: SubtaskInfo):
         self._subtask_info = subtask_info
+    
+    @size.setter
+    def size(self, size: float):
+        self._size = size
         
     def __eq__(self, other):
         return self.subtask_info.get_subtask_id() == other.subtask_info.get_subtask_id()
