@@ -152,6 +152,7 @@ class MDC(Program):
                 subtask_info_bytes = pickle.dumps(subtask_info)
 
                 # send subtask info to controller
+                self._performance_manager.add_output(dnn_output.size)
                 self._controller_publisher.publish("job/response", subtask_info_bytes)
                 return
 
