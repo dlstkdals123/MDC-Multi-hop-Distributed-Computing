@@ -114,7 +114,7 @@ class VirtualQueue:
             subtask, _ = self.subtask_infos[subtask_info]
         return subtask.subtask_info
     
-    def find_subtask(self, subtask_info: SubtaskInfo) -> DNNSubtask:
+    def get_subtask(self, subtask_info: SubtaskInfo) -> DNNSubtask:
         """
         서브태스크를 찾아 반환합니다.
 
@@ -134,7 +134,7 @@ class VirtualQueue:
         
         return subtask
         
-    def pop_subtask_info(self, subtask_info: SubtaskInfo) -> DNNSubtask:
+    def del_subtask_info(self, subtask_info: SubtaskInfo) -> None:
         """
         서브태스크를 제거하고 반환합니다.
 
@@ -147,8 +147,6 @@ class VirtualQueue:
         with self.mutex:
             subtask, _ = self.subtask_infos[subtask_info]
             del self.subtask_infos[subtask_info]
-
-        return subtask
     
     def get_backlogs(self) -> Dict[LayerNodePair, float]:
         """

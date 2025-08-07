@@ -80,6 +80,7 @@ class JobManager:
         previous_subtask_info = dnn_output.subtask_info
         current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
         dnn_output.subtask_info = current_subtask_info
+        del previous_subtask_info
         
     def pop_dnn_output(self, subtask_info: SubtaskInfo) -> DNNOutput:
         """
@@ -131,9 +132,8 @@ class JobManager:
         subtask_info = output.subtask_info
         if subtask_info.job_type == "dnn":
             
-            subtask: DNNSubtask = self._virtual_queue.find_subtask(subtask_info)
+            subtask: DNNSubtask = self._virtual_queue.get_subtask(subtask_info)
             backlog = subtask.get_total_capacity()
-            self._virtual_queue.last_subtask_info = subtask_info
 
             # 아직 run하지 않은 data이므로 사용해야 할 input data입니다.
             data = output.output
@@ -147,7 +147,8 @@ class JobManager:
 
             performance = backlog if subtask.subtask_info.is_computing() else 0 # GFLOPs
 
-            self._virtual_queue.pop_subtask_info(subtask_info)
+            self._virtual_queue.del_subtask_info(subtask_info)
+            del subtask
     
             return dnn_output, performance
         
