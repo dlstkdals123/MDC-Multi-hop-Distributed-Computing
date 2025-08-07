@@ -143,7 +143,7 @@ class JobManager:
             else:
                 data = data.to(self._device)
                 
-            dnn_output = subtask.run(data)
+            dnn_output = subtask.run(data, output.size)
 
             performance = backlog if subtask.subtask_info.is_computing() else 0 # GFLOPs
 

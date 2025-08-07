@@ -132,8 +132,10 @@ class MDC(Program):
         return self._job_manager is not None
 
     def handle_dnn(self, topic, data, publisher):
-        self._performance_manager.add_input(len(data) / KB_PER_BYTE)
+        size = len(data) / KB_PER_BYTE
         previous_dnn_output: DNNOutput = pickle.loads(data)
+        previous_dnn_output.size = size
+        self._performance_manager.add_input(size)
         self.run_dnn(previous_dnn_output)
 
     def handle_finish(self, topic, data, publisher):
@@ -150,6 +152,7 @@ class MDC(Program):
                 subtask_info_bytes = pickle.dumps(subtask_info)
 
                 # send subtask info to controller
+                self._performance_manager.add_output(dnn_output.size)
                 self._controller_publisher.publish("job/response", subtask_info_bytes)
                 return
 
@@ -169,8 +172,8 @@ class MDC(Program):
                 destination_ip = destination.ip
                 subtask_info.set_next_source()
                 dnn_output_bytes = pickle.dumps(dnn_output)
+                self._performance_manager.add_output(dnn_output.size)
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
-                self._performance_manager.add_output(len(dnn_output_bytes) / KB_PER_BYTE)
                 return
             else:
                 # 계산 성능 업데이트 
