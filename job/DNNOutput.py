@@ -10,10 +10,10 @@ class DNNOutput:
         _output (torch.Tensor): 모델의 출력.
         _subtask_info (SubtaskInfo): 서브태스크 정보.
     """
-    def __init__(self, data: torch.Tensor, subtask_info: SubtaskInfo) -> None:
+    def __init__(self, data: torch.Tensor, subtask_info: SubtaskInfo, size: float = 0) -> None:
         self._output = data
         self._subtask_info = subtask_info
-        self._size = 0 # KB
+        self._size = size # KB
 
     @property
     def subtask_info(self) -> SubtaskInfo:
