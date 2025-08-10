@@ -56,7 +56,11 @@ class DNNSubtask:
         Returns:
             DNNOutput: 서브태스크의 출력. (서브태스크가 계산일 경우 모델 계산 결과, 전송일 경우 그대로 반환)
         """
-        output = data if self._subtask_info.is_transmission() else self._dnn_model(data)
+        if self._subtask_info.is_transmission():
+            output = data
+        else:
+            with torch.no_grad():
+                output = self._dnn_model(data)
         
         if isinstance(output, list):
             output = [o.to("cpu") for o in output]
