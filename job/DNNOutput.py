@@ -34,6 +34,9 @@ class DNNOutput:
     @size.setter
     def size(self, size: float):
         self._size = size
+
+    def __str__(self):
+        return f"DNNOutput(subtask_info={self.subtask_info})" 
         
     def __eq__(self, other):
         return self.subtask_info.get_subtask_id() == other.subtask_info.get_subtask_id()

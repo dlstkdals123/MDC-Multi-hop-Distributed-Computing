@@ -154,6 +154,7 @@ class MDC(Program):
                 # send subtask info to controller
                 self._performance_manager.add_output(dnn_output.size)
                 self._controller_publisher.publish("job/response", subtask_info_bytes)
+
                 return
 
             # subtask가 도착하기 전에 dnn_output이 온 경우
@@ -174,6 +175,7 @@ class MDC(Program):
                 dnn_output_bytes = pickle.dumps(dnn_output)
                 self._performance_manager.add_output(dnn_output.size)
                 publish.single(f"job/{subtask_info.job_type}", dnn_output_bytes, hostname=destination_ip)
+
                 return
             else:
                 # 계산 성능 업데이트 
