@@ -1,5 +1,5 @@
+from typing import Dict, Any
 import sys, os
-import json
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -7,7 +7,6 @@ import pickle
 import time
 from threading import Thread
 import paho.mqtt.publish as publish
-import numpy as np
 import cv2
 import torch
 try:
@@ -21,8 +20,8 @@ except ImportError:
 
 from utils.utils import get_ip_address
 from program import MDC
-from job import JobInfo, SubtaskInfo, DNNOutput, PerformanceManager
-from config import SenderConfig
+from job import JobInfo, SubtaskInfo, DNNOutput, PerformanceManager, JobManager
+from config import NetworkConfig, ModelConfig, SenderConfig
 
 TARGET_WIDTH = 320
 TARGET_HEIGHT = 320
@@ -46,11 +45,18 @@ class VideoSender(MDC):
 
         super().__init__(sub_configs, pub_configs)
 
-        self.init_sender_config()
+    # overriding
+    def handle_config(self, topic, data, publisher):
+        config: Dict[str, Any] = pickle.loads(data)
+        self._network_config: NetworkConfig = config["network"]
+        self._model_config: ModelConfig = config["model"]
+        self._sender_config: SenderConfig = config["sender"]
 
-    def init_sender_config(self):
-        with open(path, 'r') as file:
-            self._sender_config = SenderConfig(json.load(file)["Sender"])
+        self._job_manager = JobManager(self._network_config, self._model_config)
+
+        self.init_node_publisher()
+
+        print(f"Succesfully get config.")
 
     def init_job_info(self, input_bytes: float):
         job_name = self._job_name
