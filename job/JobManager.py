@@ -80,7 +80,6 @@ class JobManager:
         previous_subtask_info = dnn_output.subtask_info
         current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
         dnn_output.subtask_info = current_subtask_info
-        del previous_subtask_info
         
     def pop_dnn_output(self, subtask_info: SubtaskInfo) -> DNNOutput:
         """
@@ -148,7 +147,6 @@ class JobManager:
             performance = backlog if subtask.subtask_info.is_computing() else 0 # GFLOPs
 
             self._virtual_queue.del_subtask_info(subtask_info)
-            del subtask
     
             return dnn_output, performance
         
