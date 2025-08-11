@@ -8,7 +8,11 @@ from torchvision.models import resnet18, mobilenet_v2
 from yolov5.Yolov5 import P1, P2, P3, P4
 
 NANO_PER_MILLISECOND = 1_000_000
-GIGABYTES = 1_000_000_000
+GIGABITS = 1_000_000_000
+MEGABITS = 1_000_000
+KILOBITS = 1_000
+BITS_PER_BYTE = 8
+BYTES_PER_KILOBYTE = 1024
 
 def get_ip_address(interface_name=["eth0"]):
     # check os
@@ -219,7 +223,7 @@ def get_network_capacity(interface_name='eth0', wireless=False) -> float:
         wireless (bool): 무선 인터페이스 여부 (True: 무선, False: 유선)
         
     Returns:
-        dict: 최대 대역폭 정보 (bps)
+        float: 최대 대역폭 정보 (KB/s)
     """
     if os.name == "nt":  # windows
         capacity = get_network_capacity_windows(interface_name, wireless)
@@ -241,7 +245,8 @@ def get_network_capacity_windows(interface_name, wireless):
         if line.startswith('Speed='):
             speed_str = line.split('=', 1)[1].strip()
             if speed_str and speed_str != '':
-                return float(speed_str)
+                speed_bps = float(speed_str)
+                return speed_bps / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # bps를 KB/s로 변환 (bits/8/1024)
     
     # Raise error if Speed information cannot be found
     raise ValueError(f"Speed information for network interface '{interface_name}' not found.")
@@ -274,24 +279,24 @@ def _get_wireless_capacity_linux(interface_name):
                     speed_value = float(bit_rate_match.group(1))
                     speed_unit = bit_rate_match.group(2)
                     
-                    # 단위를 bps로 변환
+                    # 단위를 KB/s로 변환
                     if speed_unit == 'Gb/s':
-                        speed_bps = speed_value * 1_000_000_000
+                        speed_kbs = speed_value * GIGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Gbps를 KB/s로 변환
                     elif speed_unit == 'Mb/s':
-                        speed_bps = speed_value * 1_000_000
+                        speed_kbs = speed_value * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
                     elif speed_unit == 'Kb/s':
-                        speed_bps = speed_value * 1_000
+                        speed_kbs = speed_value * KILOBITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Kbps를 KB/s로 변환
                     else:
-                        speed_bps = speed_value
+                        speed_kbs = speed_value / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # bps를 KB/s로 변환
                     
-                    return speed_bps
+                    return speed_kbs
         
         # iwconfig에서 속도 정보를 찾지 못한 경우 대안 방법
         speed_file = f"/sys/class/net/{interface_name}/speed"
         if os.path.exists(speed_file):
             with open(speed_file, 'r') as f:
                 speed_mbps = int(f.read().strip())
-                return speed_mbps * 1_000_000  # Mbps를 bps로 변환
+                return speed_mbps * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
         
         # 속도 정보를 찾을 수 없는 경우 오류 발생
         raise ValueError(f"무선 네트워크 인터페이스 '{interface_name}'의 속도 정보를 찾을 수 없습니다.")
@@ -320,14 +325,14 @@ def _get_wired_capacity_linux(interface_name):
                         # ethtool은 보통 "1000Mb/s" 형태로 반환
                         if 'Mb/s' in speed_str:
                             speed_mbps = int(speed_str.replace('Mb/s', ''))
-                            return speed_mbps * 1_000_000  # Mbps를 bps로 변환
+                            return speed_mbps * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
                         elif 'Gb/s' in speed_str:
                             speed_gbps = int(speed_str.replace('Gb/s', ''))
-                            return speed_gbps * 1_000_000_000  # Gbps를 bps로 변환
+                            return speed_gbps * GIGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Gbps를 KB/s로 변환
                         else:
                             # 숫자만 추출 (Mbps로 가정)
                             speed_mbps = int(''.join(filter(str.isdigit, speed_str)))
-                            return speed_mbps * 1_000_000  # Mbps를 bps로 변환
+                            return speed_mbps * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
                         
                     except ValueError:
                         raise ValueError(f"네트워크 인터페이스 '{interface_name}'의 속도 정보를 파싱할 수 없습니다: {speed_str}")
@@ -337,7 +342,7 @@ def _get_wired_capacity_linux(interface_name):
         if os.path.exists(speed_file):
             with open(speed_file, 'r') as f:
                 speed_mbps = int(f.read().strip())
-                return speed_mbps * 1_000_000  # Mbps를 bps로 변환
+                return speed_mbps * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
         
         # Speed 정보를 찾을 수 없는 경우 오류 발생
         raise ValueError(f"네트워크 인터페이스 '{interface_name}'의 속도 정보를 찾을 수 없습니다.")
