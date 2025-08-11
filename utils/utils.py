@@ -91,10 +91,6 @@ def save_virtual_backlog(file_path, virtual_backlog):
     headers = ["sum_GFLOPs", "avg_GFLOPs", "sum_KB", "avg_KB"] + links
     datas = [sum_GFLOPs, sum_GFLOPs_avg, sum_KB, sum_KB_avg] + backlogs
 
-    # datas가 전부 0이면 return
-    if all(data == 0 for data in datas):
-        return
-
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
 
