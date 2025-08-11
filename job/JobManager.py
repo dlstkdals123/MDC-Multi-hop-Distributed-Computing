@@ -193,11 +193,12 @@ class JobManager:
         if not success_add_dnn_output:
             raise Exception(f"DNNOutput already exists. : {previous_dnn_output.subtask_info.get_subtask_id()}")
 
-    def update_backlog(self, performance: Performance) -> None:
+    def update_backlog(self, computing_capacity: float, transfer_capacity: float) -> None:
         """
         가상큐의 백로그를 업데이트합니다.
 
         Args:
-            performance (Performance): 성능 정보.
+            computing_capacity (float): 계산량.
+            transfer_capacity (float): 전송량.
         """
-        self._virtual_queue.update_backlog(performance)
+        self._virtual_queue.update_backlog(computing_capacity, transfer_capacity)

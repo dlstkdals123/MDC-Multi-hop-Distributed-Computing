@@ -2,3 +2,4 @@
 results*/
 plot/*/*.png
 plot/*/*.svg
+config/mdc_config.json

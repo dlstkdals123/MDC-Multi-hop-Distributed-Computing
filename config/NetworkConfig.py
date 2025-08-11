@@ -28,6 +28,7 @@ class NetworkConfig:
         self._network: Dict[str, any] = network_config["network"]
         self._router: List[str] = network_config["router"]
         self._models: Dict[str, any] = network_config["models"]
+        self._computing_capacity: Dict[str, any] = network_config["computing_capacity"]
 
     def _check_validate(self, network_config: Dict[str, any]):
         """
@@ -44,7 +45,8 @@ class NetworkConfig:
             "jobs", 
             "network", 
             "router", 
-            "models"
+            "models",
+            "computing_capacity"
         ]
 
         for key in required_keys:
@@ -139,3 +141,6 @@ class NetworkConfig:
 
     def get_models(self, ip: str) -> List[str]:
         return self._models[ip]
+    
+    def get_computing_capacity(self, ip: str) -> int:
+        return self._computing_capacity[ip]
