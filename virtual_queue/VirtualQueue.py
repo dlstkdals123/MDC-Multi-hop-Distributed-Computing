@@ -39,30 +39,31 @@ class VirtualQueue:
 
         print(f"Deleted {len(keys_to_delete)} jobs. {len(self.subtask_infos)} remains.")
 
-    def update_backlog(self, performance: Performance) -> None:
+    def update_backlog(self, computing_capacity: float, transfer_capacity: float) -> None:
         """
         백로그를 업데이트합니다.
 
         Args:
-            performance (Performance): 노드의 성능 정보.
+            computing_capacity (float): 노드의 계산량.
+            transfer_capacity (float): 노드의 전송량.
         """
         cur_time = time.time() * NANO_SECOND # ns
         time_delta = cur_time - self._last_update_time
         time_delta /= NANO_SECOND # s
 
-        computing_capacity = performance.computing * time_delta # GFLOPs (GFLOPs/s * s)
-        transfer_capacity = performance.output * time_delta # KB (KB/s * s)
+        computing_performance = computing_capacity * time_delta # GFLOPs (GFLOPs/s * s)
+        transfer_performance = transfer_capacity * time_delta # KB (KB/s * s)
 
         computing_subtasks = [subtask for subtask, _ in self.subtask_infos.values() if subtask.subtask_info.is_computing()]
         transfer_subtasks = [subtask for subtask, _ in self.subtask_infos.values() if subtask.subtask_info.is_transmission()]
 
-        decrasing_computing_capacity = computing_capacity / len(computing_subtasks) if len(computing_subtasks) > 0 else 0
-        decrasing_transfer_capacity = transfer_capacity / len(transfer_subtasks) if len(transfer_subtasks) > 0 else 0
+        decrasing_computing_backlog = computing_performance / len(computing_subtasks) if len(computing_subtasks) > 0 else 0
+        decrasing_transfer_backlog = transfer_performance / len(transfer_subtasks) if len(transfer_subtasks) > 0 else 0
 
         for computing_subtask in computing_subtasks:
-            computing_subtask.decrease_backlog(decrasing_computing_capacity)
+            computing_subtask.decrease_backlog(decrasing_computing_backlog)
         for transfer_subtask in transfer_subtasks:
-            transfer_subtask.decrease_backlog(decrasing_transfer_capacity)
+            transfer_subtask.decrease_backlog(decrasing_transfer_backlog)
 
         self._last_update_time = cur_time
 

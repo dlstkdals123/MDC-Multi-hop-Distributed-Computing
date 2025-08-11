@@ -1,5 +1,5 @@
 from typing import Dict, Any
-import sys, os
+import sys, os, json
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -19,7 +19,8 @@ except ImportError:
         return int(now.timestamp() * 1e9)
 
 from utils.utils import get_ip_address
-from program import MDC
+from program import SENDER_CONFIG_PATH
+from program.MDC import MDC
 from job import JobInfo, SubtaskInfo, DNNOutput, PerformanceManager, JobManager
 from config import NetworkConfig, ModelConfig, SenderConfig
 
@@ -43,20 +44,25 @@ class VideoSender(MDC):
 
         self._performance_manager = PerformanceManager()
 
+        self._init_sender_config()
+
         super().__init__(sub_configs, pub_configs)
 
-    # overriding
-    def handle_config(self, topic, data, publisher):
-        config: Dict[str, Any] = pickle.loads(data)
-        self._network_config: NetworkConfig = config["network"]
-        self._model_config: ModelConfig = config["model"]
-        self._sender_config: SenderConfig = config["sender"]
-
-        self._job_manager = JobManager(self._network_config, self._model_config)
-
-        self.init_node_publisher()
-
-        print(f"Succesfully get config.")
+    def _init_sender_config(self):
+        try:
+            with open(SENDER_CONFIG_PATH, 'r', encoding='utf-8') as file:  # UTF-8 인코딩 명시
+                config = json.load(file)
+                self._sender_config = SenderConfig(config)
+        except FileNotFoundError:
+            # 파일이 없으면 디폴트 설정으로 생성
+            default_config = {
+                "frame_delay": 0.3
+            }
+            self._sender_config = SenderConfig(default_config)
+            
+            # 디폴트 설정을 파일로 저장 (UTF-8 인코딩으로)
+            with open(SENDER_CONFIG_PATH, 'w', encoding='utf-8') as file:
+                json.dump(default_config, file, indent=2, ensure_ascii=False)
 
     def init_job_info(self, input_bytes: float):
         job_name = self._job_name
@@ -144,9 +150,6 @@ if __name__ == '__main__':
                 ("mdc/node_info", 1),
             ],
         }
-
-    global path
-    path = "config/config.json"
     
     pub_configs = []
 

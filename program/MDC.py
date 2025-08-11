@@ -1,12 +1,12 @@
-import sys, os
+import sys, os, json
  
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from program import Program
+from program import Program, MDC_CONFIG_PATH
 from job import JobManager, SubtaskInfo, DNNOutput, PerformanceManager
 from communication import RequestConfig, NodeLinkInfo
-from utils.utils import get_ip_address
-from config import NetworkConfig, ModelConfig
+from utils.utils import get_ip_address, get_network_capacity
+from config import NetworkConfig, ModelConfig, MDCConfig
 
 import paho.mqtt.publish as publish
 import MQTTclient
@@ -48,15 +48,40 @@ class MDC(Program):
 
         self._network_config = None
         self._model_config = None
+        self._mdc_config = None
         self._job_manager = None
         self._neighbors = None
         self._backlogs_zero_flag = False
 
         self._performance_manager = PerformanceManager()
+        self._computing_capacity = 0
+        self._transfer_capacity = 0
 
         super().__init__(self.sub_configs, self.pub_configs, self.topic_dispatcher, self.topic_dispatcher_checker)
 
+        self.init_config()
         self.request_config()
+
+    def init_config(self):
+        try:
+            with open(MDC_CONFIG_PATH, 'r', encoding='utf-8') as file:  # UTF-8 인코딩 명시
+                config = json.load(file)
+                self._mdc_config = MDCConfig(config)
+        except FileNotFoundError:
+            # 파일이 없으면 디폴트 설정으로 생성
+            default_config = {
+                "computing_capacity": 0,
+                "interface_name": "eth0",
+                "wireless": False
+            }
+            self._mdc_config = MDCConfig(default_config)
+            
+            # 디폴트 설정을 파일로 저장 (UTF-8 인코딩으로)
+            with open(MDC_CONFIG_PATH, 'w', encoding='utf-8') as file:
+                json.dump(default_config, file, indent=2, ensure_ascii=False)
+
+
+        get_network_capacity(self._mdc_config.interface_name, self._mdc_config.wireless)
 
     # request network information to network controller
     # sending node info.
@@ -86,11 +111,12 @@ class MDC(Program):
 
         self._job_manager = JobManager(self._network_config, self._model_config)
 
-        self.init_node_publisher()
+        self._init_node_publisher()
+        self._init_capacity()
 
         print(f"Succesfully get config.")
 
-    def init_node_publisher(self):
+    def _init_node_publisher(self):
         neighbors = self._network_config.get_network_neighbors(self._address)
 
         for neighbor in neighbors:
@@ -100,11 +126,16 @@ class MDC(Program):
             })
             self._node_publisher[neighbor] = publisher
 
+    def _init_capacity(self):
+        self._computing_capacity = self._mdc_config.computing_capacity
+        self._transfer_capacity = get_network_capacity(self._mdc_config.interface_name, self._mdc_config.wireless)
 
     def handle_request_backlog(self, topic, data, publisher):
         # transfer capacity check current capacity every sync time.
+        computing_capacity = self._computing_capacity
+        transfer_capacity = self._transfer_capacity
 
-        self._job_manager.update_backlog(self._performance_manager.performance)
+        self._job_manager.update_backlog(computing_capacity, transfer_capacity)
         links = self._job_manager.get_backlogs()
 
         performance = self._performance_manager.performance

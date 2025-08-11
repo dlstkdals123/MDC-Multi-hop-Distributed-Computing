@@ -132,7 +132,7 @@ class JobManager:
         if subtask_info.job_type == "dnn":
             
             subtask: DNNSubtask = self._virtual_queue.get_subtask(subtask_info)
-            backlog = subtask.get_total_capacity()
+            capacity = subtask.get_total_capacity()
 
             # 아직 run하지 않은 data이므로 사용해야 할 input data입니다.
             data = output.output
@@ -144,7 +144,7 @@ class JobManager:
                 
             dnn_output = subtask.run(data, output.size)
 
-            performance = backlog if subtask.subtask_info.is_computing() else 0 # GFLOPs
+            performance = capacity if subtask.subtask_info.is_computing() else 0 # GFLOPs
 
             self._virtual_queue.del_subtask_info(subtask_info)
     
@@ -193,11 +193,12 @@ class JobManager:
         if not success_add_dnn_output:
             raise Exception(f"DNNOutput already exists. : {previous_dnn_output.subtask_info.get_subtask_id()}")
 
-    def update_backlog(self, performance: Performance) -> None:
+    def update_backlog(self, computing_capacity: float, transfer_capacity: float) -> None:
         """
         가상큐의 백로그를 업데이트합니다.
 
         Args:
-            performance (Performance): 성능 정보.
+            computing_capacity (float): 계산량.
+            transfer_capacity (float): 전송량.
         """
-        self._virtual_queue.update_backlog(performance)
+        self._virtual_queue.update_backlog(computing_capacity, transfer_capacity)

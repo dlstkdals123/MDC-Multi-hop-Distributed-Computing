@@ -8,6 +8,11 @@ from torchvision.models import resnet18, mobilenet_v2
 from yolov5.Yolov5 import P1, P2, P3, P4
 
 NANO_PER_MILLISECOND = 1_000_000
+GIGABITS = 1_000_000_000
+MEGABITS = 1_000_000
+KILOBITS = 1_000
+BITS_PER_BYTE = 8
+BYTES_PER_KILOBYTE = 1024
 
 def get_ip_address(interface_name=["eth0"]):
     # check os
@@ -38,7 +43,6 @@ def get_ip_address_linux(interface_name='eth0'):
             return "IP address not found"
     except subprocess.CalledProcessError:
         return "Failed to execute ip command or interface not found"
-    
 
 def save_latency(file_path: str, latency: float):
     # 파일이 존재하는지 확인
@@ -86,10 +90,6 @@ def save_virtual_backlog(file_path, virtual_backlog):
 
     headers = ["sum_GFLOPs", "avg_GFLOPs", "sum_KB", "avg_KB"] + links
     datas = [sum_GFLOPs, sum_GFLOPs_avg, sum_KB, sum_KB_avg] + backlogs
-
-    # datas가 전부 0이면 return
-    if all(data == 0 for data in datas):
-        return
 
     with open(file_path, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile)
@@ -209,3 +209,141 @@ def ensure_path_exists(path, is_file=False):
         # 폴더가 없으면 폴더 생성
         os.makedirs(path, exist_ok=True)
         print(f"Directory ensured at: {path}")
+
+def get_network_capacity(interface_name='eth0', wireless=False) -> float:
+    """
+    네트워크 인터페이스의 최대 대역폭(capacity)을 가져옵니다.
+    
+    Args:
+        interface_name (str): 확인할 네트워크 인터페이스 이름
+        wireless (bool): 무선 인터페이스 여부 (True: 무선, False: 유선)
+        
+    Returns:
+        float: 최대 대역폭 정보 (KB/s)
+    """
+    if os.name == "nt":  # windows
+        capacity = get_network_capacity_windows(interface_name, wireless)
+    else:  # linux / unix
+        capacity = get_network_capacity_linux(interface_name, wireless)
+    
+    return capacity
+
+def get_network_capacity_windows(interface_name, wireless):
+    """
+    Windows에서 네트워크 인터페이스의 최대 대역폭을 가져옵니다.
+    """
+    cmd = f'wmic nic where "NetConnectionID=\'{interface_name}\' AND NetEnabled=TRUE" get Speed /value'
+    output = subprocess.check_output(cmd, shell=True, encoding='utf-8')
+    
+    # 출력에서 Speed 값 추출
+    lines = output.strip().split('\n')
+    for line in lines:
+        if line.startswith('Speed='):
+            speed_str = line.split('=', 1)[1].strip()
+            if speed_str and speed_str != '':
+                speed_bps = float(speed_str)
+                return speed_bps / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # bps를 KB/s로 변환 (bits/8/1024)
+    
+    # Raise error if Speed information cannot be found
+    raise ValueError(f"Speed information for network interface '{interface_name}' not found.")
+
+def get_network_capacity_linux(interface_name, wireless):
+    """
+    Linux에서 네트워크 인터페이스의 최대 대역폭을 가져옵니다.
+    """
+    if wireless:
+        return _get_wireless_capacity_linux(interface_name)
+    else:
+        return _get_wired_capacity_linux(interface_name)
+
+def _get_wireless_capacity_linux(interface_name):
+    """
+    Linux에서 무선 네트워크 인터페이스의 최대 대역폭을 가져옵니다.
+    """
+    try:
+        # 무선 인터페이스인 경우 iwconfig를 사용
+        cmd = f"iwconfig {interface_name}"
+        output = subprocess.check_output(cmd, shell=True, encoding='utf-8', stderr=subprocess.DEVNULL)
+        
+        # 무선 인터페이스에서는 Bit Rate 정보 추출
+        lines = output.strip().split('\n')
+        for line in lines:
+            if 'Bit Rate' in line:
+                # "Bit Rate=54 Mb/s" 형태에서 속도 추출
+                bit_rate_match = re.search(r'Bit Rate[=:]\s*(\d+(?:\.\d+)?)\s*([MGK]b/s)', line)
+                if bit_rate_match:
+                    speed_value = float(bit_rate_match.group(1))
+                    speed_unit = bit_rate_match.group(2)
+                    
+                    # 단위를 KB/s로 변환
+                    if speed_unit == 'Gb/s':
+                        speed_kbs = speed_value * GIGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Gbps를 KB/s로 변환
+                    elif speed_unit == 'Mb/s':
+                        speed_kbs = speed_value * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
+                    elif speed_unit == 'Kb/s':
+                        speed_kbs = speed_value * KILOBITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Kbps를 KB/s로 변환
+                    else:
+                        speed_kbs = speed_value / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # bps를 KB/s로 변환
+                    
+                    return speed_kbs
+        
+        # iwconfig에서 속도 정보를 찾지 못한 경우 대안 방법
+        speed_file = f"/sys/class/net/{interface_name}/speed"
+        if os.path.exists(speed_file):
+            with open(speed_file, 'r') as f:
+                speed_mbps = int(f.read().strip())
+                return speed_mbps * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
+        
+        # 속도 정보를 찾을 수 없는 경우 오류 발생
+        raise ValueError(f"무선 네트워크 인터페이스 '{interface_name}'의 속도 정보를 찾을 수 없습니다.")
+        
+    except subprocess.CalledProcessError as e:
+        raise ValueError(f"네트워크 인터페이스 '{interface_name}'에 대한 iwconfig 명령어 실행에 실패했습니다: {str(e)}")
+    except Exception as e:
+        raise ValueError(f"무선 네트워크 용량을 가져오는 중 오류가 발생했습니다: {str(e)}")
+
+def _get_wired_capacity_linux(interface_name):
+    """
+    Linux에서 유선 네트워크 인터페이스의 최대 대역폭을 가져옵니다.
+    """
+    try:
+        # 유선 인터페이스인 경우 ethtool 사용
+        cmd = f"ethtool {interface_name}"
+        output = subprocess.check_output(cmd, shell=True, encoding='utf-8', stderr=subprocess.DEVNULL)
+        
+        # 출력에서 Speed 정보 추출
+        lines = output.strip().split('\n')
+        for line in lines:
+            if 'Speed:' in line:
+                speed_str = line.split(':')[1].strip()
+                if speed_str and speed_str != '':
+                    try:
+                        # ethtool은 보통 "1000Mb/s" 형태로 반환
+                        if 'Mb/s' in speed_str:
+                            speed_mbps = int(speed_str.replace('Mb/s', ''))
+                            return speed_mbps * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
+                        elif 'Gb/s' in speed_str:
+                            speed_gbps = int(speed_str.replace('Gb/s', ''))
+                            return speed_gbps * GIGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Gbps를 KB/s로 변환
+                        else:
+                            # 숫자만 추출 (Mbps로 가정)
+                            speed_mbps = int(''.join(filter(str.isdigit, speed_str)))
+                            return speed_mbps * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
+                        
+                    except ValueError:
+                        raise ValueError(f"네트워크 인터페이스 '{interface_name}'의 속도 정보를 파싱할 수 없습니다: {speed_str}")
+        
+        # ethtool에서 속도 정보를 찾지 못한 경우 /sys/class/net 확인
+        speed_file = f"/sys/class/net/{interface_name}/speed"
+        if os.path.exists(speed_file):
+            with open(speed_file, 'r') as f:
+                speed_mbps = int(f.read().strip())
+                return speed_mbps * MEGABITS / BITS_PER_BYTE / BYTES_PER_KILOBYTE  # Mbps를 KB/s로 변환
+        
+        # Speed 정보를 찾을 수 없는 경우 오류 발생
+        raise ValueError(f"네트워크 인터페이스 '{interface_name}'의 속도 정보를 찾을 수 없습니다.")
+        
+    except subprocess.CalledProcessError as e:
+        raise ValueError(f"네트워크 인터페이스 '{interface_name}'에 대한 ethtool 명령어 실행에 실패했습니다: {str(e)}")
+    except Exception as e:
+        raise ValueError(f"유선 네트워크 용량을 가져오는 중 오류가 발생했습니다: {str(e)}")

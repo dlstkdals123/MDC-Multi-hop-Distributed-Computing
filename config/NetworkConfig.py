@@ -44,7 +44,7 @@ class NetworkConfig:
             "jobs", 
             "network", 
             "router", 
-            "models"
+            "models",
         ]
 
         for key in required_keys:
