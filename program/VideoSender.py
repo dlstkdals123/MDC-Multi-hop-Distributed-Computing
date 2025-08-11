@@ -1,5 +1,5 @@
 from typing import Dict, Any
-import sys, os
+import sys, os, json
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -43,20 +43,14 @@ class VideoSender(MDC):
 
         self._performance_manager = PerformanceManager()
 
+        self._init_sender_config()
+
         super().__init__(sub_configs, pub_configs)
 
-    # overriding
-    def handle_config(self, topic, data, publisher):
-        config: Dict[str, Any] = pickle.loads(data)
-        self._network_config: NetworkConfig = config["network"]
-        self._model_config: ModelConfig = config["model"]
-        self._sender_config: SenderConfig = config["sender"]
-
-        self._job_manager = JobManager(self._network_config, self._model_config)
-
-        self._init_node_publisher()
-
-        print(f"Succesfully get config.")
+    def _init_sender_config(self):
+        with open(SENDER_CONFIG_PATH, 'r', encoding='utf-8') as file:
+            config = json.load(file)
+            self._sender_config = SenderConfig(config)
 
     def init_job_info(self, input_bytes: float):
         job_name = self._job_name

@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from program import Program, CONFIG_PATH
 from communication import *
-from config import ControllerConfig, NetworkConfig, ModelConfig, SenderConfig
+from config import ControllerConfig, NetworkConfig, ModelConfig
 from layeredgraph import LayeredGraph
 from job import JobInfo, SubtaskInfo
 from utils import save_latency, save_virtual_backlog, save_path, get_ip_address, save_performance
@@ -65,7 +65,6 @@ class Controller(Program):
             self._network_config = NetworkConfig(config["Network"]) 
             self._controller_config = ControllerConfig(config["Controller"])
             self._model_config = ModelConfig(config["Model"])
-            self._sender_config = SenderConfig(config["Sender"])
 
     def init_path(self):
         folder_name = self._controller_config.experiment_name + "_" + datetime.now().strftime('%m-%d_%H%M%S')
@@ -134,7 +133,6 @@ class Controller(Program):
         config = {
             "network": self._network_config,
             "model": self._model_config,
-            "sender": self._sender_config
         }
 
         config_bytes = pickle.dumps(config)
