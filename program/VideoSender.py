@@ -99,9 +99,14 @@ class VideoSender(MDC):
 
     def stream_player(self):
         cap = cv2.VideoCapture("video/JN.mp4")
-
+        
         while True:
             ret, frame = cap.read()
+            if not ret or frame is None:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                print("Video restarted.")
+                continue
+                
             resize_frame = cv2.resize(frame, (320, 320), interpolation=cv2.INTER_CUBIC)
             self._frame = resize_frame
             time.sleep(1 / 30)
