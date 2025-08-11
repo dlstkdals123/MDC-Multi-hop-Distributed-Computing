@@ -19,7 +19,8 @@ except ImportError:
         return int(now.timestamp() * 1e9)
 
 from utils.utils import get_ip_address
-from program import MDC, SENDER_CONFIG_PATH
+from program import SENDER_CONFIG_PATH
+from program.MDC import MDC
 from job import JobInfo, SubtaskInfo, DNNOutput, PerformanceManager, JobManager
 from config import NetworkConfig, ModelConfig, SenderConfig
 
