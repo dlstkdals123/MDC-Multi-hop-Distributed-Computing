@@ -54,7 +54,7 @@ class VideoSender(MDC):
 
         self._job_manager = JobManager(self._network_config, self._model_config)
 
-        self.init_node_publisher()
+        self._init_node_publisher()
 
         print(f"Succesfully get config.")
 
