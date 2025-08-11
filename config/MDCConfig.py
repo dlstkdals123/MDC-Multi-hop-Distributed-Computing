@@ -1,5 +1,4 @@
 from typing import Dict
-from utils.utils import get_network_capacity
 
 class MDCConfig:
     def __init__(self, mdc_config: Dict[str, any]):
@@ -15,8 +14,6 @@ class MDCConfig:
         for key in required_keys:
             if key not in mdc_config:
                 raise ValueError(f"Missing required key: {key}")
-
-        get_network_capacity(mdc_config["interface_name"], mdc_config["wireless"])
 
     @property
     def computing_capacity(self) -> float:

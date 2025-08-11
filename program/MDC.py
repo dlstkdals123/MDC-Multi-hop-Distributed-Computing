@@ -80,6 +80,9 @@ class MDC(Program):
             with open(mdc_path, 'w', encoding='utf-8') as file:
                 json.dump(default_config, file, indent=2, ensure_ascii=False)
 
+
+        get_network_capacity(self._mdc_config.interface_name, self._mdc_config.wireless)
+
     # request network information to network controller
     # sending node info.
     def request_config(self):
