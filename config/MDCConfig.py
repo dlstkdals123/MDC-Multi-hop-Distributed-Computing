@@ -1,6 +1,14 @@
 from typing import Dict
 
 class MDCConfig:
+    """
+    MDC 설정 정보를 저장하는 클래스입니다.
+
+    Attributes:
+        _computing_capacity (float): MDC의 컴퓨팅 용량.
+        _interface_name (str): MDC의 네트워크 인터페이스 이름.
+        _wireless (bool): MDC의 무선 여부.
+    """
     def __init__(self, mdc_config: Dict[str, any]):
         self._check_validate(mdc_config)
 
