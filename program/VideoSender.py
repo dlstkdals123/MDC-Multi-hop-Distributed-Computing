@@ -49,9 +49,20 @@ class VideoSender(MDC):
         super().__init__(sub_configs, pub_configs)
 
     def _init_sender_config(self):
-        with open(SENDER_CONFIG_PATH, 'r', encoding='utf-8') as file:
-            config = json.load(file)
-            self._sender_config = SenderConfig(config)
+        try:
+            with open(SENDER_CONFIG_PATH, 'r', encoding='utf-8') as file:  # UTF-8 인코딩 명시
+                config = json.load(file)
+                self._sender_config = SenderConfig(config)
+        except FileNotFoundError:
+            # 파일이 없으면 디폴트 설정으로 생성
+            default_config = {
+                "frame_delay": 0.3
+            }
+            self._sender_config = SenderConfig(default_config)
+            
+            # 디폴트 설정을 파일로 저장 (UTF-8 인코딩으로)
+            with open(SENDER_CONFIG_PATH, 'w', encoding='utf-8') as file:
+                json.dump(default_config, file, indent=2, ensure_ascii=False)
 
     def init_job_info(self, input_bytes: float):
         job_name = self._job_name
