@@ -2,7 +2,7 @@ import sys, os
  
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from program import Program
+from program import Program, CONFIG_PATH
 from communication import *
 from config import ControllerConfig, NetworkConfig, ModelConfig, SenderConfig
 from layeredgraph import LayeredGraph
@@ -60,7 +60,7 @@ class Controller(Program):
         self.init_layered_graph()
 
     def init_config(self):
-        with open(path, 'r') as file:
+        with open(CONFIG_PATH, 'r') as file:
             config = json.load(file)
             self._network_config = NetworkConfig(config["Network"]) 
             self._controller_config = ControllerConfig(config["Controller"])
@@ -237,9 +237,6 @@ if __name__ == '__main__':
                 ("mdc/finish", 1),
             ],
         }
-    
-    global path
-    path = "config/config.json"
 
     pub_configs = []
     

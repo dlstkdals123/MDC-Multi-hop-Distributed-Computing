@@ -2,7 +2,7 @@ import sys, os, json
  
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from program import Program
+from program import Program, MDC_CONFIG_PATH
 from job import JobManager, SubtaskInfo, DNNOutput, PerformanceManager
 from communication import RequestConfig, NodeLinkInfo
 from utils.utils import get_ip_address, get_network_capacity
@@ -64,7 +64,7 @@ class MDC(Program):
 
     def init_config(self):
         try:
-            with open(mdc_path, 'r', encoding='utf-8') as file:  # UTF-8 인코딩 명시
+            with open(MDC_CONFIG_PATH, 'r', encoding='utf-8') as file:  # UTF-8 인코딩 명시
                 config = json.load(file)
                 self._mdc_config = MDCConfig(config)
         except FileNotFoundError:
@@ -77,7 +77,7 @@ class MDC(Program):
             self._mdc_config = MDCConfig(default_config)
             
             # 디폴트 설정을 파일로 저장 (UTF-8 인코딩으로)
-            with open(mdc_path, 'w', encoding='utf-8') as file:
+            with open(MDC_CONFIG_PATH, 'w', encoding='utf-8') as file:
                 json.dump(default_config, file, indent=2, ensure_ascii=False)
 
 
@@ -229,9 +229,6 @@ if __name__ == '__main__':
     
     pub_configs = [
     ]
-
-    global mdc_path
-    mdc_path = "config/mdc_config.json"
     
     mdc = MDC(sub_configs=sub_configs, pub_configs=pub_configs)
     mdc.start()

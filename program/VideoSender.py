@@ -19,7 +19,7 @@ except ImportError:
         return int(now.timestamp() * 1e9)
 
 from utils.utils import get_ip_address
-from program import MDC
+from program import MDC, SENDER_CONFIG_PATH
 from job import JobInfo, SubtaskInfo, DNNOutput, PerformanceManager, JobManager
 from config import NetworkConfig, ModelConfig, SenderConfig
 
@@ -144,9 +144,6 @@ if __name__ == '__main__':
                 ("mdc/node_info", 1),
             ],
         }
-
-    global mdc_path
-    mdc_path = "config/mdc_config.json"
     
     pub_configs = []
 
