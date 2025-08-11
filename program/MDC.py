@@ -64,7 +64,7 @@ class MDC(Program):
 
     def init_config(self):
         try:
-            with open(mdc_path, 'r') as file:
+            with open(mdc_path, 'r', encoding='utf-8') as file:  # UTF-8 인코딩 명시
                 config = json.load(file)
                 self._mdc_config = MDCConfig(config)
         except FileNotFoundError:
@@ -76,9 +76,9 @@ class MDC(Program):
             }
             self._mdc_config = MDCConfig(default_config)
             
-            # 디폴트 설정을 파일로 저장
-            with open(mdc_path, 'w') as file:
-                json.dump(default_config, file, indent=2)
+            # 디폴트 설정을 파일로 저장 (UTF-8 인코딩으로)
+            with open(mdc_path, 'w', encoding='utf-8') as file:
+                json.dump(default_config, file, indent=2, ensure_ascii=False)
 
     # request network information to network controller
     # sending node info.
