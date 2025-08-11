@@ -145,8 +145,8 @@ if __name__ == '__main__':
             ],
         }
 
-    global path
-    path = "config/config.json"
+    global mdc_path
+    mdc_path = "config/config.json"
     
     pub_configs = []
 
