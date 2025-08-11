@@ -132,7 +132,7 @@ class JobManager:
         if subtask_info.job_type == "dnn":
             
             subtask: DNNSubtask = self._virtual_queue.get_subtask(subtask_info)
-            backlog = subtask.get_total_capacity()
+            capacity = subtask.get_total_capacity()
 
             # 아직 run하지 않은 data이므로 사용해야 할 input data입니다.
             data = output.output
@@ -144,7 +144,7 @@ class JobManager:
                 
             dnn_output = subtask.run(data, output.size)
 
-            performance = backlog if subtask.subtask_info.is_computing() else 0 # GFLOPs
+            performance = capacity if subtask.subtask_info.is_computing() else 0 # GFLOPs
 
             self._virtual_queue.del_subtask_info(subtask_info)
     
