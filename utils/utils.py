@@ -308,17 +308,7 @@ def _get_wired_capacity_linux(interface_name):
     try:
         # 유선 인터페이스인 경우 ethtool 사용
         cmd = f"ethtool {interface_name}"
-        result = subprocess.run(cmd, shell=True, capture_output=True, encoding='utf-8')
-        
-        if result.returncode != 0:
-            # stderr에 경고가 있어도 stdout은 정상일 수 있음
-            if "Operation not permitted" in result.stderr:
-                # 경고 메시지가 있지만 계속 진행
-                pass
-            else:
-                raise subprocess.CalledProcessError(result.returncode, cmd, result.stdout, result.stderr)
-        
-        output = result.stdout
+        output = subprocess.check_output(cmd, shell=True, encoding='utf-8', stderr=subprocess.DEVNULL)
         
         # 출력에서 Speed 정보 추출
         lines = output.strip().split('\n')
