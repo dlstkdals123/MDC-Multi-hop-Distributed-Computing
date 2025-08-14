@@ -4,7 +4,8 @@ from typing import List
 import csv
 
 import torch
-from torchvision.models import resnet18, mobilenet_v2
+from torchvision.models import resnet18, mobilenet_v2, wide_resnet101_2
+import urllib.request
 from yolov5.Yolov5 import P1, P2, P3, P4
 
 NANO_PER_MILLISECOND = 1_000_000
@@ -164,14 +165,15 @@ def split_model(model: torch.nn.Module, split_point, flatten_index: int) -> torc
     splited_model = torch.nn.Sequential(*layers[start:end])
     return splited_model
 
-def load_model(model_name) -> torch.nn.Module:
+def load_model(model_name, device: str = "cpu") -> torch.nn.Module:
 
-    available_model_list = ["yolov5", "resnet-18", "resnet-50", "mobilenet_v2"]
+    available_model_list = ["yolov5", "resnet-18", "resnet-50", "mobilenet_v2", "wide_resnet101_2"]
 
     assert model_name in available_model_list, f"Model must be in {available_model_list}."
 
     if model_name == "yolov5":
         models = torch.nn.Sequential(P1(), P2(), P3(), P4())
+        models.eval()
         return models
     
     elif model_name == "resnet-18":
@@ -184,6 +186,33 @@ def load_model(model_name) -> torch.nn.Module:
     
     elif model_name == "mobilenet_v2":
         model = mobilenet_v2(pretrained=True)
+        model.eval()
+        return model
+    
+    elif model_name == "wide_resnet101_2":
+        save_path = "wide_resnet101_2/wide_resnet101_2_default.pth"
+        
+        # 파일이 존재하는지 확인
+        if not os.path.exists(save_path):
+            # 파일이 없으면 가중치를 다운로드하고 저장
+            ensure_path_exists(save_path, is_file=True)
+            # 가중치 URL에서 직접 다운로드 (캐시 사용 안함)
+            print("Downloading weights...")
+            weight_url = "https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth"
+
+            # 직접 다운로드
+            urllib.request.urlretrieve(weight_url, save_path)
+
+            print("Weights downloaded successfully.")
+
+        # 모델에 로드 (버전 호환성을 위해 자동 감지)
+        try:
+            # PyTorch 1.6+ 버전용 (weights 파라미터 지원)
+            model = wide_resnet101_2(weights=None)
+        except TypeError:
+            model = wide_resnet101_2(pretrained=False)
+        model.load_state_dict(torch.load(save_path, map_location=device))
+        
         model.eval()
         return model
     

@@ -4,3 +4,4 @@ plot/*/*.png
 plot/*/*.svg
 config/mdc_config.json
 config/sender_config.json
+wide_resnet101_2/*.pth
