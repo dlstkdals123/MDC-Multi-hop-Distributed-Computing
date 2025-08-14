@@ -29,7 +29,7 @@ class Subscriber:
         pass
 
     def on_disconnect(self, client, userdata, flags, rc=0):
-        print(str(rc))
+        print(f"Disconnected from {self.config['ip']} with return code: {rc}")
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         # print("subscribed: " + str(mid) + " " + str(granted_qos))
