@@ -37,7 +37,7 @@ class DNNModels:
         """
         model_names = model_config.model_names
         for model_name in model_names:
-            model = load_model(model_name).to(device)
+            model = load_model(model_name, device).to(device)
             self._models[model_name] = model
         
         self._init_computing_and_transfer(model_config, device)

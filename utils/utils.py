@@ -4,8 +4,9 @@ from typing import List
 import csv
 
 import torch
-from torchvision.models import resnet18, mobilenet_v2, wide_resnet101_2, Wide_ResNet101_2_Weights
-from yolov5.Yolov5 import P1, P2, P3, P4
+from torchvision.models import resnet18, mobilenet_v2, wide_resnet101_2
+import urllib.request
+from models.yolov5.Yolov5 import P1, P2, P3, P4
 
 NANO_PER_MILLISECOND = 1_000_000
 GIGABITS = 1_000_000_000
@@ -164,7 +165,7 @@ def split_model(model: torch.nn.Module, split_point, flatten_index: int) -> torc
     splited_model = torch.nn.Sequential(*layers[start:end])
     return splited_model
 
-def load_model(model_name) -> torch.nn.Module:
+def load_model(model_name, device: str = "cpu") -> torch.nn.Module:
 
     available_model_list = ["yolov5", "resnet-18", "resnet-50", "mobilenet_v2", "wide_resnet101_2"]
 
@@ -172,6 +173,7 @@ def load_model(model_name) -> torch.nn.Module:
 
     if model_name == "yolov5":
         models = torch.nn.Sequential(P1(), P2(), P3(), P4())
+        models.eval()
         return models
     
     elif model_name == "resnet-18":
@@ -188,7 +190,22 @@ def load_model(model_name) -> torch.nn.Module:
         return model
     
     elif model_name == "wide_resnet101_2":
-        model = wide_resnet101_2(weights=Wide_ResNet101_2_Weights.DEFAULT)
+        save_path = "models/wide_resnet101_2/wide_resnet101_2_default.pth"
+        
+        # 파일이 존재하는지 확인
+        if not os.path.exists(save_path):
+            # 파일이 없으면 가중치를 다운로드하고 저장
+            ensure_path_exists(save_path, is_file=True)
+            # 가중치 URL에서 직접 다운로드 (캐시 사용 안함)
+            weight_url = "https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth"
+
+            # 직접 다운로드
+            urllib.request.urlretrieve(weight_url, save_path)
+
+        # 모델에 로드
+        model = wide_resnet101_2(weights=None)
+        model.load_state_dict(torch.load(save_path, map_location=device))
+        
         model.eval()
         return model
     
