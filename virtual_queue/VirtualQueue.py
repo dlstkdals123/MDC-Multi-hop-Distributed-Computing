@@ -54,8 +54,12 @@ class VirtualQueue:
         computing_performance = computing_capacity * time_delta # GFLOPs (GFLOPs/s * s)
         transfer_performance = transfer_capacity * time_delta # KB (KB/s * s)
 
-        computing_subtasks = [subtask for subtask, _ in self.subtask_infos.values() if subtask.subtask_info.is_computing()]
-        transfer_subtasks = [subtask for subtask, _ in self.subtask_infos.values() if subtask.subtask_info.is_transmission()]
+        # 딕셔너리 순회 중 수정을 방지하기 위해 복사본 생성
+        with self.mutex:
+            subtask_infos_copy = list(self.subtask_infos.values())
+
+        computing_subtasks = [subtask for subtask, _ in subtask_infos_copy if subtask.subtask_info.is_computing()]
+        transfer_subtasks = [subtask for subtask, _ in subtask_infos_copy if subtask.subtask_info.is_transmission()]
 
         decrasing_computing_backlog = computing_performance / len(computing_subtasks) if len(computing_subtasks) > 0 else 0
         decrasing_transfer_backlog = transfer_performance / len(transfer_subtasks) if len(transfer_subtasks) > 0 else 0
