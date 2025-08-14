@@ -6,7 +6,7 @@ import csv
 import torch
 from torchvision.models import resnet18, mobilenet_v2, wide_resnet101_2
 import urllib.request
-from models.yolov5.Yolov5 import P1, P2, P3, P4
+from yolov5.Yolov5 import P1, P2, P3, P4
 
 NANO_PER_MILLISECOND = 1_000_000
 GIGABITS = 1_000_000_000
