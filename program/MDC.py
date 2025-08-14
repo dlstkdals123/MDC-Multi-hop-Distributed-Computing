@@ -194,7 +194,7 @@ class MDC(Program):
                 return
             
             self._job_manager.update_dnn_output(dnn_output)
-            dnn_output, computing_performance = self._job_manager.run(output=dnn_output)
+            dnn_output, computing_performance = self._job_manager.run(dnn_output=dnn_output)
 
             subtask_info = dnn_output.subtask_info
 

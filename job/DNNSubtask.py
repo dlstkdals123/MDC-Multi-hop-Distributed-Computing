@@ -44,7 +44,7 @@ class DNNSubtask:
         """
         return self._remaining_computing_capacity if self._subtask_info.is_computing() else self._remaining_transfer_capacity
     
-    def run(self, data: torch.Tensor, size: float = 0) -> DNNOutput:
+    def run(self, input: torch.Tensor) -> torch.Tensor:
         """
         data를 입력으로 받아, 서브태스크를 실행합니다.
         서브태스크가 계산일 경우 모델을 계산합니다.
@@ -56,18 +56,16 @@ class DNNSubtask:
         Returns:
             DNNOutput: 서브태스크의 출력. (서브태스크가 계산일 경우 모델 계산 결과, 전송일 경우 그대로 반환)
         """
-        if self._subtask_info.is_transmission():
-            output = data
-        else:
+        if self._subtask_info.is_computing():
             with torch.no_grad():
-                output = self._dnn_model(data)
+                output = self._dnn_model(input)
+
+            if isinstance(output, list):
+                output = [o.to("cpu") for o in output]
+            else:
+                output = output.to("cpu")
         
-        if isinstance(output, list):
-            output = [o.to("cpu") for o in output]
-        else:
-            output = output.to("cpu")
-            
-        return DNNOutput(output, self._subtask_info, size)
+        return output
 
     def decrease_backlog(self, amount: float):
         """
