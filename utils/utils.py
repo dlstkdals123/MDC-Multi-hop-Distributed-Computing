@@ -4,7 +4,7 @@ from typing import List
 import csv
 
 import torch
-from torchvision.models import resnet18, mobilenet_v2, wide_resnet101_2
+from torchvision.models import resnet18, mobilenet_v2, wide_resnet101_2, Wide_ResNet101_2_Weights
 from yolov5.Yolov5 import P1, P2, P3, P4
 
 NANO_PER_MILLISECOND = 1_000_000
@@ -188,7 +188,7 @@ def load_model(model_name) -> torch.nn.Module:
         return model
     
     elif model_name == "wide_resnet101_2":
-        model = wide_resnet101_2(pretrained=True)
+        model = wide_resnet101_2(weights=Wide_ResNet101_2_Weights.DEFAULT)
         model.eval()
         return model
     
