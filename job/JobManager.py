@@ -26,7 +26,6 @@ class JobManager:
     Attributes:
         _device (str): 모델을 실행하는 노드의 디바이스(cpu, cuda).
         _network_config (NetworkConfig): 네트워크 설정.
-        _model_config (ModelConfig): 모델 설정.
         _dnn_models (DNNModels): 모델 모음.
         _virtual_queue (VirtualQueue): 가상큐. 서브태스크를 저장 및 관리.
         _ahead_of_time_outputs (AheadOutputQueue): 대기큐. 미리 도착한 DNNOutput을 저장 및 관리.
@@ -40,7 +39,6 @@ class JobManager:
         self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
         self._network_config = network_config
-        self._model_config = model_config
         self._dnn_models: DNNModels = DNNModels(model_config, self._device)
 
         self._virtual_queue: VirtualQueue = VirtualQueue()

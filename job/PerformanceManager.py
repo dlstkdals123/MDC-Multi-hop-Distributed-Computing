@@ -12,6 +12,7 @@ class PerformanceManager:
         _last_output (float): 마지막 출력량 (KB).
         _last_computing (float): 마지막 계산량 (GFLOPs).
         _last_time (float): 마지막 업데이트 시간 (ns).
+        _sync_time (float): 동기화 시간 (ns).
 
         _performance (Performance): 노드의 성능 정보
     """
