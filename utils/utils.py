@@ -190,17 +190,20 @@ def load_model(model_name, device: str = "cpu") -> torch.nn.Module:
         return model
     
     elif model_name == "wide_resnet101_2":
-        save_path = "models/wide_resnet101_2/wide_resnet101_2_default.pth"
+        save_path = "wide_resnet101_2/wide_resnet101_2_default.pth"
         
         # 파일이 존재하는지 확인
         if not os.path.exists(save_path):
             # 파일이 없으면 가중치를 다운로드하고 저장
             ensure_path_exists(save_path, is_file=True)
             # 가중치 URL에서 직접 다운로드 (캐시 사용 안함)
+            print("Downloading weights...")
             weight_url = "https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth"
 
             # 직접 다운로드
             urllib.request.urlretrieve(weight_url, save_path)
+
+            print("Weights downloaded successfully.")
 
         # 모델에 로드
         model = wide_resnet101_2(weights=None)
