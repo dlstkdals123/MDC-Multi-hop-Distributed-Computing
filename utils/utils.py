@@ -205,8 +205,12 @@ def load_model(model_name, device: str = "cpu") -> torch.nn.Module:
 
             print("Weights downloaded successfully.")
 
-        # 모델에 로드
-        model = wide_resnet101_2(weights=None)
+        # 모델에 로드 (버전 호환성을 위해 자동 감지)
+        try:
+            # PyTorch 1.6+ 버전용 (weights 파라미터 지원)
+            model = wide_resnet101_2(weights=None)
+        except TypeError:
+            model = wide_resnet101_2(pretrained=False)
         model.load_state_dict(torch.load(save_path, map_location=device))
         
         model.eval()
