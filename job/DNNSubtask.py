@@ -1,6 +1,6 @@
 import torch
 
-from job import SubtaskInfo, DNNOutput
+from job import SubtaskInfo
 
 class DNNSubtask:
     """
@@ -11,6 +11,9 @@ class DNNSubtask:
         _dnn_model (torch.nn.Module): 실제 모델.
         _computing_capacity (float): 모델의 계산량 (GFLOPs).
         _transfer_capacity (float): 전송량 (KB).
+
+        _remaining_computing_capacity (float): 남은 계산량 (GFLOPs).
+        _remaining_transfer_capacity (float): 남은 전송량 (KB).
     """
     def __init__(self, subtask_info: SubtaskInfo, dnn_model: torch.nn.Module, computing_capacity: float, transfer_capacity: float):
         self._subtask_info = subtask_info
@@ -46,24 +49,21 @@ class DNNSubtask:
     
     def run(self, input: torch.Tensor) -> torch.Tensor:
         """
-        data를 입력으로 받아, 서브태스크를 실행합니다.
-        서브태스크가 계산일 경우 모델을 계산합니다.
-        전송일 경우 데이터를 그대로 반환합니다.
+        입력을 받아, 서브태스크를 실행합니다.
 
         Args:
-            data (torch.Tensor): 서브태스크의 입력 데이터.
+            input (torch.Tensor): 서브태스크의 입력 데이터.
 
         Returns:
-            DNNOutput: 서브태스크의 출력. (서브태스크가 계산일 경우 모델 계산 결과, 전송일 경우 그대로 반환)
+            torch.Tensor: 서브태스크의 출력.
         """
-        if self._subtask_info.is_computing():
-            with torch.no_grad():
-                output = self._dnn_model(input)
+        with torch.no_grad():
+            output = self._dnn_model(input)
 
-            if isinstance(output, list):
-                output = [o.to("cpu") for o in output]
-            else:
-                output = output.to("cpu")
+        if isinstance(output, list):
+            output = [o.to("cpu") for o in output]
+        else:
+            output = output.to("cpu")
         
         return output
 

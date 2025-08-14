@@ -10,6 +10,7 @@ class DNNOutput:
         _input (torch.Tensor): 모델의 입력.
         _output (torch.Tensor): 모델의 출력.
         _subtask_info (SubtaskInfo): 서브태스크 정보.
+        _size (float): 객체 크기. (KB)
     """
     def __init__(self, input: torch.Tensor, subtask_info: SubtaskInfo, size: float = 0) -> None:
         self._input = input
