@@ -7,21 +7,27 @@ class DNNOutput:
     모델의 출력을 저장하는 클래스입니다.
 
     Attributes:
+        _input (torch.Tensor): 모델의 입력.
         _output (torch.Tensor): 모델의 출력.
         _subtask_info (SubtaskInfo): 서브태스크 정보.
+        _size (float): 객체 크기. (KB)
     """
-    def __init__(self, data: torch.Tensor, subtask_info: SubtaskInfo, size: float = 0) -> None:
-        self._output = data
+    def __init__(self, input: torch.Tensor, subtask_info: SubtaskInfo, size: float = 0) -> None:
+        self._input = input
+        self._output = dict()
         self._subtask_info = subtask_info
         self._size = size # KB
+
+    def add_output(self, model_name: str, output: torch.Tensor) -> None:
+        self._output[model_name] = output
 
     @property
     def subtask_info(self) -> SubtaskInfo:
         return self._subtask_info
 
     @property
-    def output(self) -> torch.Tensor:
-        return self._output
+    def input(self) -> torch.Tensor:
+        return self._input
 
     @property
     def size(self) -> float:

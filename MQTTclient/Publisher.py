@@ -23,7 +23,7 @@ class Publisher:
         pass
 
     def on_disconnect(self, client, userdata, flags, rc=0):
-        print(str(rc))
+        print(f"Disconnected from {self.config['ip']} with return code: {rc}")
 
     def publish(self, topic, message):
         if isinstance(message, bytes):

@@ -117,7 +117,7 @@ class JobManager:
 
             self._ahead_of_time_outputs.garbage_dnn_output_collector(collect_garbage_job_time)
 
-    def run(self, output: DNNOutput) -> Tuple[DNNOutput, float]:
+    def run(self, dnn_output: DNNOutput) -> Tuple[DNNOutput, float]:
         """
         서브태스크를 실행하고, 계산량을 반환합니다. (GFLOPs)
         서브태스크가 전송일 경우 0을 반환합니다.
@@ -128,27 +128,29 @@ class JobManager:
         Returns:
             Tuple[DNNOutput, float]: 실행 결과와 단위 시간당 계산량. (GFLOPs)
         """
-        subtask_info = output.subtask_info
+        subtask_info = dnn_output.subtask_info
+        subtask: DNNSubtask = self._virtual_queue.get_subtask(subtask_info)
+
+        if subtask_info.is_transmission():
+            self._virtual_queue.del_subtask_info(subtask_info)
+            return dnn_output, 0
+
         if subtask_info.job_type == "dnn":
-            
-            subtask: DNNSubtask = self._virtual_queue.get_subtask(subtask_info)
             capacity = subtask.get_total_capacity()
 
-            # 아직 run하지 않은 data이므로 사용해야 할 input data입니다.
-            data = output.output
+            input = dnn_output.input
 
-            if isinstance(data, list):
-                data = [d.to(self._device) for d in data]
+            if isinstance(input, list):
+                input = [data.to(self._device) for data in input]
             else:
-                data = data.to(self._device)
+                input = input.to(self._device)
                 
-            dnn_output = subtask.run(data, output.size)
-
-            performance = capacity if subtask.subtask_info.is_computing() else 0 # GFLOPs
+            output = subtask.run(input)
+            dnn_output.add_output(subtask_info.model_name, output)
 
             self._virtual_queue.del_subtask_info(subtask_info)
     
-            return dnn_output, performance
+            return dnn_output, capacity
         
     # add subtask_info based SubtaskInfo
     def add_subtask(self, subtask_info: SubtaskInfo) -> None:
