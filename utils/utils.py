@@ -4,7 +4,7 @@ from typing import List
 import csv
 
 import torch
-from torchvision.models import resnet18, mobilenet_v2
+from torchvision.models import resnet18, mobilenet_v2, wide_resnet101_2
 from yolov5.Yolov5 import P1, P2, P3, P4
 
 NANO_PER_MILLISECOND = 1_000_000
@@ -166,7 +166,7 @@ def split_model(model: torch.nn.Module, split_point, flatten_index: int) -> torc
 
 def load_model(model_name) -> torch.nn.Module:
 
-    available_model_list = ["yolov5", "resnet-18", "resnet-50", "mobilenet_v2"]
+    available_model_list = ["yolov5", "resnet-18", "resnet-50", "mobilenet_v2", "wide_resnet101_2"]
 
     assert model_name in available_model_list, f"Model must be in {available_model_list}."
 
@@ -184,6 +184,11 @@ def load_model(model_name) -> torch.nn.Module:
     
     elif model_name == "mobilenet_v2":
         model = mobilenet_v2(pretrained=True)
+        model.eval()
+        return model
+    
+    elif model_name == "wide_resnet101_2":
+        model = wide_resnet101_2(pretrained=True)
         model.eval()
         return model
     
