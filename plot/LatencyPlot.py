@@ -36,23 +36,39 @@ def load_latency_data(result_dir: str, start_idx: int = 0, end_idx: Optional[int
     return zip(*filtered_data)
 
 def shorten_path(path: str) -> str:
-    """경로를 축약된 형태로 변환합니다."""
+    """경로를 축약된 형태로 변환합니다. computing 정보만 사용하며 동일한 노드는 통합합니다."""
+    computing_items = []
     items = [p.strip() for p in path.split(',') if p.strip()]
-    short_items = []
     
     for item in items:
-        if 'transmission' in item:
-            # 전송 경로: IP->IP 형태를 축약
-            ips = re.findall(r'\d+\.\d+\.\d+\.(\d+)->\d+\.\d+\.\d+\.(\d+)', item)
-            if ips:
-                short_items.append(f'{ips[0][0]}→{ips[0][1]}')
-        elif 'computing' in item:
-            # 컴퓨팅 경로: IP 형태를 축약
-            ip = re.search(r'(\d+\.\d+\.\d+\.(\d+))', item)
-            if ip:
-                short_items.append(f'C{ip.group(2)}')
+        if 'computing' in item:
+            # (computing) 192.168.1.6->192.168.1.6: wide_resnet101_2 형태에서 IP의 마지막 숫자와 모델명 추출
+            ip_match = re.search(r'192\.168\.1\.(\d+)->192\.168\.1\.(\d+)', item)
+            model_match = re.search(r':\s*(\w+)', item)
+            
+            if ip_match and model_match:
+                node_ip = ip_match.group(1)  # 마지막 IP 숫자
+                model_name = model_match.group(1)
+                computing_items.append(f"{node_ip}: {model_name}")
     
-    return '-'.join(short_items)
+    # 동일한 노드의 computing 작업들을 통합 (노드 번호 기준으로 정렬)
+    node_models = {}
+    for item in computing_items:
+        if ':' in item:
+            node, model = item.split(':', 1)
+            node = node.strip()
+            model = model.strip()
+            if node not in node_models:
+                node_models[node] = set()
+            node_models[node].add(model)
+    
+    # 노드별로 정렬하여 결과 생성
+    result_parts = []
+    for node in sorted(node_models.keys(), key=int):
+        models = sorted(node_models[node])
+        result_parts.append(f"{node}: {', '.join(models)}")
+    
+    return ', '.join(result_parts)
 
 def group_latency_by_path(latency_values: List[float], paths: List[str]) -> Dict[str, List[float]]:
     """경로별로 지연시간을 그룹화합니다."""
@@ -60,9 +76,10 @@ def group_latency_by_path(latency_values: List[float], paths: List[str]) -> Dict
     
     for lat, path in zip(latency_values, paths):
         short_path = shorten_path(path)
-        if short_path not in data_by_path:
+        if short_path and short_path not in data_by_path:
             data_by_path[short_path] = []
-        data_by_path[short_path].append(lat)
+        if short_path:
+            data_by_path[short_path].append(lat)
     
     return data_by_path
 
@@ -105,9 +122,9 @@ def plot_latency_by_path(result_dir: str, file_postfix: str, start_idx: int = 0,
     
     # 그래프 스타일링
     plt.ylabel('지연시간 (ms)', fontsize=12)
-    plt.xlabel('경로', fontsize=12)
-    plt.title('작업 경로별 지연시간 패턴 분석: 분포도 기반 성능 비교', fontsize=14, pad=20)
-    plt.xticks(rotation=30, fontsize=9)
+    plt.xlabel('Computing 경로', fontsize=12)
+    plt.title('Computing 경로별 지연시간 패턴 분석: 분포도 기반 성능 비교', fontsize=14, pad=20)
+    plt.xticks(rotation=90, fontsize=9)
     plt.grid(True, alpha=0.3, axis='y')
     plt.tight_layout()
     
@@ -130,10 +147,11 @@ def plot_latency_over_time(result_dir: str, file_postfix: str, start_idx: int = 
     path_groups = {}
     for i, (lat, path) in enumerate(zip(latency_values, paths)):
         short_path = shorten_path(path)
-        if short_path not in path_groups:
+        if short_path and short_path not in path_groups:
             path_groups[short_path] = {'time': [], 'latency': []}
-        path_groups[short_path]['time'].append(i)
-        path_groups[short_path]['latency'].append(lat)
+        if short_path:
+            path_groups[short_path]['time'].append(i)
+            path_groups[short_path]['latency'].append(lat)
     
     # 라인 플롯 생성
     plt.figure(figsize=(12, 6), dpi=300)

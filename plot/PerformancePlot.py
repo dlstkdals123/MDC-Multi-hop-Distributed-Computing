@@ -35,16 +35,16 @@ def plot_network_backlog(result_dir: str, file_postfix: str, start_idx: int = 0,
         plt.plot(time, df[col], label=f"Node {node_num}", color=Colors.NODES[node_num])
     
     # 전체/평균 백로그
-    plt.plot(time, df['sum_actual_queue_backlog (KB/s)'], label='Total Backlog', color=Colors.TOTAL, linestyle='--')
-    plt.plot(time, df['avg_actual_queue_backlog (KB/s)'], label='Average Backlog', color=Colors.AVERAGE, linestyle='--')
+    plt.plot(time, df['sum_actual_queue_backlog (KB)'], label='Total Actual Queue Backlog', color=Colors.TOTAL, linestyle='--')
+    plt.plot(time, df['avg_actual_queue_backlog (KB)'], label='Average Actual Queue Backlog', color=Colors.AVERAGE, linestyle='--')
     
-    plt.ylabel('Queue Backlog (KB/s)')
+    plt.ylabel('Actual Queue Backlog (KB)')
     plt.xlabel('Time step')
-    plt.title('네트워크 백로그 분석: 노드별/전체/평균 큐 백로그')
+    plt.title('Actual Queue Backlog 분석')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    save_or_show_plot(plot_dir, f'network_backlog_{result_dir_name}{file_postfix}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'actual_queue_backlog_{file_postfix}.svg', save_plot)
 
 def plot_computing_performance(result_dir: str, file_postfix: str, start_idx: int = 0, 
                              end_idx: Optional[int] = None, save_plot: bool = True):
@@ -69,7 +69,7 @@ def plot_computing_performance(result_dir: str, file_postfix: str, start_idx: in
     
     plt.ylabel('Computing Performance (GFLOPs/s)')
     plt.xlabel('Time step')
-    plt.title('연산 성능 분석: 노드별/전체/평균 연산 능력')
+    plt.title('연산량 분석')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
