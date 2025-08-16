@@ -124,7 +124,7 @@ def plot_latency_by_path(result_dir: str, file_postfix: str, start_idx: int = 0,
     plt.ylabel('지연시간 (ms)', fontsize=12)
     plt.xlabel('Computing 경로', fontsize=12)
     plt.title('Computing 경로별 지연시간 패턴 분석: 분포도 기반 성능 비교', fontsize=14, pad=20)
-    plt.xticks(rotation=90, fontsize=9)
+    plt.xticks(rotation=0, fontsize=9)
     plt.grid(True, alpha=0.3, axis='y')
     plt.tight_layout()
     
