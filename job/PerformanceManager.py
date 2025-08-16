@@ -54,10 +54,15 @@ class PerformanceManager:
             output_delta = self._last_output / time_delta * NANO_SECOND
             computing_delta = self._last_computing / time_delta * NANO_SECOND
 
-        queue_backlog_delta = (max(cur_actual_queue_backlog - output_delta, 0) + input_delta) # KB/s
+        # total input, output
+        time_second = time_delta / NANO_SECOND
+        total_output = output_delta * time_second # KB
+        total_input = input_delta * time_second # KB
+
+        queue_backlog = (max(cur_actual_queue_backlog - total_output, 0) + total_input) # KB
 
         # 성능 정보 갱신
-        self._performance.actual_queue_backlog = queue_backlog_delta
+        self._performance.actual_queue_backlog = queue_backlog
         self._performance.input = input_delta
         self._performance.output = output_delta
         self._performance.computing = computing_delta
