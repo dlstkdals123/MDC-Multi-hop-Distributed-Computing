@@ -39,11 +39,11 @@ def plot_node_gflops(result_dir: str, file_postfix: str, start_idx: int = 0,
     
     plt.ylabel('Backlog (GFLOPs)')
     plt.xlabel('Time step')
-    plt.title('노드별 연산 처리량 분석: 시간에 따른 백로그 변화')
+    plt.title('노드별 Virtual Queue Backlog (GFLOPs) 분석')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    save_or_show_plot(plot_dir, f'backlog_gflops_{result_dir_name}{file_postfix}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'virtual_queue_backlog{file_postfix}.svg', save_plot)
 
 def plot_node_kb(result_dir: str, file_postfix: str, start_idx: int = 0,
                  end_idx: Optional[int] = None, save_plot: bool = True):
@@ -68,11 +68,11 @@ def plot_node_kb(result_dir: str, file_postfix: str, start_idx: int = 0,
     
     plt.ylabel('Backlog (KB)')
     plt.xlabel('Time step')
-    plt.title('노드 간 데이터 전송량 분석: 시간에 따른 백로그 변화')
+    plt.title('노드별 Virtual Queue Backlog (KB) 변화')
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    save_or_show_plot(plot_dir, f'backlog_kb_{result_dir_name}{file_postfix}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'virtual_queue_backlog_{file_postfix}.svg', save_plot)
 
 if __name__ == "__main__":
     results_dir = os.path.join(os.path.dirname(__file__), '../results')
