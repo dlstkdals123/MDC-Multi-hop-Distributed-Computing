@@ -43,7 +43,7 @@ def plot_node_gflops(result_dir: str, file_postfix: str, start_idx: int = 0,
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    save_or_show_plot(plot_dir, f'virtual_queue_backlog{file_postfix}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'virtual_queue_computing{file_postfix}.svg', save_plot)
 
 def plot_node_kb(result_dir: str, file_postfix: str, start_idx: int = 0,
                  end_idx: Optional[int] = None, save_plot: bool = True):
@@ -72,7 +72,7 @@ def plot_node_kb(result_dir: str, file_postfix: str, start_idx: int = 0,
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    save_or_show_plot(plot_dir, f'virtual_queue_backlog{file_postfix}.svg', save_plot)
+    save_or_show_plot(plot_dir, f'virtual_queue_transmission{file_postfix}.svg', save_plot)
 
 if __name__ == "__main__":
     results_dir = os.path.join(os.path.dirname(__file__), '../results')
