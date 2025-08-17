@@ -76,7 +76,7 @@ class JobManager:
             dnn_output (DNNOutput): 업데이트할 DNNOutput.
         """
         previous_subtask_info = dnn_output.subtask_info
-        current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info)
+        current_subtask_info = self._virtual_queue.get_subtask_info(previous_subtask_info.get_subtask_id())
         dnn_output.subtask_info = current_subtask_info
         
     def pop_dnn_output(self, subtask_info: SubtaskInfo) -> DNNOutput:
