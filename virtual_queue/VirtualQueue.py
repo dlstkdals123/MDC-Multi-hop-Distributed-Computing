@@ -105,18 +105,18 @@ class VirtualQueue:
                 self.subtask_infos[subtask_info] = (subtask, cur_time)
                 return True
 
-    def get_subtask_info(self, subtask_info: SubtaskInfo) -> SubtaskInfo:
+    def get_subtask_info(self, subtask_info_id: str) -> SubtaskInfo:
         """
         서브태스크 정보를 반환합니다.
 
         Args:
-            subtask_info (SubtaskInfo): 찾을 서브태스크 정보.
+            subtask_info_id (str): 찾을 서브태스크 정보의 ID.
 
         Returns:
             SubtaskInfo: 찾은 서브태스크 정보.
         """
         with self.mutex:
-            subtask, _ = self.subtask_infos[subtask_info]
+            subtask, _ = self.subtask_infos[subtask_info_id]
         return subtask.subtask_info
     
     def get_subtask(self, subtask_info: SubtaskInfo) -> DNNSubtask:
