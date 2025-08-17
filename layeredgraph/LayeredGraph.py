@@ -41,32 +41,10 @@ class LayeredGraph:
 
         self._scheduling_algorithm = None
 
-        self.init_graph()
-        self.init_algorithm()
-        
+        self._init_graph()
+        self._init_algorithm()
 
-    def set_backlogs(self, links: Dict[LayerNodePair, float]) -> None:
-        """
-        링크별 백로그 정보를 받아 그래프를 갱신합니다.
-
-        Args:
-            links (Dict[LayerNodePair, float]): 각 링크와 해당 백로그 값의 딕셔너리.
-        """
-        for link, backlog in links.items():
-            self._layered_graph_backlog[link] = backlog
-    
-    def set_performance(self, node_ip: str, performance: Performance) -> None:
-        """
-        노드의 성능 정보를 받아 그래프를 갱신합니다.
-
-        Args:
-            node_ip (str): 노드의 IP 주소.
-            performance (Performance): 노드의 성능 정보.
-        """
-        node = self._get_layer_node(node_ip)
-        self._performances[node] = performance
-
-    def init_graph(self):
+    def _init_graph(self):
         """
         네트워크 설정을 기반으로 정보들을 초기화합니다.
         """
@@ -91,13 +69,35 @@ class LayeredGraph:
             self._layered_graph[source].append(source)
             self._layered_graph_backlog.setdefault(self._get_layer_node_pair(source_ip, source_ip), 0)
 
-    def init_algorithm(self):
+    def _init_algorithm(self):
         """
         네트워크 설정에 명시된 스케줄링 알고리즘을 동적으로 import하여 초기화합니다.
         """
         module_path = self._network_config.scheduling_algorithm.replace(".py", "").replace("/", ".")
         self._algorithm_class = module_path.split(".")[-1]
         self._scheduling_algorithm = getattr(importlib.import_module(module_path), self._algorithm_class)()
+        
+
+    def set_backlogs(self, links: Dict[LayerNodePair, float]) -> None:
+        """
+        링크별 백로그 정보를 받아 그래프를 갱신합니다.
+
+        Args:
+            links (Dict[LayerNodePair, float]): 각 링크와 해당 백로그 값.
+        """
+        for link, backlog in links.items():
+            self._layered_graph_backlog[link] = backlog
+    
+    def set_performance(self, node_ip: str, performance: Performance) -> None:
+        """
+        노드의 성능 정보를 받아 그래프를 갱신합니다.
+
+        Args:
+            node_ip (str): 노드의 IP 주소.
+            performance (Performance): 노드의 성능 정보.
+        """
+        node = self._get_layer_node(node_ip)
+        self._performances[node] = performance
 
     def _get_layer_node(self, ip: str) -> LayerNode:
         return LayerNode(ip, self._network_config.get_models(ip))
