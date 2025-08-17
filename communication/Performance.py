@@ -15,6 +15,9 @@ class Performance:
         self._output = output
         self._computing = computing
 
+    def is_empty(self) -> bool:
+        return self._actual_queue_backlog == 0 and self._input == 0 and self._output == 0 and self._computing == 0
+
     @property
     def actual_queue_backlog(self) -> float:
         return self._actual_queue_backlog
